@@ -15,6 +15,7 @@
   <header class="site-header">
     <a class="logo" href="./">PokePon</a>
     <nav class="nav">
+      <a href="#player-guide">Player guide</a>
       <a href="terms.html">Terms of Service</a>
       <a href="privacy.html">Privacy Policy</a>
       <a class="nav-cta" href="https://github.com/HamieBrooklyn/Poke-Cards" target="_blank" rel="noopener noreferrer">GitHub</a>
@@ -35,13 +36,71 @@
       <p class="hero-note">
         Replace the invite URL’s <code>client_id</code> with your application’s ID from the
         <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer">Discord Developer Portal</a>.
+        New to the bot? See the <a href="#player-guide">player guide</a> below.
       </p>
+    </section>
+
+    <section id="player-guide" class="prose player-guide-on-home" tabindex="-1">
+      <p class="guide-kicker">Getting started</p>
+      <h2>Player guide</h2>
+      <p class="meta">Short intro for new players — you can share a link straight to this section in Discord.</p>
+
+      <p class="share-url">
+        <strong>Link to post in Discord:</strong>
+        <a href="https://hamiebrooklyn.github.io/#player-guide">https://hamiebrooklyn.github.io/#player-guide</a>
+      </p>
+
+      <h3>1. How you use the bot</h3>
+      <ul>
+        <li><strong>Slash commands:</strong> type <code>/</code> and pick a command (for example <code>/balance</code>, <code>/daily</code>).</li>
+        <li><strong>Text shortcuts (optional):</strong> many card commands also work with the prefix <code>c</code> (for example <code>ccd</code> for a drop) or by <strong>mentioning the bot</strong> first. If that does not work in your server, stick to slash commands.</li>
+      </ul>
+
+      <h3>2. First steps</h3>
+      <ol>
+        <li><code>/balance</code> — see your <strong>Pokedollars</strong> and <strong>Crystals</strong>.</li>
+        <li><code>/daily</code> — claim your daily reward when it is available.</li>
+        <li><code>/cd</code> or <code>ccd</code> — <strong>card drop</strong>: opens a pack-style pull; use the <strong>buttons</strong> to choose what you keep. Card IDs may appear as plain text under the message so you can copy them on mobile.</li>
+        <li><code>/coll</code> or <code>ccoll</code> — list saved cards (often with pages).</li>
+      </ol>
+
+      <h3>3. Collection &amp; search</h3>
+      <ul>
+        <li><code>/cs</code> — search the <strong>global catalog</strong> or <strong>your collection</strong> (pick the mode the command offers).</li>
+        <li><code>/cv</code> — full <strong>card view</strong> (large image + details) for one card.</li>
+        <li><code>/colv</code> — flip through your cards like a binder (arrow buttons).</li>
+      </ul>
+
+      <h3>4. Packs (10 cards + 1 code card)</h3>
+      <ul>
+        <li><code>/packv</code> — find packs by <strong>series / set</strong>, browse art, and <strong>buy with Crystals</strong> on a series.</li>
+        <li><code>/packd</code> — <strong>random</strong> pack for <strong>10,000</strong> Pokedollars (or your server’s shop consumable, if configured).</li>
+        <li><code>/packcolv</code> — see <strong>unopened packs</strong>; use <strong>Open</strong>, flip through pulls, and <strong>Scrap</strong> cards you do not want (the rest stay in your collection).</li>
+      </ul>
+      <p>Crystals come from <strong>voting</strong> (see <code>/pvote</code>) and from <strong>code cards</strong> inside packs.</p>
+
+      <h3>5. More features</h3>
+      <ul>
+        <li><code>/pvote</code> — vote rewards (for example Top.gg).</li>
+        <li><code>trade</code> — player trades (for example <code>trade offer</code>).</li>
+        <li><code>/auction</code> — list, bid, and search auctions.</li>
+        <li><code>duel</code> / <code>deck</code> — PvP duels and your duel deck.</li>
+      </ul>
+
+      <h3>6. Tips</h3>
+      <ul>
+        <li>If a new command <strong>does not show up</strong> yet, global slash commands can take a little while to update on Discord after a bot update.</li>
+        <li>Use <code>/help</code> or <code>chelp</code> if your server exposes a command list.</li>
+      </ul>
+
+      <p class="back-to-top"><a href="#">↑ Back to top</a></p>
     </section>
 
     <section class="legal-strip">
       <h2>Legal</h2>
       <p>Use of the bot is subject to our policies and to Discord’s Terms of Service.</p>
       <ul class="legal-links">
+        <li><a href="#player-guide">Player guide</a></li>
         <li><a href="terms.html">Terms of Service</a></li>
         <li><a href="privacy.html">Privacy Policy</a></li>
       </ul>
@@ -51,6 +110,7 @@
   <footer class="site-footer">
     <span>© <span id="y"></span> PokePon · Not affiliated with Nintendo, The Pokémon Company, or Creatures Inc.</span>
     <span class="footer-links">
+      <a href="#player-guide">Guide</a>
       <a href="terms.html">Terms</a>
       <a href="privacy.html">Privacy</a>
     </span>

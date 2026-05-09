@@ -256,6 +256,75 @@ main {
   letter-spacing: -0.01em;
 }
 
+.prose h3 {
+  margin: 1.35rem 0 0.5rem;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+#player-guide {
+  scroll-margin-top: 5rem;
+}
+
+.player-guide-on-home {
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+  padding-bottom: 1rem;
+}
+
+.player-guide-on-home > .guide-kicker {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.player-guide-on-home > h2 {
+  margin-top: 0;
+}
+
+.player-guide-on-home .back-to-top {
+  margin-top: 2rem;
+  font-size: 0.95rem;
+}
+
+.player-guide-on-home .back-to-top a {
+  color: var(--muted);
+}
+
+.player-guide-on-home .back-to-top a:hover {
+  color: var(--accent);
+}
+
+.redirect-body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.redirect-main {
+  position: relative;
+  z-index: 1;
+  padding: 2rem;
+  max-width: 28rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+.redirect-main a {
+  font-weight: 600;
+}
+
+.redirect-main p {
+  margin: 0 0 1rem;
+}
+
 .prose p,
 .prose li {
   color: #c2c8d6;
@@ -263,6 +332,35 @@ main {
 
 .prose ul {
   padding-left: 1.25rem;
+}
+
+.prose ol {
+  padding-left: 1.25rem;
+  color: #c2c8d6;
+}
+
+.prose code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  padding: 0.12rem 0.35rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+}
+
+.prose .share-url {
+  margin: 0 0 2rem;
+  padding: 1rem 1.15rem;
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.prose .share-url a {
+  font-weight: 600;
+  word-break: break-all;
 }
 
 .site-footer {
