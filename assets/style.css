@@ -348,21 +348,6 @@ main {
   border: 1px solid var(--border);
 }
 
-.prose .share-url {
-  margin: 0 0 2rem;
-  padding: 1rem 1.15rem;
-  border-radius: var(--radius);
-  background: var(--bg-elev);
-  border: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
-.prose .share-url a {
-  font-weight: 600;
-  word-break: break-all;
-}
-
 .site-footer {
   position: relative;
   z-index: 1;
