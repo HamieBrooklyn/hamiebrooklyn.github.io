@@ -17,6 +17,24 @@
     return API_BASE + path;
   }
 
+  /**
+   * Treat anything other than an http(s) URL as "API not configured". GitHub Pages
+   * itself doesn't serve `/auth/...` or `/api/...`, so calling those with an empty
+   * base shows a 404; we'd rather catch that here and show a setup hint than make
+   * the user stare at GitHub's 404 page wondering what broke.
+   */
+  function apiConfigured() {
+    return /^https?:\/\//i.test(API_BASE);
+  }
+  var CONFIG_HINT_HTML =
+    'The dashboard does not know where your bot\u2019s API lives yet. ' +
+    'Edit <code>collection.html</code> in your <strong>hamiebrooklyn.github.io</strong> repo and set the ' +
+    'meta tag near the bottom of the file:' +
+    '<pre class="config-snippet">&lt;meta name="pokepon-api-base" content="https://your-tunnel.example" /&gt;</pre>' +
+    'Point the URL at whatever HTTPS proxy / tunnel exposes the bot, then commit + reload this page. ' +
+    'The full setup (Discord OAuth client id/secret and the <code>WEB_*</code> env vars) is in the ' +
+    '<a href="https://github.com/HamieBrooklyn/Poke-Cards#public-web-dashboard-optional" target="_blank" rel="noopener noreferrer">Poke-Cards README</a>.';
+
   var STATUS_KIND = {
     INFO: "info",
     EMPTY: "empty",
@@ -137,10 +155,17 @@
   }
 
   function bootAuth() {
-    showLoadingUser();
-    if (!API_BASE) {
-      // Same-origin mode — the API is presumed to be reverse-proxied here.
+    if (!apiConfigured()) {
+      // Don't even attempt to fetch — same-origin requests against
+      // hamiebrooklyn.github.io return a 404 HTML page that gives an unhelpful
+      // "HTTP 404" error after the fact. Tell the user how to wire the API instead.
+      showSignedOut();
+      setStatus(STATUS_KIND.AUTH, CONFIG_HINT_HTML);
+      els.grid.innerHTML = "";
+      els.pager.hidden = true;
+      return;
     }
+    showLoadingUser();
     fetch(api("/api/me"), { credentials: "include" })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
@@ -414,6 +439,11 @@
   // ------- event wiring -------------------------------------------------
 
   els.btnLogin.addEventListener("click", function () {
+    if (!apiConfigured()) {
+      setStatus(STATUS_KIND.AUTH, CONFIG_HINT_HTML);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     window.location.href = loginUrl();
   });
 

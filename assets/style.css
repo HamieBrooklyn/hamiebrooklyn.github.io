@@ -386,6 +386,17 @@ main {
   min-height: 100vh;
 }
 
+/* The HTML `hidden` attribute is supposed to imply `display: none`, but
+   any explicit `display:` rule on the same element wins. The dashboard
+   toggles sidebar/state panels through `hidden` from JS, so force the
+   attribute back into a hard hide. Without this, things like
+   `.sidebar-user-signedin { display: flex }` keep rendering even when
+   `hidden` is set, which is how the sidebar ended up showing both the
+   "signed out" and "signed in" cards at the same time. */
+[hidden] {
+  display: none !important;
+}
+
 .app-shell {
   position: relative;
   z-index: 1;
@@ -754,6 +765,25 @@ main {
 .collection-status .muted {
   color: var(--muted);
   font-size: 0.85em;
+}
+
+.collection-status .config-snippet {
+  display: block;
+  margin: 0.55rem 0;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: #cfdcff;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.collection-status a {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 /* ----- Card grid -------------------------------------------------------- */
