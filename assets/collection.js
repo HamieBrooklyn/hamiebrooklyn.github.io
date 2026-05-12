@@ -18,22 +18,24 @@
   }
 
   /**
-   * Treat anything other than an http(s) URL as "API not configured". GitHub Pages
-   * itself doesn't serve `/auth/...` or `/api/...`, so calling those with an empty
-   * base shows a 404; we'd rather catch that here and show a setup hint than make
-   * the user stare at GitHub's 404 page wondering what broke.
+   * Default headers sent with every API call.
+   *
+   * `ngrok-skip-browser-warning` bypasses ngrok-free's HTML interstitial that
+   * otherwise hijacks cross-origin browser requests (it returns an HTML page
+   * with no CORS headers, so `fetch` reports "NetworkError"). Any non-empty
+   * value works; ngrok only checks for the header's presence. Harmless on
+   * non-ngrok hosts since the server just ignores headers it doesn't know.
    */
-  function apiConfigured() {
-    return /^https?:\/\//i.test(API_BASE);
+  function apiHeaders() {
+    return { "ngrok-skip-browser-warning": "1" };
   }
-  var CONFIG_HINT_HTML =
-    'The dashboard does not know where your bot\u2019s API lives yet. ' +
-    'Edit <code>collection.html</code> in your <strong>hamiebrooklyn.github.io</strong> repo and set the ' +
-    'meta tag near the bottom of the file:' +
-    '<pre class="config-snippet">&lt;meta name="pokepon-api-base" content="https://your-tunnel.example" /&gt;</pre>' +
-    'Point the URL at whatever HTTPS proxy / tunnel exposes the bot, then commit + reload this page. ' +
-    'The full setup (Discord OAuth client id/secret and the <code>WEB_*</code> env vars) is in the ' +
-    '<a href="https://github.com/HamieBrooklyn/Poke-Cards#public-web-dashboard-optional" target="_blank" rel="noopener noreferrer">Poke-Cards README</a>.';
+  function apiFetch(path, options) {
+    options = options || {};
+    options.credentials = "include";
+    var headers = Object.assign({}, apiHeaders(), options.headers || {});
+    options.headers = headers;
+    return fetch(api(path), options);
+  }
 
   var STATUS_KIND = {
     INFO: "info",
@@ -155,18 +157,8 @@
   }
 
   function bootAuth() {
-    if (!apiConfigured()) {
-      // Don't even attempt to fetch — same-origin requests against
-      // hamiebrooklyn.github.io return a 404 HTML page that gives an unhelpful
-      // "HTTP 404" error after the fact. Tell the user how to wire the API instead.
-      showSignedOut();
-      setStatus(STATUS_KIND.AUTH, CONFIG_HINT_HTML);
-      els.grid.innerHTML = "";
-      els.pager.hidden = true;
-      return;
-    }
     showLoadingUser();
-    fetch(api("/api/me"), { credentials: "include" })
+    apiFetch("/api/me")
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
@@ -210,13 +202,13 @@
 
   // ------- collection fetch + render ------------------------------------
 
-  function buildCollectionUrl() {
+  function buildCollectionPath() {
     var qs = new URLSearchParams();
     qs.set("page", String(state.page));
     qs.set("page_size", String(state.pageSize));
     qs.set("sort", state.sort);
     if (state.query) qs.set("q", state.query);
-    return api("/api/me/collection?" + qs.toString());
+    return "/api/me/collection?" + qs.toString();
   }
 
   function loadCollection(scrollTop) {
@@ -233,10 +225,7 @@
     setStatus(STATUS_KIND.INFO, "Loading your collection…");
     els.grid.setAttribute("aria-busy", "true");
 
-    fetch(buildCollectionUrl(), {
-      credentials: "include",
-      signal: ctrl.signal,
-    })
+    apiFetch(buildCollectionPath(), { signal: ctrl.signal })
       .then(function (r) {
         if (r.status === 401) {
           state.authenticated = false;
@@ -439,19 +428,11 @@
   // ------- event wiring -------------------------------------------------
 
   els.btnLogin.addEventListener("click", function () {
-    if (!apiConfigured()) {
-      setStatus(STATUS_KIND.AUTH, CONFIG_HINT_HTML);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
     window.location.href = loginUrl();
   });
 
   els.btnLogout.addEventListener("click", function () {
-    fetch(api("/auth/logout"), {
-      method: "POST",
-      credentials: "include",
-    }).finally(function () {
+    apiFetch("/auth/logout", { method: "POST" }).finally(function () {
       window.location.reload();
     });
   });
