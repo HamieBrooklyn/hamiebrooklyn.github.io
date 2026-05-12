@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Collection — PokePon</title>
+  <meta name="description" content="Browse your PokePon Discord-bot card collection: search, sort by rarity / HP / damage, and view focused card details." />
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+</head>
+<body class="app-body">
+  <div class="bg-grid"></div>
+
+  <div class="app-shell" id="app">
+    <aside class="sidebar" id="sidebar" aria-label="Primary">
+      <div class="sidebar-top">
+        <a class="logo sidebar-logo" href="./">PokePon</a>
+        <button class="sidebar-toggle" type="button" id="sidebar-toggle" aria-controls="sidebar" aria-expanded="false">
+          <span class="sidebar-toggle-bar"></span>
+          <span class="sidebar-toggle-bar"></span>
+          <span class="sidebar-toggle-bar"></span>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Sections">
+        <ul>
+          <li>
+            <a class="sidebar-link is-active" href="collection.html" aria-current="page">
+              <span class="sidebar-link-icon" aria-hidden="true">▣</span>
+              <span class="sidebar-link-text">Collection</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link is-soon" aria-disabled="true">
+              <span class="sidebar-link-icon" aria-hidden="true">⇄</span>
+              <span class="sidebar-link-text">Trades</span>
+              <span class="sidebar-pill">Soon</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link is-soon" aria-disabled="true">
+              <span class="sidebar-link-icon" aria-hidden="true">⚖</span>
+              <span class="sidebar-link-text">Auctions</span>
+              <span class="sidebar-pill">Soon</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link is-soon" aria-disabled="true">
+              <span class="sidebar-link-icon" aria-hidden="true">⚔</span>
+              <span class="sidebar-link-text">Duels</span>
+              <span class="sidebar-pill">Soon</span>
+            </a>
+          </li>
+        </ul>
+
+        <p class="sidebar-section">Help</p>
+        <ul>
+          <li><a class="sidebar-link" href="./#player-guide">Player guide</a></li>
+          <li><a class="sidebar-link" href="terms.html">Terms</a></li>
+          <li><a class="sidebar-link" href="privacy.html">Privacy</a></li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-user" id="sidebar-user" data-state="loading">
+        <div class="sidebar-user-loading">Checking session…</div>
+
+        <div class="sidebar-user-signedout" hidden>
+          <p>Sign in with your Discord account to see your bot collection.</p>
+          <button class="btn btn-primary btn-block" type="button" id="btn-login">
+            Sign in with Discord
+          </button>
+        </div>
+
+        <div class="sidebar-user-signedin" hidden>
+          <img class="sidebar-avatar" alt="" src="" id="user-avatar" />
+          <div class="sidebar-user-text">
+            <div class="sidebar-user-name" id="user-name">—</div>
+            <div class="sidebar-user-hint">Signed in</div>
+          </div>
+          <button class="btn-link" type="button" id="btn-logout" title="Sign out">Sign out</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <header class="page-head">
+        <p class="hero-kicker">Section</p>
+        <h1>Collection</h1>
+        <p class="page-lead">Your full PokePon binder. Search, sort by rarity, HP, or damage, and tap any card for the focused view.</p>
+      </header>
+
+      <section class="toolbar" aria-label="Collection controls">
+        <div class="toolbar-search">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input
+            type="search"
+            id="search-input"
+            placeholder="Search by card name…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button class="search-clear" type="button" id="search-clear" hidden aria-label="Clear search">×</button>
+        </div>
+
+        <div class="toolbar-sort" role="group" aria-label="Sort">
+          <button class="chip" type="button" data-sort="newest" aria-pressed="true">Newest</button>
+          <button class="chip" type="button" data-sort="rarity" aria-pressed="false">Most rare</button>
+          <button class="chip" type="button" data-sort="hp" aria-pressed="false">Most HP</button>
+          <button class="chip" type="button" data-sort="damage" aria-pressed="false">Most damage</button>
+        </div>
+      </section>
+
+      <section class="collection-status" id="status"></section>
+
+      <section class="card-grid" id="card-grid" aria-live="polite"></section>
+
+      <nav class="pager" id="pager" hidden aria-label="Pagination">
+        <button class="btn btn-ghost" type="button" id="pager-prev">← Prev</button>
+        <span class="pager-info" id="pager-info">Page 1</span>
+        <button class="btn btn-ghost" type="button" id="pager-next">Next →</button>
+      </nav>
+    </main>
+  </div>
+
+  <div class="modal" id="card-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" role="document">
+      <button class="modal-close" type="button" data-close aria-label="Close">×</button>
+      <div class="modal-grid">
+        <div class="modal-image">
+          <img id="modal-img" alt="" />
+        </div>
+        <div class="modal-body">
+          <p class="modal-set" id="modal-set"></p>
+          <h2 class="modal-title" id="modal-title"></h2>
+          <p class="modal-rarity" id="modal-rarity"></p>
+
+          <dl class="modal-stats">
+            <div><dt>HP</dt><dd id="modal-hp">—</dd></div>
+            <div><dt>Max damage</dt><dd id="modal-damage">—</dd></div>
+            <div><dt>Types</dt><dd id="modal-types">—</dd></div>
+            <div><dt>Card ID</dt><dd><code id="modal-pid">—</code></dd></div>
+          </dl>
+
+          <section class="modal-attacks" id="modal-attacks-section" hidden>
+            <h3>Attacks</h3>
+            <ul id="modal-attacks"></ul>
+          </section>
+
+          <p class="modal-obtained" id="modal-obtained"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <meta name="pokepon-api-base" content="" />
+  <script>
+    // Read the API base URL from the meta tag above so deployers can swap hosts
+    // (ngrok URL, prod proxy, local dev) without rebuilding the JS bundle. An
+    // empty value means "same origin", which works when the API is reverse-proxied
+    // under the website's domain.
+    const _meta = document.querySelector('meta[name="pokepon-api-base"]');
+    window.POKEPON_API_BASE = (_meta && _meta.content && _meta.content.trim()) || "";
+  </script>
+  <script src="assets/collection.js" defer></script>
+</body>
+</html>
