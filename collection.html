@@ -169,19 +169,46 @@
     //   4. <meta>         Default baked into this HTML.
     (function () {
       var KEY = "pokepon-api-base";
+
+      // Validate with the URL constructor so placeholder strings like
+      // `https://<new-ngrok-url>.example` are rejected before we cache them.
+      // Without this, an invalid value can get pinned to localStorage and
+      // every subsequent reload silently fails with "fetch: not a valid URL".
+      function isValidBase(value) {
+        if (!value || !/^https?:\/\//i.test(value)) return false;
+        try {
+          var u = new URL(value);
+          return /^https?:$/.test(u.protocol) && !!u.hostname && !/[<>{}\s]/.test(u.hostname);
+        } catch (_) {
+          return false;
+        }
+      }
+
       var params = new URLSearchParams(window.location.search);
       var override = params.get("api");
       if (override === "clear" || override === "reset") {
         try { localStorage.removeItem(KEY); } catch (_) {}
         override = "";
       }
-      if (override && /^https?:\/\//i.test(override)) {
-        try { localStorage.setItem(KEY, override.replace(/\/+$/, "")); } catch (_) {}
+      if (override) {
+        if (isValidBase(override)) {
+          try { localStorage.setItem(KEY, override.replace(/\/+$/, "")); } catch (_) {}
+        } else {
+          console.warn(
+            "[pokepon] ignoring ?api= override — not a valid URL:",
+            override
+          );
+        }
       }
       var stored = "";
       try { stored = localStorage.getItem(KEY) || ""; } catch (_) {}
+      if (stored && !isValidBase(stored)) {
+        try { localStorage.removeItem(KEY); } catch (_) {}
+        stored = "";
+      }
       var meta = document.querySelector('meta[name="pokepon-api-base"]');
       var fromMeta = (meta && meta.content && meta.content.trim()) || "";
+      if (fromMeta && !isValidBase(fromMeta)) fromMeta = "";
       window.POKEPON_API_BASE = stored || fromMeta || "";
     })();
   </script>
