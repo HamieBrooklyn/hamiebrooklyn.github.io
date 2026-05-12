@@ -17,6 +17,43 @@
     return API_BASE + path;
   }
 
+  var SESSION_KEY = "pokepon-session";
+
+  function readSessionToken() {
+    try {
+      return localStorage.getItem(SESSION_KEY) || "";
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function storeSessionToken(token) {
+    try {
+      localStorage.setItem(SESSION_KEY, token);
+    } catch (_) {}
+  }
+
+  function clearSessionToken() {
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch (_) {}
+  }
+
+  function captureSessionFromFragment() {
+    if (!window.location.hash) return;
+    var params = new URLSearchParams(window.location.hash.slice(1));
+    var token = params.get("session");
+    if (!token) return;
+    storeSessionToken(token);
+    params.delete("session");
+    var nextHash = params.toString();
+    var cleanUrl =
+      window.location.pathname +
+      window.location.search +
+      (nextHash ? "#" + nextHash : "");
+    window.history.replaceState(null, "", cleanUrl);
+  }
+
   /**
    * Default headers sent with every API call.
    *
@@ -27,7 +64,10 @@
    * non-ngrok hosts since the server just ignores headers it doesn't know.
    */
   function apiHeaders() {
-    return { "ngrok-skip-browser-warning": "1" };
+    var headers = { "ngrok-skip-browser-warning": "1" };
+    var token = readSessionToken();
+    if (token) headers.Authorization = "Bearer " + token;
+    return headers;
   }
   function apiFetch(path, options) {
     options = options || {};
@@ -432,6 +472,7 @@
   });
 
   els.btnLogout.addEventListener("click", function () {
+    clearSessionToken();
     apiFetch("/auth/logout", { method: "POST" }).finally(function () {
       window.location.reload();
     });
@@ -508,5 +549,6 @@
   });
 
   // Boot
+  captureSessionFromFragment();
   bootAuth();
 })();
