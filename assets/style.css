@@ -1169,8 +1169,8 @@ body.modal-open {
 
 .deck-bench {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 0.65rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
   margin: 1.25rem 0 0.75rem;
 }
 
@@ -1179,14 +1179,14 @@ body.modal-open {
   background: var(--bg-elev);
   border: 2px solid var(--border);
   border-radius: 14px;
-  padding: 0.65rem 0.5rem 0.55rem;
+  padding: 0.75rem 0.65rem 0.65rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-  min-height: 170px;
+  min-height: 220px;
   text-align: center;
 }
 
@@ -1209,7 +1209,7 @@ body.modal-open {
 }
 
 .deck-slot-label {
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1232,14 +1232,14 @@ body.modal-open {
 }
 
 .deck-slot-img {
-  width: 72px;
+  width: 110px;
   height: auto;
-  border-radius: 6px;
+  border-radius: 8px;
   pointer-events: none;
 }
 
 .deck-slot-name {
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1248,7 +1248,7 @@ body.modal-open {
 }
 
 .deck-slot-hp {
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   color: var(--muted);
 }
 
@@ -1261,13 +1261,13 @@ body.modal-open {
 .deck-slot-clear {
   appearance: none;
   width: 100%;
-  margin: 0;
-  padding: 0.3rem 0.5rem;
+  margin: auto 0 0;
+  padding: 0.4rem 0.5rem;
   border-radius: 8px;
   border: 1px solid rgba(248, 113, 113, 0.25);
   background: rgba(248, 113, 113, 0.1);
   color: #fda4af;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1383,6 +1383,6 @@ body.modal-open {
   }
 
   .deck-bench {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 }
