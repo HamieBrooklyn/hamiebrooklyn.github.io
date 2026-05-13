@@ -77,6 +77,46 @@
     return fetch(api(path), options);
   }
 
+  function copyCardId(text, buttonEl) {
+    var pid = (text || "").trim();
+    if (!pid) return;
+    var flash = function (ok) {
+      if (!buttonEl || !ok) return;
+      var orig = buttonEl.textContent;
+      buttonEl.textContent = "Copied!";
+      setTimeout(function () {
+        buttonEl.textContent = orig;
+      }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard
+        .writeText(pid)
+        .then(function () {
+          flash(true);
+        })
+        .catch(function () {
+          fallbackCopy();
+        });
+    } else {
+      fallbackCopy();
+    }
+    function fallbackCopy() {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = pid;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        flash(true);
+      } catch (_) {
+        flash(false);
+      }
+    }
+  }
+
   var STATUS_KIND = {
     INFO: "info",
     EMPTY: "empty",
@@ -108,6 +148,7 @@
     modalDamage: document.getElementById("modal-damage"),
     modalTypes: document.getElementById("modal-types"),
     modalPid: document.getElementById("modal-pid"),
+    modalCopyId: document.getElementById("modal-copy-id"),
     modalAttacksSection: document.getElementById("modal-attacks-section"),
     modalAttacks: document.getElementById("modal-attacks"),
     modalObtained: document.getElementById("modal-obtained"),
@@ -309,7 +350,7 @@
           ? "No cards in your collection match <strong>" +
               escapeHtml(state.query) +
               "</strong>."
-          : "Your collection is empty. Run <code>/cd</code> in Discord to claim your first card."
+          : "Your collection is empty. Run <code>pcd</code> in Discord to claim your first card."
       );
       return;
     }
@@ -355,6 +396,11 @@
   function buildTile(item, idx) {
     var card = item.card || {};
     var rarity = card.rarity || {};
+    var publicId = item.public_id || "";
+
+    var wrap = document.createElement("div");
+    wrap.className = "card-tile-wrap";
+
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "card-tile " + rarityClassFor(rarity.display_name);
@@ -397,7 +443,21 @@
     btn.addEventListener("click", function () {
       openModal(item);
     });
-    return btn;
+
+    var copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "card-tile-copy";
+    copyBtn.textContent = "Copy ID";
+    copyBtn.setAttribute("aria-label", "Copy Card ID");
+    copyBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      copyCardId(publicId, copyBtn);
+    });
+
+    wrap.appendChild(btn);
+    wrap.appendChild(copyBtn);
+    return wrap;
   }
 
   // ------- modal --------------------------------------------------------
@@ -542,6 +602,12 @@
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && !els.modal.hidden) closeModal();
   });
+
+  if (els.modalCopyId) {
+    els.modalCopyId.addEventListener("click", function () {
+      copyCardId(els.modalPid.textContent, els.modalCopyId);
+    });
+  }
 
   els.sidebarToggle.addEventListener("click", function () {
     var open = els.sidebar.classList.toggle("is-open");

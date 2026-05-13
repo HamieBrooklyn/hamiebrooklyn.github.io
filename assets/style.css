@@ -386,17 +386,6 @@ main {
   min-height: 100vh;
 }
 
-/* The HTML `hidden` attribute is supposed to imply `display: none`, but
-   any explicit `display:` rule on the same element wins. The dashboard
-   toggles sidebar/state panels through `hidden` from JS, so force the
-   attribute back into a hard hide. Without this, things like
-   `.sidebar-user-signedin { display: flex }` keep rendering even when
-   `hidden` is set, which is how the sidebar ended up showing both the
-   "signed out" and "signed in" cards at the same time. */
-[hidden] {
-  display: none !important;
-}
-
 .app-shell {
   position: relative;
   z-index: 1;
@@ -767,31 +756,42 @@ main {
   font-size: 0.85em;
 }
 
-.collection-status .config-snippet {
-  display: block;
-  margin: 0.55rem 0;
-  padding: 0.55rem 0.7rem;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid var(--border);
-  font-family: var(--mono);
-  font-size: 0.78rem;
-  color: #cfdcff;
-  overflow-x: auto;
-  white-space: pre;
-}
-
-.collection-status a {
-  color: var(--accent);
-  font-weight: 600;
-}
-
 /* ----- Card grid -------------------------------------------------------- */
 
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 1rem;
+}
+
+.card-tile-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.card-tile-copy {
+  appearance: none;
+  width: 100%;
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.card-tile-copy:hover {
+  background: rgba(91, 140, 255, 0.12);
+  border-color: rgba(91, 140, 255, 0.45);
+  color: var(--text);
 }
 
 .card-tile {
@@ -1049,6 +1049,24 @@ main {
   border-radius: 6px;
 }
 
+.modal-stats .modal-id-row {
+  grid-column: 1 / -1;
+}
+
+.modal-id-dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  word-break: break-all;
+}
+
+.btn-copy-inline {
+  flex-shrink: 0;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.78rem;
+}
+
 .modal-attacks {
   border-top: 1px solid var(--border);
   padding-top: 0.85rem;
@@ -1119,6 +1137,209 @@ body.modal-open {
   overflow: hidden;
 }
 
+/* ----- Deck editor ------------------------------------------------------ */
+
+.deck-status,
+.deck-picker-status {
+  padding: 0.65rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+.deck-status.state-auth,
+.deck-picker-status.state-auth {
+  background: rgba(91, 140, 255, 0.08);
+  border: 1px solid rgba(91, 140, 255, 0.25);
+}
+.deck-status.state-error,
+.deck-picker-status.state-error {
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+}
+.deck-status.state-info,
+.deck-picker-status.state-info {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+}
+.deck-status.state-empty,
+.deck-picker-status.state-empty {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+}
+
+.deck-bench {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.65rem;
+  margin: 1.25rem 0 0.75rem;
+}
+
+.deck-slot {
+  position: relative;
+  background: var(--bg-elev);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 0.65rem 0.5rem 0.55rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  min-height: 170px;
+  text-align: center;
+}
+
+.deck-slot:hover {
+  border-color: rgba(91, 140, 255, 0.35);
+}
+
+.deck-slot.is-selected {
+  border-color: rgba(91, 140, 255, 0.7);
+  box-shadow: 0 0 0 2px rgba(91, 140, 255, 0.18);
+  background: rgba(91, 140, 255, 0.04);
+}
+
+.deck-slot.is-filled {
+  border-color: rgba(134, 239, 172, 0.35);
+}
+
+.deck-slot.is-filled.is-selected {
+  border-color: rgba(91, 140, 255, 0.7);
+}
+
+.deck-slot-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.deck-slot-lead {
+  color: #fde68a;
+}
+
+.deck-slot-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+  width: 100%;
+}
+
+.deck-slot-img {
+  width: 72px;
+  height: auto;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.deck-slot-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.deck-slot-hp {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.deck-slot-empty {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.deck-slot-clear {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  appearance: none;
+  border: none;
+  background: rgba(248, 113, 113, 0.15);
+  color: #fda4af;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease;
+}
+
+.deck-slot-clear:hover {
+  background: rgba(248, 113, 113, 0.35);
+}
+
+.deck-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.deck-save-hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.deck-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.5rem 0;
+}
+
+.deck-picker-head {
+  margin-bottom: 0.75rem;
+}
+
+.deck-picker-head h2 {
+  font-size: 1.15rem;
+  margin: 0 0 0.2rem;
+}
+
+.deck-picker-head .page-lead {
+  margin: 0;
+}
+
+/* Picker tile overrides */
+.picker-tile.is-in-deck {
+  opacity: 0.4;
+  pointer-events: none;
+  position: relative;
+}
+
+.picker-tile.is-ineligible {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.picker-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.15rem 0.4rem;
+  color: var(--muted);
+}
+
 /* ----- Responsive ------------------------------------------------------- */
 
 @media (max-width: 880px) {
@@ -1160,5 +1381,9 @@ body.modal-open {
 
   .modal-grid {
     grid-template-columns: 1fr;
+  }
+
+  .deck-bench {
+    grid-template-columns: repeat(3, 1fr);
   }
 }

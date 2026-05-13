@@ -33,6 +33,12 @@
             </a>
           </li>
           <li>
+            <a class="sidebar-link" href="deck.html">
+              <span class="sidebar-link-icon" aria-hidden="true">⚔</span>
+              <span class="sidebar-link-text">Deck Editor</span>
+            </a>
+          </li>
+          <li>
             <a class="sidebar-link is-soon" aria-disabled="true">
               <span class="sidebar-link-icon" aria-hidden="true">⇄</span>
               <span class="sidebar-link-text">Trades</span>
@@ -43,13 +49,6 @@
             <a class="sidebar-link is-soon" aria-disabled="true">
               <span class="sidebar-link-icon" aria-hidden="true">⚖</span>
               <span class="sidebar-link-text">Auctions</span>
-              <span class="sidebar-pill">Soon</span>
-            </a>
-          </li>
-          <li>
-            <a class="sidebar-link is-soon" aria-disabled="true">
-              <span class="sidebar-link-icon" aria-hidden="true">⚔</span>
-              <span class="sidebar-link-text">Duels</span>
               <span class="sidebar-pill">Soon</span>
             </a>
           </li>
@@ -141,7 +140,7 @@
             <div><dt>HP</dt><dd id="modal-hp">—</dd></div>
             <div><dt>Max damage</dt><dd id="modal-damage">—</dd></div>
             <div><dt>Types</dt><dd id="modal-types">—</dd></div>
-            <div><dt>Card ID</dt><dd><code id="modal-pid">—</code></dd></div>
+            <div class="modal-id-row"><dt>Card ID</dt><dd class="modal-id-dd"><code id="modal-pid">—</code> <button type="button" class="btn btn-ghost btn-copy-inline" id="modal-copy-id" aria-label="Copy Card ID">Copy</button></dd></div>
           </dl>
 
           <section class="modal-attacks" id="modal-attacks-section" hidden>
