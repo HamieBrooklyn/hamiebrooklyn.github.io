@@ -68,6 +68,7 @@
 
     search: document.getElementById("search-input"),
     searchClear: document.getElementById("search-clear"),
+    chips: Array.prototype.slice.call(document.querySelectorAll(".chip[data-sort]")),
     pickerStatus: document.getElementById("picker-status"),
     grid: document.getElementById("card-grid"),
     pager: document.getElementById("pager"),
@@ -85,6 +86,7 @@
     // picker
     page: 1,
     pageSize: 60,
+    sort: "newest",
     query: "",
     total: 0,
     items: [],
@@ -370,7 +372,7 @@
     var qs = new URLSearchParams();
     qs.set("page", String(state.page));
     qs.set("page_size", String(state.pageSize));
-    qs.set("sort", "newest");
+    qs.set("sort", state.sort);
     if (state.query) qs.set("q", state.query);
     return "/api/me/collection?" + qs.toString();
   }
@@ -436,6 +438,7 @@
       "<strong>" + state.total.toLocaleString() + "</strong> card" +
         (state.total === 1 ? "" : "s") +
         (state.query ? ' matching "' + escapeHtml(state.query) + '"' : "") +
+        " · sorted by <strong>" + sortLabel(state.sort) + "</strong>" +
         " — tap a Pokémon card to assign it to <strong>slot " + (state.selectedSlot + 1) + "</strong>"
     );
 
@@ -510,6 +513,15 @@
     return btn;
   }
 
+  function sortLabel(sort) {
+    switch (sort) {
+      case "rarity": return "rarity";
+      case "hp": return "HP";
+      case "damage": return "damage";
+      default: return "newest";
+    }
+  }
+
   // ------- event wiring -------------------------------------------------
 
   els.btnLogin.addEventListener("click", function () {
@@ -561,6 +573,26 @@
       loadCollection(false);
     }
     els.search.focus();
+  });
+
+  // Sort chips
+  els.chips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      var sort = chip.dataset.sort;
+      if (!sort || sort === state.sort) return;
+      els.chips.forEach(function (c) {
+        var on = c === chip;
+        c.classList.toggle("is-active", on);
+        c.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      state.sort = sort;
+      state.page = 1;
+      loadCollection(false);
+    });
+    if (chip.dataset.sort === state.sort) {
+      chip.classList.add("is-active");
+      chip.setAttribute("aria-pressed", "true");
+    }
   });
 
   // Pagination
