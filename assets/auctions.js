@@ -250,6 +250,7 @@
     var el = document.createElement("article");
     el.className = "auction-tile";
     el.dataset.id = String(a.id);
+    if (a.ends_at) el.dataset.endsAt = a.ends_at;
     var img = (a.card && a.card.image_small_url) || "";
     var cur = a.bid_currency || "pokedollars";
     var high =
@@ -476,6 +477,28 @@
 
     captureSessionFromFragment();
     bootAuth().then(loadList);
+
+    setInterval(function () {
+      pruneEndedTiles();
+    }, 15000);
+
+    setInterval(function () {
+      loadList();
+    }, 60000);
+  }
+
+  function pruneEndedTiles() {
+    if (!els.grid) return;
+    var now = Date.now();
+    var tiles = els.grid.querySelectorAll(".auction-tile[data-ends-at]");
+    tiles.forEach(function (tile) {
+      var end = new Date(tile.dataset.endsAt).getTime();
+      if (isNaN(end) || end > now) return;
+      tile.classList.add("auction-tile-ended");
+      setTimeout(function () {
+        if (tile.parentNode) tile.parentNode.removeChild(tile);
+      }, 600);
+    });
   }
 
   if (document.readyState === "loading") {
