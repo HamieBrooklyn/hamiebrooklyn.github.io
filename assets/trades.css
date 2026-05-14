@@ -44,6 +44,93 @@
   font-family: var(--font);
 }
 
+.trade-field-invite {
+  position: relative;
+  flex: 1 1 14rem;
+  min-width: 12rem;
+}
+
+.invite-suggestions {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.invite-suggestions[hidden] {
+  display: none !important;
+}
+
+.invite-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.invite-suggestion:last-child {
+  border-bottom: none;
+}
+
+.invite-suggestion:hover,
+.invite-suggestion:focus-visible {
+  background: var(--accent-soft);
+  outline: none;
+}
+
+.invite-suggestion-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--border);
+}
+
+.invite-suggestion-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.invite-suggestion-handle {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--accent);
+}
+
+.invite-suggestion-display {
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.invite-suggestion-hint {
+  padding: 0.45rem 0.65rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
 .trade-error {
   color: #f07178;
   margin-bottom: 0.75rem;

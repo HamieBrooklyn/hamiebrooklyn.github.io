@@ -39,6 +39,9 @@
     pickerTotal: 0,
     pickerDebounce: 0,
     pickerInflight: null,
+    selectedPartnerId: null,
+    inviteSearchDebounce: 0,
+    inviteSearchInFlight: null,
   };
 
   var els = {
@@ -49,6 +52,7 @@
     btnLogout: document.getElementById("btn-logout"),
     inviteSection: document.getElementById("trade-invite-section"),
     inviteInput: document.getElementById("invite-input"),
+    inviteSuggestions: document.getElementById("invite-suggestions"),
     btnInvite: document.getElementById("btn-invite"),
     inviteMsg: document.getElementById("invite-msg"),
     listSection: document.getElementById("trade-list-section"),
@@ -197,7 +201,14 @@
     if (els.inviteMsg) els.inviteMsg.innerHTML = "";
     var val = (els.inviteInput.value || "").trim();
     if (!val) return;
-    var body = /^\d+$/.test(val) ? { partner_id: val } : { partner_username: val };
+    var body;
+    if (state.selectedPartnerId) {
+      body = { partner_id: String(state.selectedPartnerId) };
+    } else if (/^\d+$/.test(val)) {
+      body = { partner_id: val };
+    } else {
+      body = { partner_username: val };
+    }
     try {
       var r = await apiFetch("/api/me/trades", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
@@ -206,9 +217,110 @@
       if (!r.ok) throw new Error(j.message || j.error || "Failed");
       if (els.inviteMsg) els.inviteMsg.innerHTML = '<div class="trade-msg-ok">Invite sent!</div>';
       els.inviteInput.value = "";
+      state.selectedPartnerId = null;
+      clearInviteSuggestions();
       loadList();
     } catch (e) {
       if (els.inviteMsg) els.inviteMsg.innerHTML = '<div class="trade-msg-err">' + String(e.message || e) + "</div>";
+    }
+  }
+
+  function clearInviteSuggestions() {
+    if (!els.inviteSuggestions) return;
+    els.inviteSuggestions.innerHTML = "";
+    els.inviteSuggestions.hidden = true;
+  }
+
+  function selectPartnerFromSuggestion(u) {
+    state.selectedPartnerId = u.id;
+    var handle = u.username || "";
+    var disp = u.global_name || u.display_name || "";
+    els.inviteInput.value = disp ? disp + " (@" + handle + ")" : "@" + handle;
+    clearInviteSuggestions();
+  }
+
+  function scheduleInviteUserSearch() {
+    clearTimeout(state.inviteSearchDebounce);
+    state.selectedPartnerId = null;
+    var raw = (els.inviteInput && els.inviteInput.value || "").trim();
+    if (!els.inviteSuggestions) return;
+    if (/^\d+$/.test(raw) || raw.length < 2) {
+      clearInviteSuggestions();
+      return;
+    }
+    state.inviteSearchDebounce = setTimeout(fetchInviteUserSuggestions, 280);
+  }
+
+  async function fetchInviteUserSuggestions() {
+    if (!els.inviteSuggestions || !state.authenticated) return;
+    var raw = (els.inviteInput.value || "").trim();
+    if (/^\d+$/.test(raw) || raw.length < 2) {
+      clearInviteSuggestions();
+      return;
+    }
+    if (state.inviteSearchInflight) state.inviteSearchInflight.abort();
+    var ctrl = new AbortController();
+    state.inviteSearchInflight = ctrl;
+    try {
+      var r = await apiFetch(
+        "/api/me/trade-user-search?q=" + encodeURIComponent(raw) + "&limit=12",
+        { signal: ctrl.signal }
+      );
+      state.inviteSearchInflight = null;
+      if (!r.ok) {
+        clearInviteSuggestions();
+        return;
+      }
+      var j = await r.json();
+      var users = j.users || [];
+      els.inviteSuggestions.innerHTML = "";
+      if (!users.length) {
+        var empty = document.createElement("div");
+        empty.className = "invite-suggestion-hint";
+        empty.textContent = "No users in bot servers match that prefix.";
+        els.inviteSuggestions.appendChild(empty);
+        els.inviteSuggestions.hidden = false;
+        return;
+      }
+      users.forEach(function (u) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "invite-suggestion";
+        btn.setAttribute("role", "option");
+        if (u.avatar_url) {
+          var img = document.createElement("img");
+          img.className = "invite-suggestion-avatar";
+          img.src = u.avatar_url;
+          img.alt = "";
+          btn.appendChild(img);
+        } else {
+          var ph = document.createElement("span");
+          ph.className = "invite-suggestion-avatar";
+          ph.setAttribute("aria-hidden", "true");
+          btn.appendChild(ph);
+        }
+        var meta = document.createElement("span");
+        meta.className = "invite-suggestion-meta";
+        var handle = document.createElement("span");
+        handle.className = "invite-suggestion-handle";
+        handle.textContent = "@" + (u.username || "?");
+        meta.appendChild(handle);
+        var gn = u.global_name || u.display_name || "";
+        if (gn) {
+          var disp = document.createElement("span");
+          disp.className = "invite-suggestion-display";
+          disp.textContent = gn;
+          meta.appendChild(disp);
+        }
+        btn.appendChild(meta);
+        btn.onclick = function () { selectPartnerFromSuggestion(u); };
+        els.inviteSuggestions.appendChild(btn);
+      });
+      els.inviteSuggestions.hidden = false;
+    } catch (e) {
+      state.inviteSearchInflight = null;
+      if (e.name === "AbortError") return;
+      clearInviteSuggestions();
     }
   }
 
@@ -497,7 +609,15 @@
       });
     }
     if (els.btnInvite) els.btnInvite.addEventListener("click", sendInvite);
-    if (els.inviteInput) els.inviteInput.addEventListener("keydown", function (e) { if (e.key === "Enter") sendInvite(); });
+    if (els.inviteInput) {
+      els.inviteInput.addEventListener("input", scheduleInviteUserSearch);
+      els.inviteInput.addEventListener("keydown", function (e) { if (e.key === "Enter") sendInvite(); });
+    }
+    document.addEventListener("click", function (e) {
+      if (!els.inviteSuggestions || els.inviteSuggestions.hidden) return;
+      var wrap = document.querySelector(".trade-field-invite");
+      if (wrap && !wrap.contains(e.target)) clearInviteSuggestions();
+    });
     if (els.btnReady) els.btnReady.addEventListener("click", toggleReady);
     if (els.btnCancelTrade) els.btnCancelTrade.addEventListener("click", function () {
       if (state.activeTrade) cancelTrade(state.activeTrade.id);

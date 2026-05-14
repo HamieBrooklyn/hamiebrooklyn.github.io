@@ -6,7 +6,7 @@
   <title>Trades — PokePon</title>
   <meta name="description" content="Trade cards, Pokedollars and Crystals with other players on PokePon." />
   <link rel="stylesheet" href="assets/style.css?v=2" />
-  <link rel="stylesheet" href="assets/trades.css?v=2" />
+  <link rel="stylesheet" href="assets/trades.css?v=3" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -83,7 +83,7 @@
         <p class="hero-kicker">Player-to-Player</p>
         <h1>Trades</h1>
         <p class="page-lead">
-          Invite another player by Discord ID or username. Both sides add cards and currency, then confirm to swap.
+          Search for someone who shares a Discord server with the bot, pick them from the list, then send an invite. You can also paste a numeric User ID.
         </p>
       </header>
 
@@ -91,9 +91,10 @@
       <section class="trade-invite-section" id="trade-invite-section" hidden>
         <h2>Start a trade</h2>
         <div class="trade-invite-form">
-          <div class="trade-field">
-            <label for="invite-input">Discord User ID or username</label>
-            <input id="invite-input" type="text" placeholder="e.g. 123456789 or trainer123" />
+          <div class="trade-field trade-field-invite">
+            <label for="invite-input">Discord user</label>
+            <input id="invite-input" type="text" placeholder="Start typing a username…" autocomplete="off" />
+            <div id="invite-suggestions" class="invite-suggestions" role="listbox" aria-label="Matching users" hidden></div>
           </div>
           <button type="button" class="btn btn-primary" id="btn-invite">Send invite</button>
         </div>
@@ -174,6 +175,6 @@
       window.POKEPON_API_BASE = stored || fromMeta || "";
     })();
   </script>
-  <script src="assets/trades.js?v=2" defer></script>
+  <script src="assets/trades.js?v=3" defer></script>
 </body>
 </html>
