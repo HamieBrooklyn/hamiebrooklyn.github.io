@@ -220,12 +220,47 @@
 
 .trade-card-chip {
   display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.55rem;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
   background: var(--accent-soft);
   border-radius: 8px;
   font-size: 0.82rem;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+
+.trade-card-chip-missing {
+  padding: 0.35rem 0.6rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  border: 1px dashed var(--border);
+  background: transparent;
+}
+
+.trade-card-chip-hit {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.55rem;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.trade-card-chip-hit:hover,
+.trade-card-chip-hit:focus-visible {
+  outline: none;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.trade-card-chip-hit:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
 .trade-card-chip img {
@@ -233,13 +268,30 @@
   height: 44px;
   object-fit: cover;
   border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .trade-card-chip .remove-card {
+  flex-shrink: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding: 0 0.45rem;
+  margin: 0;
+  border: none;
+  border-left: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.12);
   cursor: pointer;
   color: #f07178;
   font-weight: 700;
-  margin-left: 0.2rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.trade-card-chip .remove-card:hover,
+.trade-card-chip .remove-card:focus-visible {
+  background: rgba(240, 113, 120, 0.15);
+  outline: none;
 }
 
 .trade-currency-inputs {

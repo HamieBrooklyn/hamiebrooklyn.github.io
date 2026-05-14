@@ -78,10 +78,174 @@
     pickerResults: document.getElementById("picker-results"),
     sidebarToggle: document.getElementById("sidebar-toggle"),
     sidebar: document.getElementById("sidebar"),
+    modal: document.getElementById("card-modal"),
+    modalImg: document.getElementById("modal-img"),
+    modalTitle: document.getElementById("modal-title"),
+    modalSet: document.getElementById("modal-set"),
+    modalRarity: document.getElementById("modal-rarity"),
+    modalHp: document.getElementById("modal-hp"),
+    modalDamage: document.getElementById("modal-damage"),
+    modalTypes: document.getElementById("modal-types"),
+    modalPid: document.getElementById("modal-pid"),
+    modalAttacksSection: document.getElementById("modal-attacks-section"),
+    modalAttacks: document.getElementById("modal-attacks"),
+    modalObtained: document.getElementById("modal-obtained"),
+    modalCopyId: document.getElementById("modal-copy-id"),
   };
 
   function fmtPd(n) { return "₽" + Number(n || 0).toLocaleString(); }
   function fmtCr(n) { return "💎 " + Number(n || 0).toLocaleString(); }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function rarityClassFor(displayName) {
+    var v = (displayName || "").toLowerCase();
+    if (!v) return "rarity-unknown";
+    if (v.indexOf("common") !== -1) return "rarity-common";
+    if (v.indexOf("uncommon") !== -1) return "rarity-uncommon";
+    if (v.indexOf("ultra") !== -1) return "rarity-ultra";
+    if (v.indexOf("hyper") !== -1) return "rarity-hyper";
+    if (v.indexOf("secret") !== -1) return "rarity-secret";
+    if (v.indexOf("special") !== -1) return "rarity-special";
+    if (v.indexOf("rare") !== -1) return "rarity-rare";
+    return "rarity-unknown";
+  }
+
+  function copyCardId(text, buttonEl) {
+    var pid = (text || "").trim();
+    if (!pid) return;
+    var flash = function (ok) {
+      if (!buttonEl || !ok) return;
+      var orig = buttonEl.textContent;
+      buttonEl.textContent = "Copied!";
+      setTimeout(function () {
+        buttonEl.textContent = orig;
+      }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(pid).then(function () { flash(true); }).catch(function () { fallbackCopy(); });
+    } else {
+      fallbackCopy();
+    }
+    function fallbackCopy() {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = pid;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        flash(true);
+      } catch (_) {
+        flash(false);
+      }
+    }
+  }
+
+  /** Build collection-shaped item for the card modal from a trade-side card entry. */
+  function tradeModalItemFromSide(c) {
+    if (!c || c.missing) return null;
+    if (c.card) {
+      return { public_id: c.public_id, obtained_at: c.obtained_at, card: c.card };
+    }
+    return {
+      public_id: c.public_id,
+      obtained_at: c.obtained_at,
+      card: {
+        name: c.name,
+        set_name: c.set_name,
+        collector_number: c.collector_number,
+        image_small_url: c.image_small_url,
+        image_large_url: c.image_large_url,
+      },
+    };
+  }
+
+  function tradeChipThumbUrl(c) {
+    if (!c || c.missing) return "";
+    if (c.card && c.card.image_small_url) return c.card.image_small_url;
+    return c.image_small_url || "";
+  }
+
+  function tradeChipLabel(c) {
+    if (!c || c.missing) return "Missing";
+    if (c.card && c.card.name) return c.card.name;
+    return c.name || "Card";
+  }
+
+  function openTradeCardModal(item) {
+    if (!item || !els.modal) return;
+    var card = item.card || {};
+    var rarity = card.rarity || {};
+    els.modalImg.src = card.image_large_url || card.image_small_url || "";
+    els.modalImg.alt = card.name || "Card";
+    els.modalTitle.textContent = card.name || "Card";
+    els.modalSet.textContent =
+      (card.set_name || card.set_code || "") + " · #" + (card.collector_number || "?");
+    els.modalRarity.textContent = rarity.display_name || card.tcg_rarity || "Unknown rarity";
+    els.modalRarity.className = "modal-rarity " + rarityClassFor(rarity.display_name);
+    els.modalHp.textContent = card.hp ? String(card.hp) : "—";
+    els.modalDamage.textContent = card.max_damage ? String(card.max_damage) : "—";
+    var types = Array.isArray(card.types) && card.types.length ? card.types.join(" · ") : "—";
+    els.modalTypes.textContent = types;
+    els.modalPid.textContent = item.public_id || "—";
+    if (item.obtained_at) {
+      var d = new Date(item.obtained_at);
+      els.modalObtained.textContent =
+        "Obtained " + d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    } else {
+      els.modalObtained.textContent = "";
+    }
+
+    var attacks = Array.isArray(card.attacks) ? card.attacks : [];
+    if (attacks.length === 0) {
+      els.modalAttacksSection.hidden = true;
+      els.modalAttacks.innerHTML = "";
+    } else {
+      els.modalAttacksSection.hidden = false;
+      els.modalAttacks.innerHTML = attacks
+        .map(function (atk) {
+          var name = escapeHtml(atk.name || "Attack");
+          var dmg = atk.damage ? '<span class="atk-dmg">' + escapeHtml(atk.damage) + "</span>" : "";
+          var cost = Array.isArray(atk.cost) && atk.cost.length
+            ? '<span class="atk-cost">' + atk.cost.map(escapeHtml).join(" · ") + "</span>"
+            : "";
+          var text = atk.text ? '<p class="atk-text">' + escapeHtml(atk.text) + "</p>" : "";
+          return (
+            "<li>" +
+            '<div class="atk-row"><span class="atk-name">' +
+            name +
+            "</span>" +
+            cost +
+            dmg +
+            "</div>" +
+            text +
+            "</li>"
+          );
+        })
+        .join("");
+    }
+
+    els.modal.hidden = false;
+    els.modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+  }
+
+  function closeTradeCardModal() {
+    if (!els.modal) return;
+    els.modal.hidden = true;
+    els.modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+  }
 
   function showLoadingUser() {
     if (!els.sidebarUser) return;
@@ -444,18 +608,46 @@
       return;
     }
     cards.forEach(function (c) {
-      var chip = document.createElement("div");
-      chip.className = "trade-card-chip";
-      var img = c.image_small_url ? '<img src="' + c.image_small_url + '" alt="" />' : "";
-      chip.innerHTML = img + "<span>" + (c.name || "Card") + "</span>";
-      if (removable) {
-        var rm = document.createElement("span");
-        rm.className = "remove-card";
-        rm.textContent = "×";
-        rm.onclick = function () { removeCard(c.instance_id); };
-        chip.appendChild(rm);
+      if (c.missing) {
+        var miss = document.createElement("div");
+        miss.className = "trade-card-chip trade-card-chip-missing";
+        miss.textContent = "Missing instance #" + c.instance_id;
+        container.appendChild(miss);
+        return;
       }
-      container.appendChild(chip);
+      var row = document.createElement("div");
+      row.className = "trade-card-chip";
+      var hit = document.createElement("button");
+      hit.type = "button";
+      hit.className = "trade-card-chip-hit";
+      var thumb = tradeChipThumbUrl(c);
+      if (thumb) {
+        var img = document.createElement("img");
+        img.src = thumb;
+        img.alt = "";
+        hit.appendChild(img);
+      }
+      var sp = document.createElement("span");
+      sp.textContent = tradeChipLabel(c);
+      hit.appendChild(sp);
+      var modalItem = tradeModalItemFromSide(c);
+      hit.onclick = function () {
+        if (modalItem) openTradeCardModal(modalItem);
+      };
+      row.appendChild(hit);
+      if (removable) {
+        var rm = document.createElement("button");
+        rm.type = "button";
+        rm.className = "remove-card";
+        rm.setAttribute("aria-label", "Remove card from offer");
+        rm.textContent = "×";
+        rm.onclick = function (ev) {
+          ev.stopPropagation();
+          removeCard(c.instance_id);
+        };
+        row.appendChild(rm);
+      }
+      container.appendChild(row);
     });
   }
 
@@ -624,6 +816,19 @@
     });
     if (els.btnSaveSide) els.btnSaveSide.addEventListener("click", saveSide);
     if (els.pickerSearch) els.pickerSearch.addEventListener("input", pickerSearchChanged);
+
+    document.addEventListener("click", function (e) {
+      var t = e.target;
+      if (t && t.dataset && t.dataset.close !== undefined) closeTradeCardModal();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && els.modal && !els.modal.hidden) closeTradeCardModal();
+    });
+    if (els.modalCopyId && els.modalPid) {
+      els.modalCopyId.addEventListener("click", function () {
+        copyCardId(els.modalPid.textContent, els.modalCopyId);
+      });
+    }
 
     captureSessionFromFragment();
     bootAuth().then(function () {
