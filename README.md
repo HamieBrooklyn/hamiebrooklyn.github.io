@@ -23,7 +23,7 @@ The [collection binder](https://hamiebrooklyn.github.io/collection.html) talks t
 |--------|------|---------|
 | `GET` | `/api/me/collection` | Paginated cards; each item includes **`sell`** (`quote_pokedollars`, `needs_confirm`, `blocked_reason`, `can_sell`). |
 | `GET` | `/api/me/cards/{public_id}` | One card + same **`sell`** object. |
-| `POST` | `/api/me/cards/{public_id}/sell` | Body: `{ "expected_payout": <int>, "confirm_rare"?: true }`. Payout matches Discord `/colv`. |
+| `POST` | `/api/me/cards/{public_id}/sell` | Body: `{ "expected_payout": <int>, "confirm_rare"?: true }`. Amount is computed with `quote_collection_sell_payout` (same helper as any Discord UI wired to `poke_pon_bot.services.collection_sell`). |
 
 Configure the page’s **`pokepon-api-base`** meta tag (or `?api=` override) to your HTTPS bot URL. CORS must allow the GitHub Pages origin in the bot’s `WEB_ALLOWED_ORIGINS`.
 
