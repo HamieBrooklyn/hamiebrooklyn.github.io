@@ -152,6 +152,13 @@
     modalAttacksSection: document.getElementById("modal-attacks-section"),
     modalAttacks: document.getElementById("modal-attacks"),
     modalObtained: document.getElementById("modal-obtained"),
+    modalSellSection: document.getElementById("modal-sell-section"),
+    modalSellQuote: document.getElementById("modal-sell-quote"),
+    modalSellBlock: document.getElementById("modal-sell-block"),
+    modalSellWarn: document.getElementById("modal-sell-warn"),
+    modalSellBtn: document.getElementById("modal-sell-btn"),
+    modalSellBack: document.getElementById("modal-sell-back"),
+    modalSellMsg: document.getElementById("modal-sell-msg"),
     sidebarToggle: document.getElementById("sidebar-toggle"),
     sidebar: document.getElementById("sidebar"),
   };
@@ -166,6 +173,9 @@
     items: [],
     inflight: null,
     searchDebounce: 0,
+    modalItem: null,
+    sellUiStep: 0,
+    sellInFlight: false,
   };
 
   // ------- helpers -------------------------------------------------------
@@ -188,6 +198,16 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  }
+
+  /** Discord copy uses **bold** — strip for plain web display. */
+  function plainDiscordMsg(s) {
+    return String(s == null ? "" : s).replace(/\*\*/g, "");
+  }
+
+  function fmtPokedollars(n) {
+    if (n == null || n === "") return "—";
+    return "₽" + Number(n).toLocaleString();
   }
 
   function rarityClassFor(displayName) {
@@ -460,9 +480,102 @@
     return wrap;
   }
 
+  function renderSellUi(item) {
+    if (!els.modalSellSection) return;
+    var sell = item && item.sell;
+    els.modalSellMsg.hidden = true;
+    els.modalSellMsg.textContent = "";
+    els.modalSellMsg.className = "modal-sell-msg";
+
+    if (!sell) {
+      els.modalSellSection.hidden = true;
+      return;
+    }
+
+    els.modalSellSection.hidden = false;
+    els.modalSellBlock.hidden = true;
+    els.modalSellBlock.textContent = "";
+    els.modalSellWarn.hidden = true;
+    els.modalSellWarn.textContent = "";
+
+    if (sell.blocked_reason) {
+      els.modalSellQuote.textContent = "";
+      els.modalSellBlock.hidden = false;
+      els.modalSellBlock.textContent = plainDiscordMsg(sell.blocked_reason);
+      els.modalSellBtn.disabled = true;
+      els.modalSellBtn.textContent = "Cannot sell";
+      els.modalSellBack.hidden = true;
+      state.sellUiStep = 0;
+      return;
+    }
+
+    if (sell.quote_pokedollars == null) {
+      els.modalSellQuote.textContent = "Sell quote unavailable (missing rarity data).";
+      els.modalSellBtn.disabled = true;
+      els.modalSellBtn.textContent = "Cannot sell";
+      els.modalSellBack.hidden = true;
+      state.sellUiStep = 0;
+      return;
+    }
+
+    var quote = sell.quote_pokedollars;
+    var need = !!sell.needs_confirm;
+    if (need && state.sellUiStep === 1) {
+      els.modalSellQuote.textContent = "Sale amount: " + fmtPokedollars(quote);
+      els.modalSellWarn.hidden = false;
+      els.modalSellWarn.innerHTML =
+        "High-tier printing — selling is permanent. You will receive " +
+        "<strong>" +
+        escapeHtml(fmtPokedollars(quote)) +
+        "</strong>.";
+      if (!state.sellInFlight) {
+        els.modalSellBtn.disabled = false;
+        els.modalSellBtn.textContent = "Confirm sale";
+        els.modalSellBack.hidden = false;
+      } else {
+        els.modalSellBtn.disabled = true;
+        els.modalSellBtn.textContent = "Selling…";
+        els.modalSellBack.hidden = true;
+      }
+      return;
+    }
+
+    els.modalSellQuote.textContent = "Shop buyout: " + fmtPokedollars(quote);
+    els.modalSellBtn.disabled = state.sellInFlight || !sell.can_sell;
+    if (state.sellInFlight) {
+      els.modalSellBtn.textContent = "Selling…";
+    } else if (need) {
+      els.modalSellBtn.textContent = "Review sale…";
+    } else {
+      els.modalSellBtn.textContent = "Sell for " + fmtPokedollars(quote);
+    }
+    els.modalSellBack.hidden = true;
+  }
+
+  function refreshModalCardDetail(item) {
+    var pid = item && item.public_id;
+    if (!pid || !state.authenticated) return;
+    apiFetch("/api/me/cards/" + encodeURIComponent(pid))
+      .then(function (r) {
+        if (r.status === 401) return null;
+        if (!r.ok) return null;
+        return r.json();
+      })
+      .then(function (detail) {
+        if (!detail || detail.public_id !== pid) return;
+        if (els.modal.hidden) return;
+        state.modalItem = detail;
+        renderSellUi(detail);
+      })
+      .catch(function () {});
+  }
+
   // ------- modal --------------------------------------------------------
 
   function openModal(item) {
+    state.modalItem = item;
+    state.sellUiStep = 0;
+    state.sellInFlight = false;
     var card = item.card || {};
     var rarity = card.rarity || {};
     els.modalImg.src = card.image_large_url || card.image_small_url || "";
@@ -514,12 +627,19 @@
         .join("");
     }
 
+    renderSellUi(item);
+    refreshModalCardDetail(item);
+
     els.modal.hidden = false;
     els.modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
   }
 
   function closeModal() {
+    state.modalItem = null;
+    state.sellUiStep = 0;
+    state.sellInFlight = false;
+    if (els.modalSellSection) els.modalSellSection.hidden = true;
     els.modal.hidden = true;
     els.modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
@@ -613,6 +733,122 @@
     var open = els.sidebar.classList.toggle("is-open");
     els.sidebarToggle.setAttribute("aria-expanded", open ? "true" : "false");
   });
+
+  function commitSellWithQuote(confirmRare) {
+    var item = state.modalItem;
+    if (!item || !item.sell || item.sell.quote_pokedollars == null) return;
+    var q = item.sell.quote_pokedollars;
+    var pid = item.public_id;
+    state.sellInFlight = true;
+    renderSellUi(item);
+    els.modalSellMsg.hidden = true;
+
+    apiFetch("/api/me/cards/" + encodeURIComponent(pid) + "/sell", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        expected_payout: q,
+        confirm_rare: !!confirmRare,
+      }),
+    })
+      .then(function (r) {
+        return r
+          .json()
+          .catch(function () {
+            return {};
+          })
+          .then(function (data) {
+            return { ok: r.ok, status: r.status, data: data };
+          });
+      })
+      .then(function (res) {
+        state.sellInFlight = false;
+        var d = res.data || {};
+
+        if (res.ok && d.ok) {
+          closeModal();
+          loadCollection(false);
+          return;
+        }
+
+        if (res.status === 401) {
+          state.authenticated = false;
+          showSignedOut();
+          renderUnauthenticated();
+          closeModal();
+          return;
+        }
+
+        if (
+          res.status === 409 &&
+          d.error === "quote_mismatch" &&
+          d.quote_pokedollars != null
+        ) {
+          if (state.modalItem && state.modalItem.sell) {
+            state.modalItem.sell.quote_pokedollars = d.quote_pokedollars;
+          }
+          state.sellUiStep = 0;
+          els.modalSellMsg.hidden = false;
+          els.modalSellMsg.className = "modal-sell-msg is-error";
+          els.modalSellMsg.textContent =
+            (d.message || "Price updated.") +
+            " New amount: " +
+            fmtPokedollars(d.quote_pokedollars);
+          if (state.modalItem) renderSellUi(state.modalItem);
+          return;
+        }
+
+        if (d.error === "confirm_required") {
+          state.sellUiStep = 1;
+          els.modalSellMsg.hidden = false;
+          els.modalSellMsg.className = "modal-sell-msg is-error";
+          els.modalSellMsg.textContent =
+            d.message || "Please confirm this sale on the step below.";
+          if (state.modalItem) renderSellUi(state.modalItem);
+          return;
+        }
+
+        els.modalSellMsg.hidden = false;
+        els.modalSellMsg.className = "modal-sell-msg is-error";
+        els.modalSellMsg.textContent =
+          plainDiscordMsg(d.reason || d.message || d.error || "Could not sell.");
+        if (state.modalItem) renderSellUi(state.modalItem);
+      })
+      .catch(function () {
+        state.sellInFlight = false;
+        els.modalSellMsg.hidden = false;
+        els.modalSellMsg.className = "modal-sell-msg is-error";
+        els.modalSellMsg.textContent = "Network error — try again.";
+        if (state.modalItem) renderSellUi(state.modalItem);
+      });
+  }
+
+  if (els.modalSellBtn) {
+    els.modalSellBtn.addEventListener("click", function () {
+      var item = state.modalItem;
+      if (!item || !item.sell || state.sellInFlight) return;
+      var sell = item.sell;
+      if (sell.blocked_reason || sell.quote_pokedollars == null) return;
+
+      if (sell.needs_confirm && state.sellUiStep === 0) {
+        state.sellUiStep = 1;
+        els.modalSellMsg.hidden = true;
+        renderSellUi(item);
+        return;
+      }
+
+      var confirmRare = !!(sell.needs_confirm && state.sellUiStep === 1);
+      commitSellWithQuote(confirmRare);
+    });
+  }
+
+  if (els.modalSellBack) {
+    els.modalSellBack.addEventListener("click", function () {
+      state.sellUiStep = 0;
+      els.modalSellMsg.hidden = true;
+      if (state.modalItem) renderSellUi(state.modalItem);
+    });
+  }
 
   // Boot
   captureSessionFromFragment();

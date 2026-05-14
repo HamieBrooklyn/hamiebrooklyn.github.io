@@ -1133,6 +1133,66 @@ main {
   font-size: 0.82rem;
 }
 
+.modal-sell {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.modal-sell-heading {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.modal-sell-desc {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.modal-sell-quote {
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.modal-sell-block {
+  margin: 0 0 0.5rem;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: #fda4af;
+}
+
+.modal-sell-warn {
+  margin: 0 0 0.65rem;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.modal-sell-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.modal-sell-msg {
+  margin: 0.55rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.modal-sell-msg.is-error {
+  color: #fda4af;
+}
+
+.modal-sell-msg.is-ok {
+  color: #86efac;
+}
+
 body.modal-open {
   overflow: hidden;
 }

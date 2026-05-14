@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Collection — PokePon</title>
   <meta name="description" content="Browse your PokePon Discord-bot card collection: search, sort by rarity / HP / damage, and view focused card details." />
-  <link rel="stylesheet" href="assets/style.css?v=2" />
+  <link rel="stylesheet" href="assets/style.css?v=3" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -148,6 +148,21 @@
           </section>
 
           <p class="modal-obtained" id="modal-obtained"></p>
+
+          <section class="modal-sell" id="modal-sell-section" hidden aria-label="Sell to shop">
+            <h3 class="modal-sell-heading">Sell to shop</h3>
+            <p class="modal-sell-desc muted">
+              Pokedollar payout matches Discord <code>/colv</code> (same formula as the bot).
+            </p>
+            <p class="modal-sell-quote" id="modal-sell-quote"></p>
+            <p class="modal-sell-block" id="modal-sell-block" hidden></p>
+            <p class="modal-sell-warn muted" id="modal-sell-warn" hidden></p>
+            <div class="modal-sell-actions">
+              <button type="button" class="btn btn-primary" id="modal-sell-btn">Sell</button>
+              <button type="button" class="btn btn-ghost" id="modal-sell-back" hidden>Back</button>
+            </div>
+            <p class="modal-sell-msg" id="modal-sell-msg" hidden></p>
+          </section>
         </div>
       </div>
     </div>
@@ -210,6 +225,6 @@
       window.POKEPON_API_BASE = stored || fromMeta || "";
     })();
   </script>
-  <script src="assets/collection.js?v=2" defer></script>
+  <script src="assets/collection.js?v=3" defer></script>
 </body>
 </html>
