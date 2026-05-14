@@ -304,7 +304,9 @@
       var j = await r.json();
       if (!r.ok) throw new Error(j.error || "load failed");
       els.grid.innerHTML = "";
+      var now = Date.now();
       (j.auctions || []).forEach(function (a) {
+        if (a.ends_at && new Date(a.ends_at).getTime() <= now) return;
         els.grid.appendChild(renderTile(a));
       });
     } catch (e) {
@@ -373,14 +375,19 @@
         els.detailBids.appendChild(li);
       });
 
+      var auctionEnded = a.ends_at && new Date(a.ends_at).getTime() <= Date.now();
       if (els.bidMsg) els.bidMsg.innerHTML = "";
       if (els.bidBox) {
-        if (state.me && String(state.me.id) !== String(a.seller_discord_id)) {
+        if (!auctionEnded && state.me && String(state.me.id) !== String(a.seller_discord_id)) {
           els.bidBox.hidden = false;
           els.bidAmt.value = minNext != null ? String(minNext) : "";
         } else {
           els.bidBox.hidden = true;
         }
+      }
+      if (auctionEnded) {
+        els.detailStats.innerHTML +=
+          '<div style="margin-top:0.5rem;color:#f07178;font-weight:600">This auction has ended.</div>';
       }
     } catch (e) {
       if (els.detailError) {
