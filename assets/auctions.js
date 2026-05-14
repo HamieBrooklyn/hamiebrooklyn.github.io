@@ -102,6 +102,47 @@
     return cur === "crystals" ? s + " 💎" : "₽" + s;
   }
 
+  function fmtDate(iso) {
+    if (!iso) return "—";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso);
+    return d.toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+  }
+
+  function fmtEndsAt(iso) {
+    if (!iso) return "—";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso);
+    var now = Date.now();
+    var diff = d.getTime() - now;
+    var countdown = "";
+    if (diff > 0) {
+      var secs = Math.floor(diff / 1000);
+      var mins = Math.floor(secs / 60);
+      var hrs = Math.floor(mins / 60);
+      var days = Math.floor(hrs / 24);
+      if (days > 0) {
+        countdown = days + "d " + (hrs % 24) + "h left";
+      } else if (hrs > 0) {
+        countdown = hrs + "h " + (mins % 60) + "m left";
+      } else if (mins > 0) {
+        countdown = mins + "m left";
+      } else {
+        countdown = "<1m left";
+      }
+    } else {
+      countdown = "ended";
+    }
+    return fmtDate(iso) + " (" + countdown + ")";
+  }
+
   function showLoadingUser() {
     if (!els.sidebarUser) return;
     els.sidebarUser.dataset.state = "loading";
@@ -234,7 +275,7 @@
       high +
       "</div>" +
       '<div class="auction-muted" style="margin-top:0.35rem">Ends ' +
-      new Date(a.ends_at).toLocaleString() +
+      fmtEndsAt(a.ends_at) +
       "</div>" +
       "</div>";
     el.addEventListener("click", function () {
@@ -310,7 +351,7 @@
         (minNext != null ? fmtAmt(minNext, cur) : "—") +
         "</div>" +
         "<div><strong>Ends</strong> " +
-        new Date(a.ends_at).toLocaleString() +
+        fmtEndsAt(a.ends_at) +
         "</div>" +
         '<div class="auction-muted" style="margin-top:0.35rem">' +
         (a.bid_count || 0) +
@@ -324,7 +365,7 @@
           (b.display || fmtAmt(b.amount, b.currency || cur)) +
           "</span>" +
           '<span class="auction-muted">' +
-          (b.created_at ? new Date(b.created_at).toLocaleString() : "") +
+          (b.created_at ? fmtDate(b.created_at) : "") +
           "<br/>bidder " +
           b.bidder_discord_id +
           "</span>";
