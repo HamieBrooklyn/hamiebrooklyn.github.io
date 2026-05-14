@@ -15,6 +15,18 @@ After DNS propagates, the site will be available at `https://hamiebrooklyn.githu
 
 (`guide.html` also redirects there.)
 
+## Collection HTTP API (website)
+
+The [collection binder](https://hamiebrooklyn.github.io/collection.html) talks to the **running bot** (`WEB_PORT` + OAuth + session cookie). Deploy [Poke-Cards](https://github.com/HamieBrooklyn/Poke-Cards) **master** with the collection sell API ([`97c5d1f`](https://github.com/HamieBrooklyn/Poke-Cards/commit/97c5d1f) or newer).
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/me/collection` | Paginated cards; each item includes **`sell`** (`quote_pokedollars`, `needs_confirm`, `blocked_reason`, `can_sell`). |
+| `GET` | `/api/me/cards/{public_id}` | One card + same **`sell`** object. |
+| `POST` | `/api/me/cards/{public_id}/sell` | Body: `{ "expected_payout": <int>, "confirm_rare"?: true }`. Payout matches Discord `/colv`. |
+
+Configure the page’s **`pokepon-api-base`** meta tag (or `?api=` override) to your HTTPS bot URL. CORS must allow the GitHub Pages origin in the bot’s `WEB_ALLOWED_ORIGINS`.
+
 ## Legal
 
 `terms.html` and `privacy.html` are templates for a Discord bot. Review and adjust with your counsel before relying on them in production.
