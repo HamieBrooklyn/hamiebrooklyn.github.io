@@ -34,6 +34,11 @@
     selectedCardIds: [],
     pollTimer: null,
     listTimer: null,
+    pickerQuery: "",
+    pickerPage: 1,
+    pickerTotal: 0,
+    pickerDebounce: 0,
+    pickerInflight: null,
   };
 
   var els = {
@@ -384,33 +389,65 @@
     }
   }
 
-  // ---- Card picker ----
+  // ---- Card picker (server-side search, same as collection page) ----
+  var PICKER_PAGE_SIZE = 60;
+
+  function buildPickerPath() {
+    var qs = new URLSearchParams();
+    qs.set("page", String(state.pickerPage));
+    qs.set("page_size", String(PICKER_PAGE_SIZE));
+    qs.set("sort", "newest");
+    if (state.pickerQuery) qs.set("q", state.pickerQuery);
+    return "/api/me/collection?" + qs.toString();
+  }
+
   async function loadMyCollection() {
+    if (state.pickerInflight) { state.pickerInflight.abort(); }
+    var ctrl = new AbortController();
+    state.pickerInflight = ctrl;
     try {
-      var r = await apiFetch("/api/me/collection?limit=200");
+      var r = await apiFetch(buildPickerPath(), { signal: ctrl.signal });
       if (!r.ok) return;
       var j = await r.json();
-      state.myCards = (j.cards || []).map(function (c) {
+      state.pickerInflight = null;
+      state.myCards = (j.items || []).map(function (c) {
         return {
           instance_id: c.instance_id,
           public_id: c.public_id,
           name: c.card ? c.card.name : "Card",
+          set_info: c.card ? ((c.card.set_name || "") + " #" + (c.card.collector_number || "")) : "",
           image_small_url: c.card ? c.card.image_small_url : null,
         };
       });
+      state.pickerTotal = Number(j.total) || 0;
       renderPicker();
-    } catch (_) {}
+    } catch (e) {
+      if (e.name === "AbortError") return;
+      state.pickerInflight = null;
+    }
+  }
+
+  function pickerSearchChanged() {
+    var value = (els.pickerSearch.value || "").trim();
+    clearTimeout(state.pickerDebounce);
+    state.pickerDebounce = setTimeout(function () {
+      if (value === state.pickerQuery) return;
+      state.pickerQuery = value;
+      state.pickerPage = 1;
+      loadMyCollection();
+    }, 280);
   }
 
   function renderPicker() {
     if (!els.pickerResults) return;
-    var q = (els.pickerSearch.value || "").trim().toLowerCase();
     els.pickerResults.innerHTML = "";
-    var cards = state.myCards.filter(function (c) {
-      if (q && c.name.toLowerCase().indexOf(q) < 0) return false;
-      return true;
-    });
-    cards.forEach(function (c) {
+    if (!state.myCards.length) {
+      if (state.pickerQuery) {
+        els.pickerResults.innerHTML = '<div class="trade-muted">No cards match "' + state.pickerQuery + '"</div>';
+      }
+      return;
+    }
+    state.myCards.forEach(function (c) {
       var el = document.createElement("div");
       el.className = "picker-card";
       if (state.selectedCardIds.indexOf(c.instance_id) >= 0) el.classList.add("is-selected");
@@ -425,6 +462,30 @@
       };
       els.pickerResults.appendChild(el);
     });
+    var totalPages = Math.max(1, Math.ceil(state.pickerTotal / PICKER_PAGE_SIZE));
+    if (totalPages > 1) {
+      var nav = document.createElement("div");
+      nav.className = "picker-pager";
+      var prev = document.createElement("button");
+      prev.type = "button";
+      prev.className = "btn-small";
+      prev.textContent = "← Prev";
+      prev.disabled = state.pickerPage <= 1;
+      prev.onclick = function () { if (state.pickerPage > 1) { state.pickerPage--; loadMyCollection(); } };
+      var info = document.createElement("span");
+      info.className = "trade-muted";
+      info.textContent = " Page " + state.pickerPage + " of " + totalPages + " ";
+      var next = document.createElement("button");
+      next.type = "button";
+      next.className = "btn-small";
+      next.textContent = "Next →";
+      next.disabled = state.pickerPage >= totalPages;
+      next.onclick = function () { if (state.pickerPage < totalPages) { state.pickerPage++; loadMyCollection(); } };
+      nav.appendChild(prev);
+      nav.appendChild(info);
+      nav.appendChild(next);
+      els.pickerResults.appendChild(nav);
+    }
   }
 
   // ---- Init ----
@@ -442,7 +503,7 @@
       if (state.activeTrade) cancelTrade(state.activeTrade.id);
     });
     if (els.btnSaveSide) els.btnSaveSide.addEventListener("click", saveSide);
-    if (els.pickerSearch) els.pickerSearch.addEventListener("input", renderPicker);
+    if (els.pickerSearch) els.pickerSearch.addEventListener("input", pickerSearchChanged);
 
     captureSessionFromFragment();
     bootAuth().then(function () {
