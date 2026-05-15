@@ -1332,25 +1332,14 @@ main {
 
 .modal-evo-target {
   display: flex;
-  align-items: center;
-  gap: 0.65rem;
+  align-items: stretch;
+  gap: 0.45rem;
   width: 100%;
-  padding: 0.45rem 0.55rem;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--bg-elev);
-  color: var(--text);
-  font-family: var(--font);
-  font-size: 0.88rem;
-  text-align: left;
-  cursor: pointer;
+  overflow: hidden;
   transition: border-color 0.12s ease, background 0.12s ease;
-}
-
-.modal-evo-target:hover,
-.modal-evo-target:focus-visible {
-  border-color: var(--accent);
-  outline: none;
 }
 
 .modal-evo-target.is-selected {
@@ -1358,12 +1347,50 @@ main {
   background: var(--accent-soft);
 }
 
-.modal-evo-target[aria-disabled="true"] {
-  cursor: default;
-  opacity: 0.85;
+.modal-evo-target-hit {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.45rem 0.55rem;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.88rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
 }
 
-.modal-evo-target img {
+.modal-evo-target-hit:hover,
+.modal-evo-target-hit:focus-visible {
+  background: rgba(255, 255, 255, 0.04);
+  outline: none;
+}
+
+.modal-evo-target-pick {
+  flex-shrink: 0;
+  align-self: center;
+  margin-right: 0.45rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.modal-evo-target-pick:hover,
+.modal-evo-target-pick:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.modal-evo-target-hit img {
   width: 44px;
   height: 62px;
   object-fit: cover;
@@ -1385,6 +1412,38 @@ main {
 .modal-evo-target-sub {
   font-size: 0.78rem;
   color: var(--muted);
+}
+
+.modal-evo-target-hint {
+  font-size: 0.72rem;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.evo-focus-modal {
+  z-index: 25;
+}
+
+.evo-focus-card {
+  max-width: 820px;
+}
+
+.evo-focus-cost {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #fde68a;
+}
+
+.evo-focus-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+body.evo-focus-open #card-modal .modal-card {
+  filter: brightness(0.55);
 }
 
 .modal-evolve-actions {

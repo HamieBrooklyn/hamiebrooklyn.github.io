@@ -349,52 +349,20 @@
         els.modalEvoBlock.textContent = "";
       }
     }
-    if (els.modalEvoTargets) {
-      els.modalEvoTargets.innerHTML = "";
-      evo.targets.forEach(function (t) {
-        var btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "modal-evo-target";
-        btn.setAttribute("role", "listitem");
-        if (readonly || !evo.can_evolve) btn.setAttribute("aria-disabled", "true");
-        var imgSrc = t.image_small_url || t.image_large_url || "";
-        if (imgSrc) {
-          var img = document.createElement("img");
-          img.src = imgSrc;
-          img.alt = "";
-          btn.appendChild(img);
-        }
-        var meta = document.createElement("span");
-        meta.className = "modal-evo-target-meta";
-        var nm = document.createElement("span");
-        nm.className = "modal-evo-target-name";
-        nm.textContent = t.name || "Card";
-        meta.appendChild(nm);
-        var sub = document.createElement("span");
-        sub.className = "modal-evo-target-sub";
-        var subBits = [];
-        if (t.set_name) subBits.push(t.set_name + " #" + (t.collector_number || "?"));
-        if (t.rarity_display) subBits.push(t.rarity_display);
-        if (!readonly && t.cost_pokedollars != null) subBits.push(fmtPd(t.cost_pokedollars));
-        sub.textContent = subBits.join(" · ");
-        meta.appendChild(sub);
-        btn.appendChild(meta);
-        if (!readonly && evo.can_evolve) {
-          btn.onclick = function () {
-            state.evoSelectedTargetId = t.card_id;
-            var nodes = els.modalEvoTargets.querySelectorAll(".modal-evo-target");
-            for (var i = 0; i < nodes.length; i++) {
-              nodes[i].classList.toggle("is-selected", nodes[i] === btn);
-            }
-            updateEvoButton(state.modalItem);
-          };
-        }
-        els.modalEvoTargets.appendChild(btn);
+    if (els.modalEvoTargets && window.PokeponEvoFocus) {
+      PokeponEvoFocus.renderTargetRows(els.modalEvoTargets, evo.targets, {
+        readonly: readonly,
+        canEvolve: evo.can_evolve,
+        selectedId: state.evoSelectedTargetId,
+        fmtCost: fmtPd,
+        onSelect: function (cardId) {
+          state.evoSelectedTargetId = cardId;
+          updateEvoButton(state.modalItem);
+        },
       });
       if (!readonly && evo.can_evolve && evo.targets.length === 1) {
         state.evoSelectedTargetId = evo.targets[0].card_id;
-        var only = els.modalEvoTargets.querySelector(".modal-evo-target");
-        if (only) only.classList.add("is-selected");
+        PokeponEvoFocus.syncSelection(els.modalEvoTargets, state.evoSelectedTargetId);
       }
     }
     if (els.modalEvoActions) {
@@ -455,6 +423,7 @@
 
   function closeTradeCardModal() {
     if (!els.modal) return;
+    if (window.PokeponEvoFocus) PokeponEvoFocus.close();
     state.modalItem = null;
     state.modalAllowEvolve = false;
     state.evoSelectedTargetId = null;
@@ -1147,6 +1116,9 @@
 
   // ---- Init ----
   function init() {
+    if (window.PokeponEvoFocus) {
+      PokeponEvoFocus.mount({ fmtCost: fmtPd, rarityClassFor: rarityClassFor });
+    }
     if (els.sidebarToggle && els.sidebar) {
       els.sidebarToggle.addEventListener("click", function () {
         var open = els.sidebar.classList.toggle("is-open");
@@ -1178,7 +1150,10 @@
       if (t && t.dataset && t.dataset.close !== undefined) closeTradeCardModal();
     });
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && els.modal && !els.modal.hidden) closeTradeCardModal();
+      if (e.key !== "Escape") return;
+      var evoModal = document.getElementById("evo-focus-modal");
+      if (evoModal && !evoModal.hidden) return;
+      if (els.modal && !els.modal.hidden) closeTradeCardModal();
     });
     if (els.modalCopyId && els.modalPid) {
       els.modalCopyId.addEventListener("click", function () {
