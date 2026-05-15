@@ -403,22 +403,27 @@
     clearInviteSuggestions();
   }
 
+  function inviteSearchQuery() {
+    var v = (els.inviteInput && els.inviteInput.value || "").trim();
+    return v.replace(/^@+/, "").trim();
+  }
+
   function scheduleInviteUserSearch() {
     clearTimeout(state.inviteSearchDebounce);
     state.selectedPartnerId = null;
-    var raw = (els.inviteInput && els.inviteInput.value || "").trim();
+    var raw = inviteSearchQuery();
     if (!els.inviteSuggestions) return;
-    if (/^\d+$/.test(raw) || raw.length < 2) {
+    if (/^\d+$/.test(raw) || !raw) {
       clearInviteSuggestions();
       return;
     }
-    state.inviteSearchDebounce = setTimeout(fetchInviteUserSuggestions, 280);
+    state.inviteSearchDebounce = setTimeout(fetchInviteUserSuggestions, 150);
   }
 
   async function fetchInviteUserSuggestions() {
     if (!els.inviteSuggestions || !state.authenticated) return;
-    var raw = (els.inviteInput.value || "").trim();
-    if (/^\d+$/.test(raw) || raw.length < 2) {
+    var raw = inviteSearchQuery();
+    if (/^\d+$/.test(raw) || !raw) {
       clearInviteSuggestions();
       return;
     }
@@ -803,6 +808,9 @@
     if (els.btnInvite) els.btnInvite.addEventListener("click", sendInvite);
     if (els.inviteInput) {
       els.inviteInput.addEventListener("input", scheduleInviteUserSearch);
+      els.inviteInput.addEventListener("paste", function () {
+        setTimeout(scheduleInviteUserSearch, 0);
+      });
       els.inviteInput.addEventListener("keydown", function (e) { if (e.key === "Enter") sendInvite(); });
     }
     document.addEventListener("click", function (e) {
