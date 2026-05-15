@@ -5,6 +5,7 @@
   var els = {};
   var deps = {};
   var pendingChoose = null;
+  var historyPushed = false;
 
   function escapeHtml(s) {
     return String(s == null ? "" : s)
@@ -47,12 +48,19 @@
       .join("");
   }
 
-  function close() {
+  function close(skipHistory) {
     if (!els.modal) return;
     els.modal.hidden = true;
     els.modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("evo-focus-open");
     pendingChoose = null;
+    if (!skipHistory && historyPushed) {
+      historyPushed = false;
+      if (deps.onHistoryBack) deps.onHistoryBack();
+      else history.back();
+    } else {
+      historyPushed = false;
+    }
   }
 
   function open(target, opts) {
@@ -109,6 +117,12 @@
       } else if (canChoose) {
         els.chooseBtn.textContent = "Choose this evolution";
       }
+    }
+
+    if (!historyPushed) {
+      historyPushed = true;
+      if (deps.onHistoryPush) deps.onHistoryPush();
+      else history.pushState({ pokepon: "evo-focus" }, "");
     }
 
     els.modal.hidden = false;

@@ -7,7 +7,7 @@
   <link rel="apple-touch-icon" href="assets/favicon.png" />
   <title>Collection — PokePon</title>
   <meta name="description" content="Browse your PokePon Discord-bot card collection: search, sort by rarity / HP / damage, and view focused card details." />
-  <link rel="stylesheet" href="assets/style.css?v=9" />
+  <link rel="stylesheet" href="assets/style.css?v=10" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -196,6 +196,7 @@
   <div class="modal evo-focus-modal" id="evo-focus-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="evo-focus-title">
     <div class="modal-backdrop" data-evo-focus-close tabindex="-1"></div>
     <div class="modal-card evo-focus-card" role="document">
+      <button class="btn btn-ghost btn-small modal-evo-back" type="button" data-evo-focus-close>← Back</button>
       <button class="modal-close" type="button" data-evo-focus-close aria-label="Close evolution preview">×</button>
       <div class="modal-grid">
         <div class="modal-image">
@@ -281,7 +282,7 @@
       window.POKEPON_API_BASE = stored || fromMeta || "";
     })();
   </script>
-  <script src="assets/evo-focus.js?v=1" defer></script>
-  <script src="assets/collection.js?v=7" defer></script>
+  <script src="assets/evo-focus.js?v=2" defer></script>
+  <script src="assets/collection.js?v=8" defer></script>
 </body>
 </html>

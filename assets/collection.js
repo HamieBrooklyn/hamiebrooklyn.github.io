@@ -190,6 +190,8 @@
     favoriteInFlight: false,
   };
 
+  var modalHistory = { card: false, evo: false };
+
   // ------- helpers -------------------------------------------------------
 
   function setStatus(kind, html) {
@@ -792,23 +794,7 @@
 
   // ------- modal --------------------------------------------------------
 
-  function openModal(item) {
-    state.modalItem = item;
-    state.sellUiStep = 0;
-    state.sellInFlight = false;
-    state.evoInFlight = false;
-    applyModalCardFields(item);
-    renderFavoriteBtn(item);
-    renderEvolutionUi(item);
-    renderSellUi(item);
-    refreshModalCardDetail(item);
-    els.modal.hidden = false;
-    els.modal.setAttribute("aria-hidden", "false");
-    document.body.classList.add("modal-open");
-  }
-
-  function closeModal() {
-    if (window.PokeponEvoFocus) PokeponEvoFocus.close();
+  function actuallyCloseModal() {
     state.modalItem = null;
     state.sellUiStep = 0;
     state.sellInFlight = false;
@@ -823,6 +809,48 @@
     els.modal.hidden = true;
     els.modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
+  }
+
+  function openModal(item) {
+    state.modalItem = item;
+    state.sellUiStep = 0;
+    state.sellInFlight = false;
+    state.evoInFlight = false;
+    applyModalCardFields(item);
+    renderFavoriteBtn(item);
+    renderEvolutionUi(item);
+    renderSellUi(item);
+    refreshModalCardDetail(item);
+    els.modal.hidden = false;
+    els.modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+    if (!modalHistory.card) {
+      modalHistory.card = true;
+      history.pushState({ pokepon: "card-modal" }, "");
+    }
+  }
+
+  function closeModal(skipHistory) {
+    if (window.PokeponEvoFocus) PokeponEvoFocus.close(true);
+    if (!skipHistory && modalHistory.card) {
+      history.back();
+      return;
+    }
+    modalHistory.card = false;
+    actuallyCloseModal();
+  }
+
+  function handleModalPopstate() {
+    var evoModal = document.getElementById("evo-focus-modal");
+    if (evoModal && !evoModal.hidden) {
+      modalHistory.evo = false;
+      if (window.PokeponEvoFocus) PokeponEvoFocus.close(true);
+      return;
+    }
+    if (!els.modal.hidden) {
+      modalHistory.card = false;
+      actuallyCloseModal();
+    }
   }
 
   // ------- event wiring -------------------------------------------------
@@ -894,10 +922,9 @@
   });
 
   document.addEventListener("click", function (e) {
-    var t = e.target;
-    if (t && (t.dataset && t.dataset.close !== undefined)) {
-      closeModal();
-    }
+    var closeEl = e.target && e.target.closest && e.target.closest("[data-close]");
+    if (!closeEl || els.modal.hidden) return;
+    if (closeEl.closest("#card-modal")) closeModal();
   });
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
@@ -905,6 +932,7 @@
     if (evoModal && !evoModal.hidden) return;
     if (!els.modal.hidden) closeModal();
   });
+  window.addEventListener("popstate", handleModalPopstate);
 
   if (els.modalCopyId) {
     els.modalCopyId.addEventListener("click", function () {
@@ -1032,7 +1060,9 @@
   }
 
   if (els.modalSellBack) {
-    els.modalSellBack.addEventListener("click", function () {
+    els.modalSellBack.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
       state.sellUiStep = 0;
       els.modalSellMsg.hidden = true;
       if (state.modalItem) renderSellUi(state.modalItem);
@@ -1128,7 +1158,22 @@
 
   // Boot
   if (window.PokeponEvoFocus) {
-    PokeponEvoFocus.mount({ fmtCost: fmtPokedollars, rarityClassFor: rarityClassFor });
+    PokeponEvoFocus.mount({
+      fmtCost: fmtPokedollars,
+      rarityClassFor: rarityClassFor,
+      onHistoryPush: function () {
+        if (!modalHistory.evo) {
+          modalHistory.evo = true;
+          history.pushState({ pokepon: "evo-focus" }, "");
+        }
+      },
+      onHistoryBack: function () {
+        if (modalHistory.evo) {
+          modalHistory.evo = false;
+          history.back();
+        }
+      },
+    });
   }
   captureSessionFromFragment();
   bootAuth();

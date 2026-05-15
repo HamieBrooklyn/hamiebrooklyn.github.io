@@ -1633,6 +1633,13 @@ main {
   z-index: 25;
 }
 
+.evo-focus-card .modal-evo-back {
+  position: absolute;
+  top: 0.85rem;
+  left: 0.85rem;
+  z-index: 3;
+}
+
 .evo-focus-card {
   max-width: 820px;
 }
