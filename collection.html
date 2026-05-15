@@ -142,6 +142,7 @@
           </button>
         </div>
         <div class="modal-body">
+          <div class="modal-body-scroll">
           <p class="modal-set" id="modal-set"></p>
           <h2 class="modal-title" id="modal-title"></h2>
           <p class="modal-rarity" id="modal-rarity"></p>
@@ -161,33 +162,43 @@
           <p class="modal-obtained" id="modal-obtained"></p>
 
           <section class="modal-evolve" id="modal-evolve-section" hidden aria-label="Evolve card">
-            <h3 class="modal-evolve-heading">Evolution</h3>
+            <h3 class="modal-evolve-heading">Evolution branches</h3>
             <p class="modal-evolve-desc muted">
-              Same catalog branches and costs as Discord <code>/cevolve</code>.
+              Tap a branch for details. Same costs as Discord <code>/cevolve</code>.
             </p>
             <p class="modal-evolve-stages" id="modal-evo-stages"></p>
             <p class="modal-evolve-block" id="modal-evo-block" hidden></p>
             <div class="modal-evolve-targets" id="modal-evo-targets" role="list"></div>
-            <div class="modal-evolve-actions">
+          </section>
+          </div>
+
+          <footer class="modal-footer" id="modal-footer" hidden>
+            <section class="modal-sell" id="modal-sell-section" hidden aria-label="Sell to shop">
+              <div class="modal-footer-sell-main">
+                <div class="modal-footer-sell-copy">
+                  <h3 class="modal-sell-heading">Sell to shop</h3>
+                  <p class="modal-sell-quote" id="modal-sell-quote"></p>
+                  <p class="modal-sell-block" id="modal-sell-block" hidden></p>
+                  <p class="modal-sell-warn muted" id="modal-sell-warn" hidden></p>
+                  <p class="modal-sell-msg" id="modal-sell-msg" hidden></p>
+                </div>
+                <div class="modal-sell-actions">
+                  <button type="button" class="btn btn-primary" id="modal-sell-btn">Sell</button>
+                  <button type="button" class="btn btn-ghost" id="modal-sell-back" hidden>Back</button>
+                </div>
+              </div>
+              <p class="modal-sell-desc muted">
+                Pokedollar payout matches Discord <code>/colv</code>.
+              </p>
+            </section>
+            <div class="modal-footer-evo" id="modal-evo-footer" hidden>
+              <div class="modal-footer-evo-main">
+                <span class="modal-footer-evo-label">Evolve</span>
+                <p class="modal-evolve-msg" id="modal-evo-msg" hidden></p>
+              </div>
               <button type="button" class="btn btn-primary" id="modal-evo-btn" disabled>Evolve</button>
             </div>
-            <p class="modal-evolve-msg" id="modal-evo-msg" hidden></p>
-          </section>
-
-          <section class="modal-sell" id="modal-sell-section" hidden aria-label="Sell to shop">
-            <h3 class="modal-sell-heading">Sell to shop</h3>
-            <p class="modal-sell-desc muted">
-              Pokedollar payout matches Discord <code>/colv</code> (same formula as the bot).
-            </p>
-            <p class="modal-sell-quote" id="modal-sell-quote"></p>
-            <p class="modal-sell-block" id="modal-sell-block" hidden></p>
-            <p class="modal-sell-warn muted" id="modal-sell-warn" hidden></p>
-            <div class="modal-sell-actions">
-              <button type="button" class="btn btn-primary" id="modal-sell-btn">Sell</button>
-              <button type="button" class="btn btn-ghost" id="modal-sell-back" hidden>Back</button>
-            </div>
-            <p class="modal-sell-msg" id="modal-sell-msg" hidden></p>
-          </section>
+          </footer>
         </div>
       </div>
     </div>
