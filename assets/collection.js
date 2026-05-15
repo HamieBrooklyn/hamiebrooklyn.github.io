@@ -160,6 +160,8 @@
     modalSellBtn: document.getElementById("modal-sell-btn"),
     modalSellBack: document.getElementById("modal-sell-back"),
     modalSellMsg: document.getElementById("modal-sell-msg"),
+    modalFooter: document.getElementById("modal-footer"),
+    modalEvoFooter: document.getElementById("modal-evo-footer"),
     modalEvolveSection: document.getElementById("modal-evolve-section"),
     modalEvoStages: document.getElementById("modal-evo-stages"),
     modalEvoBlock: document.getElementById("modal-evo-block"),
@@ -547,6 +549,13 @@
     return wrap;
   }
 
+  function updateModalFooter() {
+    if (!els.modalFooter) return;
+    var sellOn = els.modalSellSection && !els.modalSellSection.hidden;
+    var evoOn = els.modalEvoFooter && !els.modalEvoFooter.hidden;
+    els.modalFooter.hidden = !sellOn && !evoOn;
+  }
+
   function renderSellUi(item) {
     if (!els.modalSellSection) return;
     var sell = item && item.sell;
@@ -556,6 +565,7 @@
 
     if (!sell) {
       els.modalSellSection.hidden = true;
+      updateModalFooter();
       return;
     }
 
@@ -573,6 +583,7 @@
       els.modalSellBtn.textContent = "Cannot sell";
       els.modalSellBack.hidden = true;
       state.sellUiStep = 0;
+      updateModalFooter();
       return;
     }
 
@@ -582,6 +593,7 @@
       els.modalSellBtn.textContent = "Cannot sell";
       els.modalSellBack.hidden = true;
       state.sellUiStep = 0;
+      updateModalFooter();
       return;
     }
 
@@ -604,6 +616,7 @@
         els.modalSellBtn.textContent = "Selling…";
         els.modalSellBack.hidden = true;
       }
+      updateModalFooter();
       return;
     }
 
@@ -617,6 +630,7 @@
       els.modalSellBtn.textContent = "Sell for " + fmtPokedollars(quote);
     }
     els.modalSellBack.hidden = true;
+    updateModalFooter();
   }
 
   function updateEvoButton(item) {
@@ -657,6 +671,8 @@
     }
     if (!els.modalEvolveSection || !evo || !evo.targets || !evo.targets.length) {
       if (els.modalEvolveSection) els.modalEvolveSection.hidden = true;
+      if (els.modalEvoFooter) els.modalEvoFooter.hidden = true;
+      updateModalFooter();
       return;
     }
     els.modalEvolveSection.hidden = false;
@@ -691,10 +707,14 @@
         PokeponEvoFocus.syncSelection(els.modalEvoTargets, state.evoSelectedTargetId);
       }
     }
+    if (els.modalEvoFooter) {
+      els.modalEvoFooter.hidden = readonly || !evo.can_evolve;
+    }
     if (els.modalEvoBtn) {
-      els.modalEvoBtn.hidden = readonly || !evo.can_evolve;
+      els.modalEvoBtn.hidden = false;
       updateEvoButton(item);
     }
+    updateModalFooter();
   }
 
   function refreshModalCardDetail(item) {
@@ -798,6 +818,8 @@
     if (els.modalFavoriteBtn) els.modalFavoriteBtn.hidden = true;
     if (els.modalEvolveSection) els.modalEvolveSection.hidden = true;
     if (els.modalSellSection) els.modalSellSection.hidden = true;
+    if (els.modalEvoFooter) els.modalEvoFooter.hidden = true;
+    if (els.modalFooter) els.modalFooter.hidden = true;
     els.modal.hidden = true;
     els.modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");

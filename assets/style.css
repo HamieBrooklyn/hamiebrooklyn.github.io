@@ -1099,6 +1099,18 @@ main {
   box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.6);
 }
 
+#card-modal .modal-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#card-modal .modal-grid {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .modal-close {
   position: absolute;
   top: 0.85rem;
@@ -1138,6 +1150,123 @@ main {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+}
+
+#card-modal .modal-body {
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+}
+
+.modal-body-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-right: 0.15rem;
+}
+
+.modal-footer {
+  flex-shrink: 0;
+  margin-top: 0.65rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.22);
+}
+
+.modal-footer-sell-main,
+.modal-footer-evo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+
+.modal-footer-sell-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.modal-footer-evo {
+  padding-top: 0.65rem;
+  border-top: 1px dashed var(--border);
+}
+
+.modal-footer-evo-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.modal-footer-evo-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+.modal-footer .modal-sell {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.modal-footer .modal-sell-desc {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.modal-footer .modal-sell-heading {
+  margin-bottom: 0.2rem;
+}
+
+.modal-footer .modal-sell-quote {
+  margin-bottom: 0.35rem;
+}
+
+.modal-footer .modal-sell-actions {
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .modal-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .modal-footer-evo {
+    border-top: none;
+    padding-top: 0;
+    border-left: 1px dashed var(--border);
+    padding-left: 1rem;
+  }
+
+  .modal-footer:has(.modal-sell[hidden]) .modal-footer-evo,
+  .modal-footer:not(:has(.modal-sell:not([hidden]))) .modal-footer-evo {
+    border-left: none;
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .modal-footer-sell-main,
+  .modal-footer-evo {
+    flex-direction: column;
+  }
+
+  .modal-footer .modal-sell-actions,
+  .modal-footer-evo .btn {
+    width: 100%;
+  }
 }
 
 .modal-set {
@@ -1399,18 +1528,22 @@ main {
 
 .modal-evolve-targets {
   display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  margin-bottom: 0.65rem;
-  max-height: 220px;
-  overflow-y: auto;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.2rem;
+  scroll-snap-type: x proximity;
 }
 
 .modal-evo-target {
   display: flex;
   align-items: stretch;
   gap: 0.45rem;
-  width: 100%;
+  flex: 0 0 min(240px, 82vw);
+  scroll-snap-align: start;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--bg-elev);
