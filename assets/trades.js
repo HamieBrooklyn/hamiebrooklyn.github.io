@@ -61,6 +61,7 @@
     listEmpty: document.getElementById("trade-list-empty"),
     room: document.getElementById("trade-room"),
     roomTitle: document.getElementById("trade-room-title"),
+    roomPartner: document.getElementById("trade-room-partner"),
     roomMsg: document.getElementById("trade-room-msg"),
     btnReady: document.getElementById("btn-ready"),
     btnCancelTrade: document.getElementById("btn-cancel-trade"),
@@ -95,6 +96,47 @@
 
   function fmtPd(n) { return "₽" + Number(n || 0).toLocaleString(); }
   function fmtCr(n) { return "💎 " + Number(n || 0).toLocaleString(); }
+
+  function profileUser(u) {
+    if (!u) return null;
+    if (u.username || u.global_name || u.avatar_url) return u;
+    if (u.id) return u;
+    return null;
+  }
+
+  function buildUserChip(u, extraClass) {
+    u = profileUser(u);
+    var chip = document.createElement("div");
+    chip.className = "pokepon-user-chip" + (extraClass ? " " + extraClass : "");
+    var display =
+      (u && u.global_name) || (u && u.username) || (u && u.id ? "User " + u.id : "Unknown user");
+    if (u && u.avatar_url) {
+      var img = document.createElement("img");
+      img.className = "pokepon-user-chip-avatar";
+      img.src = u.avatar_url;
+      img.alt = "";
+      chip.appendChild(img);
+    } else {
+      var ph = document.createElement("span");
+      ph.className = "pokepon-user-chip-avatar pokepon-user-chip-avatar--ph";
+      ph.textContent = (display.charAt(0) || "?").toUpperCase();
+      chip.appendChild(ph);
+    }
+    var text = document.createElement("span");
+    text.className = "pokepon-user-chip-text";
+    var nm = document.createElement("span");
+    nm.className = "pokepon-user-chip-name";
+    nm.textContent = display;
+    text.appendChild(nm);
+    if (u && u.username) {
+      var hn = document.createElement("span");
+      hn.className = "pokepon-user-chip-handle";
+      hn.textContent = "@" + u.username;
+      text.appendChild(hn);
+    }
+    chip.appendChild(text);
+    return chip;
+  }
 
   function escapeHtml(s) {
     return String(s == null ? "" : s)
@@ -318,11 +360,18 @@
 
         var info = document.createElement("div");
         info.className = "trade-list-info";
+        var userRow = document.createElement("div");
+        userRow.className = "trade-list-user";
+        userRow.appendChild(buildUserChip(other, "pokepon-user-chip--sm"));
+        info.appendChild(userRow);
         var label = "";
-        if (isInvitedToMe) label = "Invite from <strong>" + userLabel(other) + "</strong>";
-        else if (isMySentInvite) label = "Invite sent to <strong>" + userLabel(other) + "</strong> (waiting)";
-        else label = "Active trade with <strong>" + userLabel(other) + "</strong>";
-        info.innerHTML = label + '<br><span class="trade-muted">Status: ' + t.status + "</span>";
+        if (isInvitedToMe) label = "Trade invite";
+        else if (isMySentInvite) label = "Invite sent (waiting)";
+        else label = "Active trade";
+        var statusLine = document.createElement("div");
+        statusLine.className = "trade-muted";
+        statusLine.textContent = label + " · Status: " + t.status;
+        info.appendChild(statusLine);
         el.appendChild(info);
 
         var actions = document.createElement("div");
@@ -576,7 +625,11 @@
       }
 
       var other = t.viewer_role === "initiator" ? t.partner : t.initiator;
-      els.roomTitle.textContent = "Trade with " + userLabel(other);
+      if (els.roomTitle) els.roomTitle.textContent = "Trade room";
+      if (els.roomPartner) {
+        els.roomPartner.innerHTML = "";
+        els.roomPartner.appendChild(buildUserChip(other));
+      }
 
       var mySide = t.viewer_role === "initiator" ? t.initiator_side : t.partner_side;
       var theirSide = t.viewer_role === "initiator" ? t.partner_side : t.initiator_side;

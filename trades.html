@@ -7,7 +7,7 @@
   <link rel="apple-touch-icon" href="assets/favicon.png" />
   <title>Trades — PokePon</title>
   <meta name="description" content="Trade cards, Pokedollars and Crystals with other players on PokePon." />
-  <link rel="stylesheet" href="assets/style.css?v=2" />
+  <link rel="stylesheet" href="assets/style.css?v=4" />
   <link rel="stylesheet" href="assets/trades.css?v=4" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -113,7 +113,10 @@
       <!-- trade room (hidden until a session is active) -->
       <section id="trade-room" hidden>
         <div class="trade-room-header">
-          <h2 id="trade-room-title">Trade Room</h2>
+          <div>
+            <h2 id="trade-room-title">Trade room</h2>
+            <div class="trade-room-partner" id="trade-room-partner"></div>
+          </div>
           <div class="trade-room-actions">
             <button type="button" class="btn btn-accent" id="btn-ready">Ready</button>
             <button type="button" class="btn btn-ghost" id="btn-cancel-trade">Cancel trade</button>
@@ -208,6 +211,6 @@
       window.POKEPON_API_BASE = stored || fromMeta || "";
     })();
   </script>
-  <script src="assets/trades.js?v=6" defer></script>
+  <script src="assets/trades.js?v=7" defer></script>
 </body>
 </html>

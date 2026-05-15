@@ -564,6 +564,101 @@ main {
   flex: 0 0 auto;
 }
 
+/* Discord user row (auctions seller, trades partner, bid list, etc.) */
+.pokepon-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.pokepon-user-chip-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg-elev);
+}
+
+.pokepon-user-chip-avatar--ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.pokepon-user-chip-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.pokepon-user-chip-name {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pokepon-user-chip-handle {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pokepon-user-chip--sm .pokepon-user-chip-avatar,
+.pokepon-user-chip--sm .pokepon-user-chip-avatar--ph {
+  width: 26px;
+  height: 26px;
+  font-size: 0.72rem;
+}
+
+.auction-tile-seller {
+  margin-top: 0.5rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--border);
+}
+
+.auction-detail-seller {
+  margin: 0.65rem 0 0.35rem;
+}
+
+.auction-bid-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.auction-bid-row + .auction-bid-row {
+  margin-top: 0.45rem;
+}
+
+.trade-list-user {
+  margin-bottom: 0.35rem;
+}
+
+.trade-room-partner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+}
+
+.trade-room-header h2 {
+  margin: 0;
+}
+
 .sidebar-user-text {
   flex: 1 1 auto;
   min-width: 0;

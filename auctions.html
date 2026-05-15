@@ -7,8 +7,8 @@
   <link rel="apple-touch-icon" href="assets/favicon.png" />
   <title>Auctions — PokePon</title>
   <meta name="description" content="Browse PokePon card auctions: search, bid with Pokedollars or Crystals, list cards from your collection, and see live balances." />
-  <link rel="stylesheet" href="assets/style.css?v=2" />
-  <link rel="stylesheet" href="assets/auctions.css?v=2" />
+  <link rel="stylesheet" href="assets/style.css?v=4" />
+  <link rel="stylesheet" href="assets/auctions.css?v=3" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -163,6 +163,7 @@
       <div class="auction-panel-body">
         <button type="button" class="btn btn-ghost auction-close" id="auction-close">Close</button>
         <h2 id="detail-title">—</h2>
+        <div class="auction-detail-seller" id="detail-seller"></div>
         <div class="auction-muted" id="detail-sub"></div>
         <div id="detail-stats" style="margin-top:1rem;font-size:0.95rem"></div>
         <h3 style="margin:1.25rem 0 0.35rem;font-size:1rem">Recent bids</h3>
@@ -219,6 +220,6 @@
       window.POKEPON_API_BASE = stored || fromMeta || "";
     })();
   </script>
-  <script src="assets/auctions.js?v=4" defer></script>
+  <script src="assets/auctions.js?v=5" defer></script>
 </body>
 </html>

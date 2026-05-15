@@ -67,6 +67,7 @@
     grid: document.getElementById("auction-grid"),
     overlay: document.getElementById("auction-overlay"),
     detailTitle: document.getElementById("detail-title"),
+    detailSeller: document.getElementById("detail-seller"),
     detailSub: document.getElementById("detail-sub"),
     detailStats: document.getElementById("detail-stats"),
     detailBids: document.getElementById("detail-bids"),
@@ -91,6 +92,48 @@
     sidebarToggle: document.getElementById("sidebar-toggle"),
     sidebar: document.getElementById("sidebar"),
   };
+
+  function profileUser(u, fallbackId) {
+    if (u && (u.username || u.global_name || u.avatar_url)) return u;
+    if (u && u.id) return u;
+    if (fallbackId != null) {
+      return { id: String(fallbackId), username: null, global_name: null, avatar_url: null };
+    }
+    return null;
+  }
+
+  function buildUserChip(u, extraClass) {
+    var chip = document.createElement("div");
+    chip.className = "pokepon-user-chip" + (extraClass ? " " + extraClass : "");
+    var display =
+      (u && u.global_name) || (u && u.username) || (u && u.id ? "User " + u.id : "Unknown user");
+    if (u && u.avatar_url) {
+      var img = document.createElement("img");
+      img.className = "pokepon-user-chip-avatar";
+      img.src = u.avatar_url;
+      img.alt = "";
+      chip.appendChild(img);
+    } else {
+      var ph = document.createElement("span");
+      ph.className = "pokepon-user-chip-avatar pokepon-user-chip-avatar--ph";
+      ph.textContent = (display.charAt(0) || "?").toUpperCase();
+      chip.appendChild(ph);
+    }
+    var text = document.createElement("span");
+    text.className = "pokepon-user-chip-text";
+    var nm = document.createElement("span");
+    nm.className = "pokepon-user-chip-name";
+    nm.textContent = display;
+    text.appendChild(nm);
+    if (u && u.username) {
+      var hn = document.createElement("span");
+      hn.className = "pokepon-user-chip-handle";
+      hn.textContent = "@" + u.username;
+      text.appendChild(hn);
+    }
+    chip.appendChild(text);
+    return chip;
+  }
 
   function sym(cur) {
     return cur === "crystals" ? "💎" : "₽";
@@ -279,6 +322,15 @@
       fmtEndsAt(a.ends_at) +
       "</div>" +
       "</div>";
+    var meta = el.querySelector(".auction-tile-meta");
+    if (meta) {
+      var sellerRow = document.createElement("div");
+      sellerRow.className = "auction-tile-seller";
+      sellerRow.appendChild(
+        buildUserChip(profileUser(a.seller, a.seller_discord_id), "pokepon-user-chip--sm")
+      );
+      meta.appendChild(sellerRow);
+    }
     el.addEventListener("click", function () {
       openDetail(a.id);
     });
@@ -326,10 +378,19 @@
       if (!r.ok) throw new Error(a.error || "not found");
       var cur = a.bid_currency || "pokedollars";
       els.detailTitle.textContent = (a.card && a.card.name) || "Auction";
+      if (els.detailSeller) {
+        els.detailSeller.innerHTML = "";
+        var sellerLabel = document.createElement("div");
+        sellerLabel.className = "auction-muted";
+        sellerLabel.style.marginBottom = "0.35rem";
+        sellerLabel.textContent = "Listed by";
+        els.detailSeller.appendChild(sellerLabel);
+        els.detailSeller.appendChild(
+          buildUserChip(profileUser(a.seller, a.seller_discord_id))
+        );
+      }
       els.detailSub.textContent =
         (a.card && a.card.set_name + " #" + a.card.collector_number) +
-        " · seller " +
-        a.seller_discord_id +
         " · Card ID " +
         (a.card && a.card.public_id);
       var img =
@@ -361,15 +422,23 @@
       els.detailBids.innerHTML = "";
       (a.bids || []).forEach(function (b) {
         var li = document.createElement("li");
-        li.innerHTML =
-          "<span>" +
+        var row = document.createElement("div");
+        row.className = "auction-bid-row";
+        var left = document.createElement("div");
+        left.appendChild(
+          buildUserChip(profileUser(b.bidder, b.bidder_discord_id), "pokepon-user-chip--sm")
+        );
+        var right = document.createElement("div");
+        right.className = "auction-muted";
+        right.style.textAlign = "right";
+        right.innerHTML =
+          "<div>" +
           (b.display || fmtAmt(b.amount, b.currency || cur)) +
-          "</span>" +
-          '<span class="auction-muted">' +
-          (b.created_at ? fmtDate(b.created_at) : "") +
-          "<br/>bidder " +
-          b.bidder_discord_id +
-          "</span>";
+          "</div>" +
+          (b.created_at ? "<div>" + fmtDate(b.created_at) + "</div>" : "");
+        row.appendChild(left);
+        row.appendChild(right);
+        li.appendChild(row);
         els.detailBids.appendChild(li);
       });
 
