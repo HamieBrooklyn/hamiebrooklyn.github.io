@@ -42,6 +42,7 @@
     selectedPartnerId: null,
     inviteSearchDebounce: 0,
     inviteSearchInFlight: null,
+    inviteSearchCache: {},
   };
 
   var els = {
@@ -457,6 +458,75 @@
     return v.replace(/^@+/, "").trim();
   }
 
+  function inviteCacheGet(raw) {
+    var key = raw.toLowerCase();
+    var hit = state.inviteSearchCache[key];
+    if (!hit) return null;
+    if (Date.now() - hit.ts > 60000) {
+      delete state.inviteSearchCache[key];
+      return null;
+    }
+    return hit.users;
+  }
+
+  function inviteCacheSet(raw, users) {
+    state.inviteSearchCache[raw.toLowerCase()] = { users: users, ts: Date.now() };
+  }
+
+  function showInviteSearching() {
+    if (!els.inviteSuggestions) return;
+    els.inviteSuggestions.innerHTML = '<div class="invite-suggestion-hint">Searching…</div>';
+    els.inviteSuggestions.hidden = false;
+  }
+
+  function renderInviteSuggestions(users) {
+    if (!els.inviteSuggestions) return;
+    els.inviteSuggestions.innerHTML = "";
+    if (!users.length) {
+      var empty = document.createElement("div");
+      empty.className = "invite-suggestion-hint";
+      empty.textContent = "No users in your shared servers match that prefix.";
+      els.inviteSuggestions.appendChild(empty);
+      els.inviteSuggestions.hidden = false;
+      return;
+    }
+    users.forEach(function (u) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "invite-suggestion";
+      btn.setAttribute("role", "option");
+      if (u.avatar_url) {
+        var img = document.createElement("img");
+        img.className = "invite-suggestion-avatar";
+        img.src = u.avatar_url;
+        img.alt = "";
+        btn.appendChild(img);
+      } else {
+        var ph = document.createElement("span");
+        ph.className = "invite-suggestion-avatar";
+        ph.setAttribute("aria-hidden", "true");
+        btn.appendChild(ph);
+      }
+      var meta = document.createElement("span");
+      meta.className = "invite-suggestion-meta";
+      var handle = document.createElement("span");
+      handle.className = "invite-suggestion-handle";
+      handle.textContent = "@" + (u.username || "?");
+      meta.appendChild(handle);
+      var gn = u.global_name || u.display_name || "";
+      if (gn) {
+        var disp = document.createElement("span");
+        disp.className = "invite-suggestion-display";
+        disp.textContent = gn;
+        meta.appendChild(disp);
+      }
+      btn.appendChild(meta);
+      btn.onclick = function () { selectPartnerFromSuggestion(u); };
+      els.inviteSuggestions.appendChild(btn);
+    });
+    els.inviteSuggestions.hidden = false;
+  }
+
   function scheduleInviteUserSearch() {
     clearTimeout(state.inviteSearchDebounce);
     state.selectedPartnerId = null;
@@ -466,7 +536,13 @@
       clearInviteSuggestions();
       return;
     }
-    state.inviteSearchDebounce = setTimeout(fetchInviteUserSuggestions, 55);
+    var cached = inviteCacheGet(raw);
+    if (cached) {
+      renderInviteSuggestions(cached);
+    } else {
+      showInviteSearching();
+    }
+    state.inviteSearchDebounce = setTimeout(fetchInviteUserSuggestions, cached ? 120 : 35);
   }
 
   async function fetchInviteUserSuggestions() {
@@ -494,50 +570,8 @@
         return;
       }
       var users = j.users || [];
-      els.inviteSuggestions.innerHTML = "";
-      if (!users.length) {
-        var empty = document.createElement("div");
-        empty.className = "invite-suggestion-hint";
-        empty.textContent = "No users in bot servers match that prefix.";
-        els.inviteSuggestions.appendChild(empty);
-        els.inviteSuggestions.hidden = false;
-        return;
-      }
-      users.forEach(function (u) {
-        var btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "invite-suggestion";
-        btn.setAttribute("role", "option");
-        if (u.avatar_url) {
-          var img = document.createElement("img");
-          img.className = "invite-suggestion-avatar";
-          img.src = u.avatar_url;
-          img.alt = "";
-          btn.appendChild(img);
-        } else {
-          var ph = document.createElement("span");
-          ph.className = "invite-suggestion-avatar";
-          ph.setAttribute("aria-hidden", "true");
-          btn.appendChild(ph);
-        }
-        var meta = document.createElement("span");
-        meta.className = "invite-suggestion-meta";
-        var handle = document.createElement("span");
-        handle.className = "invite-suggestion-handle";
-        handle.textContent = "@" + (u.username || "?");
-        meta.appendChild(handle);
-        var gn = u.global_name || u.display_name || "";
-        if (gn) {
-          var disp = document.createElement("span");
-          disp.className = "invite-suggestion-display";
-          disp.textContent = gn;
-          meta.appendChild(disp);
-        }
-        btn.appendChild(meta);
-        btn.onclick = function () { selectPartnerFromSuggestion(u); };
-        els.inviteSuggestions.appendChild(btn);
-      });
-      els.inviteSuggestions.hidden = false;
+      inviteCacheSet(raw, users);
+      renderInviteSuggestions(users);
     } catch (e) {
       state.inviteSearchInflight = null;
       if (e.name === "AbortError") return;
