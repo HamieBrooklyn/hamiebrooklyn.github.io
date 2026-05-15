@@ -1043,6 +1043,8 @@
           name: c.card ? c.card.name : "Card",
           set_info: c.card ? ((c.card.set_name || "") + " #" + (c.card.collector_number || "")) : "",
           image_small_url: c.card ? c.card.image_small_url : null,
+          is_favorite: !!c.is_favorite,
+          blocked_reason: c.sell && c.sell.blocked_reason ? c.sell.blocked_reason : null,
         };
       });
       state.pickerTotal = Number(j.total) || 0;
@@ -1077,15 +1079,22 @@
       var el = document.createElement("div");
       el.className = "picker-card";
       if (state.selectedCardIds.indexOf(c.instance_id) >= 0) el.classList.add("is-selected");
+      if (c.is_favorite) el.classList.add("is-favorite");
       var img = c.image_small_url ? '<img src="' + c.image_small_url + '" alt="" loading="lazy" />' : "";
-      el.innerHTML = img + "<div>" + (c.name || "Card") + "</div>";
-      el.onclick = function () {
-        if (state.selectedCardIds.indexOf(c.instance_id) >= 0) {
-          removeCard(c.instance_id);
-        } else {
-          addCard(c.instance_id);
-        }
-      };
+      var label = (c.name || "Card") + (c.is_favorite ? ' <span class="picker-fav">⭐</span>' : "");
+      el.innerHTML = img + "<div>" + label + "</div>";
+      if (c.is_favorite || c.blocked_reason) {
+        el.title = c.blocked_reason || "Favorited — cannot trade";
+        el.setAttribute("aria-disabled", "true");
+      } else {
+        el.onclick = function () {
+          if (state.selectedCardIds.indexOf(c.instance_id) >= 0) {
+            removeCard(c.instance_id);
+          } else {
+            addCard(c.instance_id);
+          }
+        };
+      }
       els.pickerResults.appendChild(el);
     });
     var totalPages = Math.max(1, Math.ceil(state.pickerTotal / PICKER_PAGE_SIZE));

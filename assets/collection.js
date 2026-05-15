@@ -149,6 +149,7 @@
     modalTypes: document.getElementById("modal-types"),
     modalPid: document.getElementById("modal-pid"),
     modalCopyId: document.getElementById("modal-copy-id"),
+    modalFavoriteBtn: document.getElementById("modal-favorite-btn"),
     modalAttacksSection: document.getElementById("modal-attacks-section"),
     modalAttacks: document.getElementById("modal-attacks"),
     modalObtained: document.getElementById("modal-obtained"),
@@ -184,6 +185,7 @@
     sellInFlight: false,
     evoSelectedTargetId: null,
     evoInFlight: false,
+    favoriteInFlight: false,
   };
 
   // ------- helpers -------------------------------------------------------
@@ -421,6 +423,55 @@
     }
   }
 
+  function renderFavoriteBtn(item) {
+    if (!els.modalFavoriteBtn) return;
+    var fav = !!(item && item.is_favorite);
+    els.modalFavoriteBtn.hidden = false;
+    els.modalFavoriteBtn.disabled = !!state.favoriteInFlight;
+    els.modalFavoriteBtn.textContent = fav ? "⭐" : "☆";
+    els.modalFavoriteBtn.classList.toggle("is-favorite", fav);
+    els.modalFavoriteBtn.setAttribute(
+      "aria-label",
+      fav ? "Unfavorite this copy" : "Favorite this copy"
+    );
+    els.modalFavoriteBtn.title = fav
+      ? "Favorited — sell, trade, and auction are disabled"
+      : "Favorite — locks sell, trade, and auction";
+  }
+
+  function toggleFavorite() {
+    var item = state.modalItem;
+    if (!item || !item.public_id || state.favoriteInFlight) return;
+    state.favoriteInFlight = true;
+    renderFavoriteBtn(item);
+    apiFetch("/api/me/cards/" + encodeURIComponent(item.public_id) + "/favorite", {
+      method: "POST",
+    })
+      .then(function (r) {
+        return r.json().then(function (data) {
+          return { ok: r.ok, data: data };
+        });
+      })
+      .then(function (res) {
+        state.favoriteInFlight = false;
+        var d = res.data || {};
+        if (res.ok && d.ok && d.card) {
+          state.modalItem = d.card;
+          applyModalCardFields(d.card);
+          renderFavoriteBtn(d.card);
+          renderSellUi(d.card);
+          renderEvolutionUi(d.card);
+          loadCollection(false);
+          return;
+        }
+        renderFavoriteBtn(state.modalItem);
+      })
+      .catch(function () {
+        state.favoriteInFlight = false;
+        renderFavoriteBtn(state.modalItem);
+      });
+  }
+
   function buildTile(item, idx) {
     var card = item.card || {};
     var rarity = card.rarity || {};
@@ -471,6 +522,14 @@
     btn.addEventListener("click", function () {
       openModal(item);
     });
+
+    if (item.is_favorite) {
+      var favBadge = document.createElement("span");
+      favBadge.className = "card-tile-fav";
+      favBadge.textContent = "⭐";
+      favBadge.title = "Favorited";
+      wrap.appendChild(favBadge);
+    }
 
     var copyBtn = document.createElement("button");
     copyBtn.type = "button";
@@ -653,6 +712,7 @@
         state.modalItem = detail;
         renderSellUi(detail);
         renderEvolutionUi(detail);
+        renderFavoriteBtn(detail);
         applyModalCardFields(detail);
       })
       .catch(function () {});
@@ -718,6 +778,7 @@
     state.sellInFlight = false;
     state.evoInFlight = false;
     applyModalCardFields(item);
+    renderFavoriteBtn(item);
     renderEvolutionUi(item);
     renderSellUi(item);
     refreshModalCardDetail(item);
@@ -733,6 +794,8 @@
     state.sellInFlight = false;
     state.evoSelectedTargetId = null;
     state.evoInFlight = false;
+    state.favoriteInFlight = false;
+    if (els.modalFavoriteBtn) els.modalFavoriteBtn.hidden = true;
     if (els.modalEvolveSection) els.modalEvolveSection.hidden = true;
     if (els.modalSellSection) els.modalSellSection.hidden = true;
     els.modal.hidden = true;
@@ -824,6 +887,12 @@
   if (els.modalCopyId) {
     els.modalCopyId.addEventListener("click", function () {
       copyCardId(els.modalPid.textContent, els.modalCopyId);
+    });
+  }
+  if (els.modalFavoriteBtn) {
+    els.modalFavoriteBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      toggleFavorite();
     });
   }
 

@@ -7,7 +7,7 @@
   <link rel="apple-touch-icon" href="assets/favicon.png" />
   <title>Collection — PokePon</title>
   <meta name="description" content="Browse your PokePon Discord-bot card collection: search, sort by rarity / HP / damage, and view focused card details." />
-  <link rel="stylesheet" href="assets/style.css?v=7" />
+  <link rel="stylesheet" href="assets/style.css?v=8" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -130,6 +130,16 @@
       <div class="modal-grid">
         <div class="modal-image">
           <img id="modal-img" alt="" />
+          <button
+            type="button"
+            class="modal-favorite-btn"
+            id="modal-favorite-btn"
+            hidden
+            aria-label="Favorite this copy"
+            title="Favorite — locks sell, trade, and auction"
+          >
+            ☆
+          </button>
         </div>
         <div class="modal-body">
           <p class="modal-set" id="modal-set"></p>
@@ -272,6 +282,6 @@
     })();
   </script>
   <script src="assets/evo-focus.js?v=1" defer></script>
-  <script src="assets/collection.js?v=5" defer></script>
+  <script src="assets/collection.js?v=6" defer></script>
 </body>
 </html>

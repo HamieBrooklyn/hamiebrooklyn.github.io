@@ -864,6 +864,65 @@ main {
   flex-direction: column;
   gap: 0.35rem;
   min-width: 0;
+  position: relative;
+}
+
+.card-tile-fav {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  z-index: 2;
+  font-size: 1rem;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.85));
+}
+
+.modal-image {
+  position: relative;
+}
+
+.modal-favorite-btn {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 2;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fde68a;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.modal-favorite-btn:hover:not(:disabled) {
+  transform: scale(1.06);
+  background: rgba(0, 0, 0, 0.75);
+  border-color: #fde68a;
+}
+
+.modal-favorite-btn.is-favorite {
+  background: rgba(120, 53, 15, 0.75);
+  border-color: #fbbf24;
+}
+
+.modal-favorite-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.picker-card.is-favorite {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.picker-fav {
+  margin-left: 0.25rem;
 }
 
 .card-tile-copy {
