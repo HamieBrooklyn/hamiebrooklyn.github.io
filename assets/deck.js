@@ -61,8 +61,11 @@
     sidebar: document.getElementById("sidebar"),
 
     deckStatus: document.getElementById("deck-status"),
+    deckWorkspace: document.getElementById("deck-workspace"),
     bench: document.getElementById("deck-bench"),
-    deckActions: document.getElementById("deck-actions"),
+    deckFillCount: document.getElementById("deck-fill-count"),
+    deckSelectedNum: document.getElementById("deck-selected-num"),
+    deckSelectedHint: document.getElementById("deck-selected-hint"),
     btnSave: document.getElementById("btn-save-deck"),
     saveHint: document.getElementById("save-hint"),
 
@@ -207,8 +210,50 @@
   function renderUnauthenticated() {
     els.grid.innerHTML = "";
     els.pager.hidden = true;
-    els.deckActions.hidden = true;
+    if (els.deckWorkspace) els.deckWorkspace.hidden = true;
+    document.body.classList.remove("deck-editor-active");
     setDeckStatus("auth", "Sign in with Discord to edit your combat deck. The button is in the side panel.");
+  }
+
+  function deckFillCount() {
+    var n = 0;
+    for (var i = 0; i < MAX_DECK; i++) {
+      if (state.slots[i]) n += 1;
+    }
+    return n;
+  }
+
+  function updateDeckMeta() {
+    if (els.deckFillCount) {
+      var filled = deckFillCount();
+      els.deckFillCount.textContent = filled + " / " + MAX_DECK + " card" + (filled === 1 ? "" : "s");
+    }
+    if (els.deckSelectedNum) {
+      els.deckSelectedNum.textContent = String(state.selectedSlot + 1);
+    }
+    if (els.deckSelectedHint) {
+      els.deckSelectedHint.hidden = false;
+    }
+  }
+
+  function getDeckSlotForPublicId(publicId) {
+    for (var i = 0; i < MAX_DECK; i++) {
+      if (state.slots[i] && state.slots[i].public_id === publicId) return i;
+    }
+    return -1;
+  }
+
+  var flashTimer = null;
+  function flashSlot(idx) {
+    var slotEl = els.bench.querySelector('.deck-slot[data-slot="' + idx + '"]');
+    if (!slotEl) return;
+    slotEl.classList.remove("is-just-added");
+    void slotEl.offsetWidth;
+    slotEl.classList.add("is-just-added");
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () {
+      slotEl.classList.remove("is-just-added");
+    }, 900);
   }
 
   // ------- deck slots ---------------------------------------------------
@@ -227,7 +272,9 @@
         }
         state.dirty = false;
         renderBench();
-        els.deckActions.hidden = false;
+        updateDeckMeta();
+        if (els.deckWorkspace) els.deckWorkspace.hidden = false;
+        document.body.classList.add("deck-editor-active");
         setSaveHint("");
       })
       .catch(function (err) {
@@ -262,6 +309,7 @@
       }
     }
     els.btnSave.disabled = state.saving;
+    updateDeckMeta();
   }
 
   function selectSlot(idx) {
@@ -274,7 +322,8 @@
     state.slots[idx] = null;
     state.dirty = true;
     renderBench();
-    setSaveHint("Unsaved changes");
+    renderCollection();
+    setSaveHint("Cleared slot " + (idx + 1) + " — unsaved changes");
   }
 
   function assignCardToSlot(item) {
@@ -285,33 +334,34 @@
     }
 
     var pid = item.public_id;
-    for (var i = 0; i < MAX_DECK; i++) {
-      if (state.slots[i] && state.slots[i].public_id === pid) {
-        setSaveHint("That card is already in slot " + (i + 1) + ".");
-        return;
-      }
+    var existing = getDeckSlotForPublicId(pid);
+    if (existing >= 0) {
+      setSaveHint("That card is already in slot " + (existing + 1) + ".");
+      return;
     }
 
-    state.slots[state.selectedSlot] = {
+    var targetSlot = state.selectedSlot;
+    state.slots[targetSlot] = {
       public_id: pid,
       card: card,
     };
     state.dirty = true;
 
     // Auto-advance to next empty slot
-    var advanced = false;
     for (var j = 1; j < MAX_DECK; j++) {
-      var next = (state.selectedSlot + j) % MAX_DECK;
+      var next = (targetSlot + j) % MAX_DECK;
       if (!state.slots[next]) {
         state.selectedSlot = next;
-        advanced = true;
         break;
       }
     }
 
     renderBench();
     renderCollection();
-    setSaveHint("Unsaved changes");
+    flashSlot(targetSlot);
+    setSaveHint(
+      "Added " + (card.name || "card") + " to slot " + (targetSlot + 1) + " — save when ready"
+    );
   }
 
   function saveDeck() {
@@ -410,10 +460,7 @@
   }
 
   function isCardInDeck(publicId) {
-    for (var i = 0; i < MAX_DECK; i++) {
-      if (state.slots[i] && state.slots[i].public_id === publicId) return true;
-    }
-    return false;
+    return getDeckSlotForPublicId(publicId) >= 0;
   }
 
   function isEligible(item) {
@@ -460,7 +507,8 @@
     var card = item.card || {};
     var rarity = card.rarity || {};
     var publicId = item.public_id || "";
-    var inDeck = isCardInDeck(publicId);
+    var deckSlotIdx = getDeckSlotForPublicId(publicId);
+    var inDeck = deckSlotIdx >= 0;
     var eligible = isEligible(item);
 
     var btn = document.createElement("button");
@@ -495,7 +543,7 @@
     var badge = document.createElement("span");
     badge.className = "picker-badge";
     if (inDeck) {
-      badge.textContent = "In Deck";
+      badge.textContent = "Slot " + (deckSlotIdx + 1);
     } else if (!eligible) {
       badge.textContent = "Not eligible";
     }

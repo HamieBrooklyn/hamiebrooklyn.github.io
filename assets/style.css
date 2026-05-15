@@ -1549,6 +1549,134 @@ body.modal-open {
 
 /* ----- Deck editor ------------------------------------------------------ */
 
+body.deck-editor-active .page-head {
+  display: none;
+}
+
+body.deck-editor-active .app-main {
+  padding-top: 0.25rem;
+}
+
+.deck-workspace {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem 1rem;
+  background: var(--bg-elev);
+  border: 1px solid rgba(91, 140, 255, 0.28);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.deck-workspace-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.deck-workspace-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.deck-workspace-meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.deck-fill-count {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.deck-selected-hint strong {
+  color: var(--accent);
+}
+
+.deck-workspace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+}
+
+.deck-picker-panel {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.deck-picker-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  border-bottom: 1px solid transparent;
+}
+
+.deck-picker-panel[open] .deck-picker-summary {
+  border-bottom-color: var(--border);
+}
+
+.deck-picker-summary::-webkit-details-marker {
+  display: none;
+}
+
+.deck-picker-summary::before {
+  content: "▸";
+  color: var(--accent);
+  transition: transform 0.15s ease;
+}
+
+.deck-picker-panel[open] .deck-picker-summary::before {
+  transform: rotate(90deg);
+}
+
+.deck-picker-inner {
+  padding: 0.85rem 1rem 1rem;
+}
+
+.deck-picker-lead {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+}
+
+.deck-picker-toolbar {
+  margin-bottom: 0.75rem;
+}
+
+@keyframes deck-slot-pop {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(134, 239, 172, 0.5);
+  }
+  35% {
+    transform: scale(1.03);
+    box-shadow: 0 0 0 4px rgba(134, 239, 172, 0.35);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(134, 239, 172, 0);
+  }
+}
+
+.deck-slot.is-just-added {
+  animation: deck-slot-pop 0.85s ease;
+  border-color: rgba(134, 239, 172, 0.65);
+}
+
 .deck-status,
 .deck-picker-status {
   padding: 0.65rem 0.9rem;
@@ -1581,7 +1709,7 @@ body.modal-open {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.75rem;
-  margin: 1.25rem 0 0.75rem;
+  margin: 0;
 }
 
 .deck-slot {
@@ -1596,8 +1724,32 @@ body.modal-open {
   gap: 0.5rem;
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-  min-height: 220px;
+  min-height: 180px;
   text-align: center;
+}
+
+@media (min-width: 900px) {
+  .deck-bench {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.55rem;
+  }
+
+  .deck-slot {
+    min-height: 150px;
+    padding: 0.55rem 0.45rem 0.45rem;
+  }
+
+  .deck-slot-img {
+    width: 72px;
+  }
+
+  .deck-slot-name {
+    font-size: 0.78rem;
+  }
+
+  .deck-slot-label {
+    font-size: 0.72rem;
+  }
 }
 
 .deck-slot:hover {
@@ -1723,10 +1875,13 @@ body.modal-open {
 }
 
 /* Picker tile overrides */
-.picker-tile.is-in-deck {
-  opacity: 0.4;
-  pointer-events: none;
+.picker-tile {
   position: relative;
+}
+
+.picker-tile.is-in-deck {
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 .picker-tile.is-ineligible {
