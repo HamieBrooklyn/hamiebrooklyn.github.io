@@ -551,11 +551,30 @@
     return wrap;
   }
 
+  function isEvoFocusOpen() {
+    var evoModal = document.getElementById("evo-focus-modal");
+    return !!(evoModal && !evoModal.hidden);
+  }
+
   function updateModalFooter() {
     if (!els.modalFooter) return;
     var sellOn = els.modalSellSection && !els.modalSellSection.hidden;
     var evoOn = els.modalEvoFooter && !els.modalEvoFooter.hidden;
     els.modalFooter.hidden = !sellOn && !evoOn;
+  }
+
+  function updateModalActionBack() {
+    if (!els.modalSellBack) return;
+    if (isEvoFocusOpen()) {
+      els.modalSellBack.hidden = false;
+      els.modalSellBack.textContent = "Back";
+      return;
+    }
+    var sell = state.modalItem && state.modalItem.sell;
+    var sellConfirm = !!(sell && sell.needs_confirm && state.sellUiStep === 1);
+    if (!sellConfirm) {
+      els.modalSellBack.hidden = true;
+    }
   }
 
   function renderSellUi(item) {
@@ -619,6 +638,7 @@
         els.modalSellBack.hidden = true;
       }
       updateModalFooter();
+      updateModalActionBack();
       return;
     }
 
@@ -633,6 +653,7 @@
     }
     els.modalSellBack.hidden = true;
     updateModalFooter();
+    updateModalActionBack();
   }
 
   function updateEvoButton(item) {
@@ -717,6 +738,7 @@
       updateEvoButton(item);
     }
     updateModalFooter();
+    updateModalActionBack();
   }
 
   function refreshModalCardDetail(item) {
@@ -1063,6 +1085,11 @@
     els.modalSellBack.addEventListener("click", function (e) {
       e.preventDefault();
       e.stopPropagation();
+      if (isEvoFocusOpen() && window.PokeponEvoFocus) {
+        PokeponEvoFocus.close(false);
+        updateModalActionBack();
+        return;
+      }
       state.sellUiStep = 0;
       els.modalSellMsg.hidden = true;
       if (state.modalItem) renderSellUi(state.modalItem);
@@ -1172,6 +1199,13 @@
           modalHistory.evo = false;
           history.back();
         }
+      },
+      onOpen: function () {
+        updateModalActionBack();
+      },
+      onClose: function () {
+        if (state.modalItem) renderSellUi(state.modalItem);
+        else updateModalActionBack();
       },
     });
   }

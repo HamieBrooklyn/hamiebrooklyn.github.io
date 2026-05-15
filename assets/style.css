@@ -1662,6 +1662,23 @@ body.evo-focus-open #card-modal .modal-card {
   filter: brightness(0.55);
 }
 
+/* Keep sell / back actions clickable above the evolution preview overlay */
+body.evo-focus-open #card-modal .modal-footer {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  width: min(880px, calc(100vw - 3rem));
+  z-index: 30;
+  margin: 0;
+  filter: none;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.55);
+}
+
 .modal-evolve-actions {
   display: flex;
   flex-wrap: wrap;

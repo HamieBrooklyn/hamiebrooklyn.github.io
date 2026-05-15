@@ -61,6 +61,7 @@
     } else {
       historyPushed = false;
     }
+    if (deps.onClose) deps.onClose();
   }
 
   function open(target, opts) {
@@ -128,6 +129,7 @@
     els.modal.hidden = false;
     els.modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("evo-focus-open");
+    if (deps.onOpen) deps.onOpen();
   }
 
   function mount(options) {
