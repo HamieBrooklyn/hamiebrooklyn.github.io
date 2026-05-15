@@ -1109,6 +1109,60 @@ main {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  align-items: stretch;
+}
+
+#card-modal .modal-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+#card-modal .modal-aside .modal-image img {
+  max-height: min(48vh, 400px);
+  width: auto;
+  max-width: 100%;
+  margin-inline: auto;
+  display: block;
+}
+
+#card-modal .modal-aside .modal-footer {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  box-shadow: none;
+  gap: 0.75rem;
+}
+
+#card-modal .modal-aside .modal-footer-sell-main,
+#card-modal .modal-aside .modal-footer-evo {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+#card-modal .modal-aside .modal-footer-evo {
+  border-top: 1px solid var(--border);
+  border-left: none;
+  padding-top: 0.75rem;
+  padding-left: 0;
+}
+
+#card-modal .modal-aside .modal-sell-actions,
+#card-modal .modal-aside .modal-footer-evo .btn {
+  width: 100%;
+}
+
+@media (min-width: 720px) {
+  #card-modal .modal-aside {
+    position: sticky;
+    top: 1.25rem;
+    align-self: start;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    padding-right: 0.15rem;
+  }
 }
 
 .modal-close {
@@ -1235,25 +1289,11 @@ main {
   flex-shrink: 0;
 }
 
+/* Collection card modal: sell + evolve stack under the image (not side-by-side). */
 @media (min-width: 640px) {
-  .modal-footer {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    align-items: start;
-  }
-
-  .modal-footer-evo {
-    border-top: none;
-    padding-top: 0;
-    border-left: 1px dashed var(--border);
-    padding-left: 1rem;
-  }
-
-  .modal-footer:has(.modal-sell[hidden]) .modal-footer-evo,
-  .modal-footer:not(:has(.modal-sell:not([hidden]))) .modal-footer-evo {
-    border-left: none;
-    padding-left: 0;
+  #card-modal .modal-aside .modal-footer {
+    display: flex;
+    flex-direction: column;
   }
 }
 
@@ -1663,12 +1703,12 @@ body.evo-focus-open #card-modal .modal-card {
 }
 
 /* Keep sell / back actions clickable above the evolution preview overlay */
-body.evo-focus-open #card-modal .modal-footer {
+body.evo-focus-open #card-modal .modal-aside .modal-footer {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
   bottom: max(1rem, env(safe-area-inset-bottom, 0px));
-  width: min(880px, calc(100vw - 3rem));
+  width: min(280px, calc(100vw - 3rem));
   z-index: 30;
   margin: 0;
   filter: none;

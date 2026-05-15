@@ -7,7 +7,7 @@
   <link rel="apple-touch-icon" href="assets/favicon.png" />
   <title>Collection — PokePon</title>
   <meta name="description" content="Browse your PokePon Discord-bot card collection: search, sort by rarity / HP / damage, and view focused card details." />
-  <link rel="stylesheet" href="assets/style.css?v=12" />
+  <link rel="stylesheet" href="assets/style.css?v=13" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -129,50 +129,20 @@
     <div class="modal-card" role="document">
       <button class="modal-close" type="button" data-close aria-label="Close">×</button>
       <div class="modal-grid">
-        <div class="modal-image">
-          <img id="modal-img" alt="" />
-          <button
-            type="button"
-            class="modal-favorite-btn"
-            id="modal-favorite-btn"
-            hidden
-            aria-label="Favorite this copy"
-            title="Favorite — locks sell, trade, and auction"
-          >
-            ☆
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="modal-body-scroll">
-          <p class="modal-set" id="modal-set"></p>
-          <h2 class="modal-title" id="modal-title"></h2>
-          <p class="modal-rarity" id="modal-rarity"></p>
-
-          <dl class="modal-stats">
-            <div><dt>HP</dt><dd id="modal-hp">—</dd></div>
-            <div><dt>Max damage</dt><dd id="modal-damage">—</dd></div>
-            <div><dt>Types</dt><dd id="modal-types">—</dd></div>
-            <div class="modal-id-row"><dt>Card ID</dt><dd class="modal-id-dd"><code id="modal-pid">—</code> <button type="button" class="btn btn-ghost btn-copy-inline" id="modal-copy-id" aria-label="Copy Card ID">Copy</button></dd></div>
-          </dl>
-
-          <section class="modal-attacks" id="modal-attacks-section" hidden>
-            <h3>Attacks</h3>
-            <ul id="modal-attacks"></ul>
-          </section>
-
-          <p class="modal-obtained" id="modal-obtained"></p>
-
-          <section class="modal-evolve" id="modal-evolve-section" hidden aria-label="Evolve card">
-            <h3 class="modal-evolve-heading">Evolution branches</h3>
-            <p class="modal-evolve-desc muted">
-              Tap a branch for details. Same costs as Discord <code>/cevolve</code>.
-            </p>
-            <p class="modal-evolve-stages" id="modal-evo-stages"></p>
-            <p class="modal-evolve-block" id="modal-evo-block" hidden></p>
-            <div class="modal-evolve-targets" id="modal-evo-targets" role="list"></div>
-          </section>
+        <aside class="modal-aside" aria-label="Card preview and actions">
+          <div class="modal-image">
+            <img id="modal-img" alt="" />
+            <button
+              type="button"
+              class="modal-favorite-btn"
+              id="modal-favorite-btn"
+              hidden
+              aria-label="Favorite this copy"
+              title="Favorite — locks sell, trade, and auction"
+            >
+              ☆
+            </button>
           </div>
-
           <footer class="modal-footer" id="modal-footer" hidden>
             <section class="modal-sell" id="modal-sell-section" hidden aria-label="Sell to shop">
               <div class="modal-footer-sell-main">
@@ -200,6 +170,37 @@
               <button type="button" class="btn btn-primary" id="modal-evo-btn" disabled>Evolve</button>
             </div>
           </footer>
+        </aside>
+        <div class="modal-body">
+          <div class="modal-body-scroll">
+            <p class="modal-set" id="modal-set"></p>
+            <h2 class="modal-title" id="modal-title"></h2>
+            <p class="modal-rarity" id="modal-rarity"></p>
+
+            <dl class="modal-stats">
+              <div><dt>HP</dt><dd id="modal-hp">—</dd></div>
+              <div><dt>Max damage</dt><dd id="modal-damage">—</dd></div>
+              <div><dt>Types</dt><dd id="modal-types">—</dd></div>
+              <div class="modal-id-row"><dt>Card ID</dt><dd class="modal-id-dd"><code id="modal-pid">—</code> <button type="button" class="btn btn-ghost btn-copy-inline" id="modal-copy-id" aria-label="Copy Card ID">Copy</button></dd></div>
+            </dl>
+
+            <section class="modal-attacks" id="modal-attacks-section" hidden>
+              <h3>Attacks</h3>
+              <ul id="modal-attacks"></ul>
+            </section>
+
+            <p class="modal-obtained" id="modal-obtained"></p>
+
+            <section class="modal-evolve" id="modal-evolve-section" hidden aria-label="Evolve card">
+              <h3 class="modal-evolve-heading">Evolution branches</h3>
+              <p class="modal-evolve-desc muted">
+                Tap a branch for details. Same costs as Discord <code>/cevolve</code>.
+              </p>
+              <p class="modal-evolve-stages" id="modal-evo-stages"></p>
+              <p class="modal-evolve-block" id="modal-evo-block" hidden></p>
+              <div class="modal-evolve-targets" id="modal-evo-targets" role="list"></div>
+            </section>
+          </div>
         </div>
       </div>
     </div>
