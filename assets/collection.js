@@ -159,6 +159,12 @@
     modalSellBtn: document.getElementById("modal-sell-btn"),
     modalSellBack: document.getElementById("modal-sell-back"),
     modalSellMsg: document.getElementById("modal-sell-msg"),
+    modalEvolveSection: document.getElementById("modal-evolve-section"),
+    modalEvoStages: document.getElementById("modal-evo-stages"),
+    modalEvoBlock: document.getElementById("modal-evo-block"),
+    modalEvoTargets: document.getElementById("modal-evo-targets"),
+    modalEvoBtn: document.getElementById("modal-evo-btn"),
+    modalEvoMsg: document.getElementById("modal-evo-msg"),
     sidebarToggle: document.getElementById("sidebar-toggle"),
     sidebar: document.getElementById("sidebar"),
   };
@@ -176,6 +182,8 @@
     modalItem: null,
     sellUiStep: 0,
     sellInFlight: false,
+    evoSelectedTargetId: null,
+    evoInFlight: false,
   };
 
   // ------- helpers -------------------------------------------------------
@@ -552,6 +560,118 @@
     els.modalSellBack.hidden = true;
   }
 
+  function updateEvoButton(item) {
+    if (!els.modalEvoBtn) return;
+    var evo = item && item.evolution;
+    if (!evo || !evo.can_evolve || state.evoInFlight) {
+      els.modalEvoBtn.disabled = true;
+      if (state.evoInFlight) els.modalEvoBtn.textContent = "Evolving…";
+      return;
+    }
+    var targets = evo.targets || [];
+    var sel = state.evoSelectedTargetId;
+    var picked = null;
+    targets.forEach(function (t) {
+      if (t.card_id === sel) picked = t;
+    });
+    if (!picked) {
+      els.modalEvoBtn.disabled = true;
+      els.modalEvoBtn.textContent = targets.length > 1 ? "Pick an evolution" : "Evolve";
+      return;
+    }
+    els.modalEvoBtn.disabled = false;
+    els.modalEvoBtn.textContent =
+      picked.cost_pokedollars != null
+        ? "Evolve for " + fmtPokedollars(picked.cost_pokedollars)
+        : "Evolve into " + (picked.name || "card");
+  }
+
+  function renderEvolutionUi(item, opts) {
+    opts = opts || {};
+    var readonly = !!opts.readonly;
+    var evo = item && item.evolution;
+    state.evoSelectedTargetId = null;
+    if (els.modalEvoMsg) {
+      els.modalEvoMsg.hidden = true;
+      els.modalEvoMsg.textContent = "";
+      els.modalEvoMsg.className = "modal-evolve-msg";
+    }
+    if (!els.modalEvolveSection || !evo || !evo.targets || !evo.targets.length) {
+      if (els.modalEvolveSection) els.modalEvolveSection.hidden = true;
+      return;
+    }
+    els.modalEvolveSection.hidden = false;
+    if (els.modalEvoStages) {
+      var stages = Number(evo.evolution_stages) || 0;
+      els.modalEvoStages.textContent = stages
+        ? "Times evolved on this copy: " + stages
+        : "Not evolved yet on this copy.";
+    }
+    if (els.modalEvoBlock) {
+      if (evo.blocked_reason) {
+        els.modalEvoBlock.hidden = false;
+        els.modalEvoBlock.textContent = plainDiscordMsg(evo.blocked_reason);
+      } else {
+        els.modalEvoBlock.hidden = true;
+        els.modalEvoBlock.textContent = "";
+      }
+    }
+    if (els.modalEvoTargets) {
+      els.modalEvoTargets.innerHTML = "";
+      evo.targets.forEach(function (t) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "modal-evo-target";
+        btn.setAttribute("role", "listitem");
+        if (readonly || !evo.can_evolve) {
+          btn.setAttribute("aria-disabled", "true");
+        }
+        var imgSrc = t.image_small_url || t.image_large_url || "";
+        if (imgSrc) {
+          var img = document.createElement("img");
+          img.src = imgSrc;
+          img.alt = "";
+          btn.appendChild(img);
+        }
+        var meta = document.createElement("span");
+        meta.className = "modal-evo-target-meta";
+        var nm = document.createElement("span");
+        nm.className = "modal-evo-target-name";
+        nm.textContent = t.name || "Card";
+        meta.appendChild(nm);
+        var sub = document.createElement("span");
+        sub.className = "modal-evo-target-sub";
+        var subBits = [];
+        if (t.set_name) subBits.push(t.set_name + " #" + (t.collector_number || "?"));
+        if (t.rarity_display) subBits.push(t.rarity_display);
+        if (!readonly && t.cost_pokedollars != null) subBits.push(fmtPokedollars(t.cost_pokedollars));
+        sub.textContent = subBits.join(" · ");
+        meta.appendChild(sub);
+        btn.appendChild(meta);
+        if (!readonly && evo.can_evolve) {
+          btn.onclick = function () {
+            state.evoSelectedTargetId = t.card_id;
+            var nodes = els.modalEvoTargets.querySelectorAll(".modal-evo-target");
+            for (var i = 0; i < nodes.length; i++) {
+              nodes[i].classList.toggle("is-selected", nodes[i] === btn);
+            }
+            updateEvoButton(state.modalItem);
+          };
+        }
+        els.modalEvoTargets.appendChild(btn);
+      });
+      if (!readonly && evo.can_evolve && evo.targets.length === 1) {
+        state.evoSelectedTargetId = evo.targets[0].card_id;
+        var only = els.modalEvoTargets.querySelector(".modal-evo-target");
+        if (only) only.classList.add("is-selected");
+      }
+    }
+    if (els.modalEvoBtn) {
+      els.modalEvoBtn.hidden = readonly || !evo.can_evolve;
+      updateEvoButton(item);
+    }
+  }
+
   function refreshModalCardDetail(item) {
     var pid = item && item.public_id;
     if (!pid || !state.authenticated) return;
@@ -566,16 +686,13 @@
         if (els.modal.hidden) return;
         state.modalItem = detail;
         renderSellUi(detail);
+        renderEvolutionUi(detail);
+        applyModalCardFields(detail);
       })
       .catch(function () {});
   }
 
-  // ------- modal --------------------------------------------------------
-
-  function openModal(item) {
-    state.modalItem = item;
-    state.sellUiStep = 0;
-    state.sellInFlight = false;
+  function applyModalCardFields(item) {
     var card = item.card || {};
     var rarity = card.rarity || {};
     els.modalImg.src = card.image_large_url || card.image_small_url || "";
@@ -597,7 +714,6 @@
     } else {
       els.modalObtained.textContent = "";
     }
-
     var attacks = Array.isArray(card.attacks) ? card.attacks : [];
     if (attacks.length === 0) {
       els.modalAttacksSection.hidden = true;
@@ -626,10 +742,19 @@
         })
         .join("");
     }
+  }
 
+  // ------- modal --------------------------------------------------------
+
+  function openModal(item) {
+    state.modalItem = item;
+    state.sellUiStep = 0;
+    state.sellInFlight = false;
+    state.evoInFlight = false;
+    applyModalCardFields(item);
+    renderEvolutionUi(item);
     renderSellUi(item);
     refreshModalCardDetail(item);
-
     els.modal.hidden = false;
     els.modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
@@ -639,6 +764,9 @@
     state.modalItem = null;
     state.sellUiStep = 0;
     state.sellInFlight = false;
+    state.evoSelectedTargetId = null;
+    state.evoInFlight = false;
+    if (els.modalEvolveSection) els.modalEvolveSection.hidden = true;
     if (els.modalSellSection) els.modalSellSection.hidden = true;
     els.modal.hidden = true;
     els.modal.setAttribute("aria-hidden", "true");
@@ -847,6 +975,93 @@
       state.sellUiStep = 0;
       els.modalSellMsg.hidden = true;
       if (state.modalItem) renderSellUi(state.modalItem);
+    });
+  }
+
+  function commitEvolve() {
+    var item = state.modalItem;
+    var evo = item && item.evolution;
+    if (!item || !evo || !evo.can_evolve || state.evoInFlight) return;
+    var targets = evo.targets || [];
+    var picked = null;
+    targets.forEach(function (t) {
+      if (t.card_id === state.evoSelectedTargetId) picked = t;
+    });
+    if (!picked || picked.cost_pokedollars == null) return;
+    var pid = item.public_id;
+    state.evoInFlight = true;
+    updateEvoButton(item);
+    if (els.modalEvoMsg) els.modalEvoMsg.hidden = true;
+    apiFetch("/api/me/cards/" + encodeURIComponent(pid) + "/evolve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        target_card_id: picked.card_id,
+        expected_cost: picked.cost_pokedollars,
+      }),
+    })
+      .then(function (r) {
+        return r.json().then(function (data) {
+          return { ok: r.ok, status: r.status, data: data };
+        });
+      })
+      .then(function (res) {
+        state.evoInFlight = false;
+        var d = res.data || {};
+        if (res.ok && d.ok && d.card) {
+          state.modalItem = d.card;
+          applyModalCardFields(d.card);
+          renderEvolutionUi(d.card);
+          renderSellUi(d.card);
+          if (els.modalEvoMsg) {
+            els.modalEvoMsg.hidden = false;
+            els.modalEvoMsg.className = "modal-evolve-msg is-ok";
+            els.modalEvoMsg.textContent =
+              "Evolved " +
+              (d.before_name || "card") +
+              " → " +
+              (d.card_name || d.card.card.name) +
+              " for " +
+              fmtPokedollars(d.cost_pokedollars) +
+              ". Balance: " +
+              fmtPokedollars(d.new_balance_pokedollars);
+          }
+          loadCollection(false);
+          return;
+        }
+        if (res.status === 409 && d.cost_pokedollars != null) {
+          refreshModalCardDetail(state.modalItem);
+          if (els.modalEvoMsg) {
+            els.modalEvoMsg.hidden = false;
+            els.modalEvoMsg.className = "modal-evolve-msg is-error";
+            els.modalEvoMsg.textContent =
+              (d.message || "Cost updated.") + " New cost: " + fmtPokedollars(d.cost_pokedollars);
+          }
+          return;
+        }
+        if (els.modalEvoMsg) {
+          els.modalEvoMsg.hidden = false;
+          els.modalEvoMsg.className = "modal-evolve-msg is-error";
+          els.modalEvoMsg.textContent = plainDiscordMsg(
+            d.reason || d.message || d.error || "Could not evolve."
+          );
+        }
+        updateEvoButton(state.modalItem);
+      })
+      .catch(function () {
+        state.evoInFlight = false;
+        if (els.modalEvoMsg) {
+          els.modalEvoMsg.hidden = false;
+          els.modalEvoMsg.className = "modal-evolve-msg is-error";
+          els.modalEvoMsg.textContent = "Network error — try again.";
+        }
+        updateEvoButton(state.modalItem);
+      });
+  }
+
+  if (els.modalEvoBtn) {
+    els.modalEvoBtn.addEventListener("click", function () {
+      commitEvolve();
     });
   }
 

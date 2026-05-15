@@ -43,6 +43,10 @@
     inviteSearchDebounce: 0,
     inviteSearchInFlight: null,
     inviteSearchCache: {},
+    modalItem: null,
+    modalAllowEvolve: false,
+    evoSelectedTargetId: null,
+    evoInFlight: false,
   };
 
   var els = {
@@ -93,6 +97,14 @@
     modalAttacks: document.getElementById("modal-attacks"),
     modalObtained: document.getElementById("modal-obtained"),
     modalCopyId: document.getElementById("modal-copy-id"),
+    modalEvolveSection: document.getElementById("modal-evolve-section"),
+    modalEvoDesc: document.getElementById("modal-evo-desc"),
+    modalEvoStages: document.getElementById("modal-evo-stages"),
+    modalEvoBlock: document.getElementById("modal-evo-block"),
+    modalEvoTargets: document.getElementById("modal-evo-targets"),
+    modalEvoActions: document.getElementById("modal-evo-actions"),
+    modalEvoBtn: document.getElementById("modal-evo-btn"),
+    modalEvoMsg: document.getElementById("modal-evo-msg"),
   };
 
   function fmtPd(n) { return "₽" + Number(n || 0).toLocaleString(); }
@@ -148,6 +160,10 @@
       .replace(/'/g, "&#39;");
   }
 
+  function plainDiscordMsg(s) {
+    return String(s == null ? "" : s).replace(/\*\*/g, "").replace(/`/g, "");
+  }
+
   function rarityClassFor(displayName) {
     var v = (displayName || "").toLowerCase();
     if (!v) return "rarity-unknown";
@@ -198,11 +214,17 @@
   function tradeModalItemFromSide(c) {
     if (!c || c.missing) return null;
     if (c.card) {
-      return { public_id: c.public_id, obtained_at: c.obtained_at, card: c.card };
+      return {
+        public_id: c.public_id,
+        obtained_at: c.obtained_at,
+        evolution: c.evolution,
+        card: c.card,
+      };
     }
     return {
       public_id: c.public_id,
       obtained_at: c.obtained_at,
+      evolution: c.evolution,
       card: {
         name: c.name,
         set_name: c.set_name,
@@ -213,20 +235,7 @@
     };
   }
 
-  function tradeChipThumbUrl(c) {
-    if (!c || c.missing) return "";
-    if (c.card && c.card.image_small_url) return c.card.image_small_url;
-    return c.image_small_url || "";
-  }
-
-  function tradeChipLabel(c) {
-    if (!c || c.missing) return "Missing";
-    if (c.card && c.card.name) return c.card.name;
-    return c.name || "Card";
-  }
-
-  function openTradeCardModal(item) {
-    if (!item || !els.modal) return;
+  function applyModalCardFields(item) {
     var card = item.card || {};
     var rarity = card.rarity || {};
     els.modalImg.src = card.image_large_url || card.image_small_url || "";
@@ -248,7 +257,6 @@
     } else {
       els.modalObtained.textContent = "";
     }
-
     var attacks = Array.isArray(card.attacks) ? card.attacks : [];
     if (attacks.length === 0) {
       els.modalAttacksSection.hidden = true;
@@ -277,7 +285,169 @@
         })
         .join("");
     }
+  }
 
+  function updateEvoButton(item) {
+    if (!els.modalEvoBtn) return;
+    var evo = item && item.evolution;
+    if (!evo || !evo.can_evolve || state.evoInFlight) {
+      els.modalEvoBtn.disabled = true;
+      if (state.evoInFlight) els.modalEvoBtn.textContent = "Evolving…";
+      return;
+    }
+    var targets = evo.targets || [];
+    var sel = state.evoSelectedTargetId;
+    var picked = null;
+    targets.forEach(function (t) {
+      if (t.card_id === sel) picked = t;
+    });
+    if (!picked) {
+      els.modalEvoBtn.disabled = true;
+      els.modalEvoBtn.textContent = targets.length > 1 ? "Pick an evolution" : "Evolve";
+      return;
+    }
+    els.modalEvoBtn.disabled = false;
+    els.modalEvoBtn.textContent =
+      picked.cost_pokedollars != null
+        ? "Evolve for " + fmtPd(picked.cost_pokedollars)
+        : "Evolve into " + (picked.name || "card");
+  }
+
+  function renderEvolutionUi(item, opts) {
+    opts = opts || {};
+    var readonly = !!opts.readonly;
+    var evo = item && item.evolution;
+    state.evoSelectedTargetId = null;
+    if (els.modalEvoMsg) {
+      els.modalEvoMsg.hidden = true;
+      els.modalEvoMsg.textContent = "";
+      els.modalEvoMsg.className = "modal-evolve-msg";
+    }
+    if (els.modalEvoDesc) {
+      els.modalEvoDesc.textContent = readonly
+        ? "Possible evolutions for this printing (view only)."
+        : "Same catalog branches and costs as Discord /cevolve.";
+    }
+    if (!els.modalEvolveSection || !evo || !evo.targets || !evo.targets.length) {
+      if (els.modalEvolveSection) els.modalEvolveSection.hidden = true;
+      if (els.modalEvoActions) els.modalEvoActions.hidden = true;
+      return;
+    }
+    els.modalEvolveSection.hidden = false;
+    if (els.modalEvoStages) {
+      var stages = Number(evo.evolution_stages) || 0;
+      els.modalEvoStages.textContent = stages
+        ? "Times evolved on this copy: " + stages
+        : "Not evolved yet on this copy.";
+    }
+    if (els.modalEvoBlock) {
+      if (evo.blocked_reason) {
+        els.modalEvoBlock.hidden = false;
+        els.modalEvoBlock.textContent = plainDiscordMsg(evo.blocked_reason);
+      } else {
+        els.modalEvoBlock.hidden = true;
+        els.modalEvoBlock.textContent = "";
+      }
+    }
+    if (els.modalEvoTargets) {
+      els.modalEvoTargets.innerHTML = "";
+      evo.targets.forEach(function (t) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "modal-evo-target";
+        btn.setAttribute("role", "listitem");
+        if (readonly || !evo.can_evolve) btn.setAttribute("aria-disabled", "true");
+        var imgSrc = t.image_small_url || t.image_large_url || "";
+        if (imgSrc) {
+          var img = document.createElement("img");
+          img.src = imgSrc;
+          img.alt = "";
+          btn.appendChild(img);
+        }
+        var meta = document.createElement("span");
+        meta.className = "modal-evo-target-meta";
+        var nm = document.createElement("span");
+        nm.className = "modal-evo-target-name";
+        nm.textContent = t.name || "Card";
+        meta.appendChild(nm);
+        var sub = document.createElement("span");
+        sub.className = "modal-evo-target-sub";
+        var subBits = [];
+        if (t.set_name) subBits.push(t.set_name + " #" + (t.collector_number || "?"));
+        if (t.rarity_display) subBits.push(t.rarity_display);
+        if (!readonly && t.cost_pokedollars != null) subBits.push(fmtPd(t.cost_pokedollars));
+        sub.textContent = subBits.join(" · ");
+        meta.appendChild(sub);
+        btn.appendChild(meta);
+        if (!readonly && evo.can_evolve) {
+          btn.onclick = function () {
+            state.evoSelectedTargetId = t.card_id;
+            var nodes = els.modalEvoTargets.querySelectorAll(".modal-evo-target");
+            for (var i = 0; i < nodes.length; i++) {
+              nodes[i].classList.toggle("is-selected", nodes[i] === btn);
+            }
+            updateEvoButton(state.modalItem);
+          };
+        }
+        els.modalEvoTargets.appendChild(btn);
+      });
+      if (!readonly && evo.can_evolve && evo.targets.length === 1) {
+        state.evoSelectedTargetId = evo.targets[0].card_id;
+        var only = els.modalEvoTargets.querySelector(".modal-evo-target");
+        if (only) only.classList.add("is-selected");
+      }
+    }
+    if (els.modalEvoActions) {
+      els.modalEvoActions.hidden = readonly || !evo.can_evolve;
+    }
+    if (els.modalEvoBtn) {
+      els.modalEvoBtn.hidden = readonly || !evo.can_evolve;
+      updateEvoButton(item);
+    }
+  }
+
+  function refreshTradeModalDetail(item) {
+    var pid = item && item.public_id;
+    if (!pid || !state.authenticated || !state.modalAllowEvolve) return;
+    apiFetch("/api/me/cards/" + encodeURIComponent(pid))
+      .then(function (r) {
+        if (r.status === 401) return null;
+        if (!r.ok) return null;
+        return r.json();
+      })
+      .then(function (detail) {
+        if (!detail || detail.public_id !== pid) return;
+        if (!els.modal || els.modal.hidden) return;
+        state.modalItem = detail;
+        applyModalCardFields(detail);
+        renderEvolutionUi(detail, { readonly: false });
+      })
+      .catch(function () {});
+  }
+
+  function tradeChipThumbUrl(c) {
+    if (!c || c.missing) return "";
+    if (c.card && c.card.image_small_url) return c.card.image_small_url;
+    return c.image_small_url || "";
+  }
+
+  function tradeChipLabel(c) {
+    if (!c || c.missing) return "Missing";
+    if (c.card && c.card.name) return c.card.name;
+    return c.name || "Card";
+  }
+
+  function openTradeCardModal(item, opts) {
+    if (!item || !els.modal) return;
+    opts = opts || {};
+    var allowEvolve = !!opts.allowEvolve;
+    state.modalItem = item;
+    state.modalAllowEvolve = allowEvolve;
+    state.evoInFlight = false;
+    state.evoSelectedTargetId = null;
+    applyModalCardFields(item);
+    renderEvolutionUi(item, { readonly: !allowEvolve });
+    if (allowEvolve) refreshTradeModalDetail(item);
     els.modal.hidden = false;
     els.modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
@@ -285,9 +455,97 @@
 
   function closeTradeCardModal() {
     if (!els.modal) return;
+    state.modalItem = null;
+    state.modalAllowEvolve = false;
+    state.evoSelectedTargetId = null;
+    state.evoInFlight = false;
+    if (els.modalEvolveSection) els.modalEvolveSection.hidden = true;
+    if (els.modalEvoActions) els.modalEvoActions.hidden = true;
     els.modal.hidden = true;
     els.modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
+  }
+
+  function commitEvolve() {
+    var item = state.modalItem;
+    var evo = item && item.evolution;
+    if (!item || !evo || !evo.can_evolve || state.evoInFlight || !state.modalAllowEvolve) return;
+    var targets = evo.targets || [];
+    var picked = null;
+    targets.forEach(function (t) {
+      if (t.card_id === state.evoSelectedTargetId) picked = t;
+    });
+    if (!picked || picked.cost_pokedollars == null) return;
+    var pid = item.public_id;
+    state.evoInFlight = true;
+    updateEvoButton(item);
+    if (els.modalEvoMsg) els.modalEvoMsg.hidden = true;
+    apiFetch("/api/me/cards/" + encodeURIComponent(pid) + "/evolve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        target_card_id: picked.card_id,
+        expected_cost: picked.cost_pokedollars,
+      }),
+    })
+      .then(function (r) {
+        return r.json().then(function (data) {
+          return { ok: r.ok, status: r.status, data: data };
+        });
+      })
+      .then(function (res) {
+        state.evoInFlight = false;
+        var d = res.data || {};
+        if (res.ok && d.ok && d.card) {
+          state.modalItem = d.card;
+          applyModalCardFields(d.card);
+          renderEvolutionUi(d.card, { readonly: false });
+          if (els.modalEvoMsg) {
+            els.modalEvoMsg.hidden = false;
+            els.modalEvoMsg.className = "modal-evolve-msg is-ok";
+            els.modalEvoMsg.textContent =
+              "Evolved " +
+              (d.before_name || "card") +
+              " → " +
+              (d.card_name || (d.card.card && d.card.card.name) || "card") +
+              " for " +
+              fmtPd(d.cost_pokedollars) +
+              ". Balance: " +
+              fmtPd(d.new_balance_pokedollars);
+          }
+          if (state.activeTrade && state.activeTrade.id) {
+            loadTradeState(state.activeTrade.id);
+          }
+          return;
+        }
+        if (res.status === 409 && d.cost_pokedollars != null) {
+          refreshTradeModalDetail(state.modalItem);
+          if (els.modalEvoMsg) {
+            els.modalEvoMsg.hidden = false;
+            els.modalEvoMsg.className = "modal-evolve-msg is-error";
+            els.modalEvoMsg.textContent =
+              (d.message || "Cost updated.") + " New cost: " + fmtPd(d.cost_pokedollars);
+          }
+          return;
+        }
+        if (els.modalEvoMsg) {
+          els.modalEvoMsg.hidden = false;
+          els.modalEvoMsg.className = "modal-evolve-msg is-error";
+          els.modalEvoMsg.textContent = plainDiscordMsg(
+            d.reason || d.message || d.error || "Could not evolve."
+          );
+        }
+        updateEvoButton(state.modalItem);
+      })
+      .catch(function () {
+        state.evoInFlight = false;
+        if (els.modalEvoMsg) {
+          els.modalEvoMsg.hidden = false;
+          els.modalEvoMsg.className = "modal-evolve-msg is-error";
+          els.modalEvoMsg.textContent = "Network error — try again.";
+        }
+        updateEvoButton(state.modalItem);
+      });
   }
 
   function showLoadingUser() {
@@ -727,7 +985,7 @@
       hit.appendChild(sp);
       var modalItem = tradeModalItemFromSide(c);
       hit.onclick = function () {
-        if (modalItem) openTradeCardModal(modalItem);
+        if (modalItem) openTradeCardModal(modalItem, { allowEvolve: removable });
       };
       row.appendChild(hit);
       if (removable) {
@@ -925,6 +1183,11 @@
     if (els.modalCopyId && els.modalPid) {
       els.modalCopyId.addEventListener("click", function () {
         copyCardId(els.modalPid.textContent, els.modalCopyId);
+      });
+    }
+    if (els.modalEvoBtn) {
+      els.modalEvoBtn.addEventListener("click", function () {
+        commitEvolve();
       });
     }
 

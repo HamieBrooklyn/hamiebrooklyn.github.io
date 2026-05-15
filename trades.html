@@ -7,7 +7,7 @@
   <link rel="apple-touch-icon" href="assets/favicon.png" />
   <title>Trades — PokePon</title>
   <meta name="description" content="Trade cards, Pokedollars and Crystals with other players on PokePon." />
-  <link rel="stylesheet" href="assets/style.css?v=4" />
+  <link rel="stylesheet" href="assets/style.css?v=5" />
   <link rel="stylesheet" href="assets/trades.css?v=4" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -186,6 +186,20 @@
           </section>
 
           <p class="modal-obtained" id="modal-obtained"></p>
+
+          <section class="modal-evolve" id="modal-evolve-section" hidden aria-label="Evolution">
+            <h3 class="modal-evolve-heading">Evolution</h3>
+            <p class="modal-evolve-desc muted" id="modal-evo-desc">
+              Possible evolutions for this printing (view only).
+            </p>
+            <p class="modal-evolve-stages" id="modal-evo-stages"></p>
+            <p class="modal-evolve-block" id="modal-evo-block" hidden></p>
+            <div class="modal-evolve-targets" id="modal-evo-targets" role="list"></div>
+            <div class="modal-evolve-actions" id="modal-evo-actions" hidden>
+              <button type="button" class="btn btn-primary" id="modal-evo-btn" disabled>Evolve</button>
+            </div>
+            <p class="modal-evolve-msg" id="modal-evo-msg" hidden></p>
+          </section>
         </div>
       </div>
     </div>
@@ -211,6 +225,6 @@
       window.POKEPON_API_BASE = stored || fromMeta || "";
     })();
   </script>
-  <script src="assets/trades.js?v=8" defer></script>
+  <script src="assets/trades.js?v=9" defer></script>
 </body>
 </html>
