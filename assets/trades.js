@@ -35,6 +35,7 @@
     pollTimer: null,
     listTimer: null,
     pickerQuery: "",
+    pickerFavoritedOnly: false,
     pickerPage: 1,
     pickerTotal: 0,
     pickerDebounce: 0,
@@ -82,6 +83,7 @@
     theirCr: document.getElementById("their-cr"),
     theirReadyStatus: document.getElementById("their-ready-status"),
     pickerSearch: document.getElementById("picker-search"),
+    pickerFilterFavorited: document.getElementById("picker-filter-favorited"),
     pickerResults: document.getElementById("picker-results"),
     sidebarToggle: document.getElementById("sidebar-toggle"),
     sidebar: document.getElementById("sidebar"),
@@ -1027,6 +1029,7 @@
     qs.set("page_size", String(PICKER_PAGE_SIZE));
     qs.set("sort", "newest");
     if (state.pickerQuery) qs.set("q", state.pickerQuery);
+    if (state.pickerFavoritedOnly) qs.set("favorited", "1");
     return "/api/me/collection?" + qs.toString();
   }
 
@@ -1073,7 +1076,14 @@
     if (!els.pickerResults) return;
     els.pickerResults.innerHTML = "";
     if (!state.myCards.length) {
-      if (state.pickerQuery) {
+      if (state.pickerFavoritedOnly) {
+        els.pickerResults.innerHTML =
+          '<div class="trade-muted">' +
+          (state.pickerQuery
+            ? 'No favorited copies match "' + state.pickerQuery + '"'
+            : "You have no favorited copies.") +
+          "</div>";
+      } else if (state.pickerQuery) {
         els.pickerResults.innerHTML = '<div class="trade-muted">No cards match "' + state.pickerQuery + '"</div>';
       }
       return;
@@ -1082,9 +1092,12 @@
       var el = document.createElement("div");
       el.className = "picker-card";
       if (state.selectedCardIds.indexOf(c.instance_id) >= 0) el.classList.add("is-selected");
+      if (c.is_favorite) el.classList.add("is-favorite");
       var img = c.image_small_url ? '<img src="' + c.image_small_url + '" alt="" loading="lazy" />' : "";
-      el.innerHTML = img + "<div>" + (c.name || "Card") + "</div>";
+      var favMark = c.is_favorite ? '<span class="picker-fav" title="Favorited">⭐</span>' : "";
+      el.innerHTML = img + "<div>" + (c.name || "Card") + favMark + "</div>";
       el.onclick = function () {
+        if (c.is_favorite) return;
         if (state.selectedCardIds.indexOf(c.instance_id) >= 0) {
           removeCard(c.instance_id);
         } else {
@@ -1154,6 +1167,16 @@
     }
     if (els.btnSaveSide) els.btnSaveSide.addEventListener("click", saveSide);
     if (els.pickerSearch) els.pickerSearch.addEventListener("input", pickerSearchChanged);
+    if (els.pickerFilterFavorited) {
+      els.pickerFilterFavorited.addEventListener("click", function () {
+        state.pickerFavoritedOnly = !state.pickerFavoritedOnly;
+        var on = state.pickerFavoritedOnly;
+        els.pickerFilterFavorited.classList.toggle("is-active", on);
+        els.pickerFilterFavorited.setAttribute("aria-pressed", on ? "true" : "false");
+        state.pickerPage = 1;
+        loadMyCollection();
+      });
+    }
 
     document.addEventListener("click", function (e) {
       var t = e.target;

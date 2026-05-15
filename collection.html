@@ -103,11 +103,12 @@
           <button class="search-clear" type="button" id="search-clear" hidden aria-label="Clear search">×</button>
         </div>
 
-        <div class="toolbar-sort" role="group" aria-label="Sort">
+        <div class="toolbar-sort" role="group" aria-label="Sort and filter">
           <button class="chip" type="button" data-sort="newest" aria-pressed="true">Newest</button>
           <button class="chip" type="button" data-sort="rarity" aria-pressed="false">Most rare</button>
           <button class="chip" type="button" data-sort="hp" aria-pressed="false">Most HP</button>
           <button class="chip" type="button" data-sort="damage" aria-pressed="false">Most damage</button>
+          <button class="chip chip-filter" type="button" id="filter-favorited" aria-pressed="false">Favorites</button>
         </div>
       </section>
 
@@ -294,6 +295,6 @@
     })();
   </script>
   <script src="assets/evo-focus.js?v=3" defer></script>
-  <script src="assets/collection.js?v=9" defer></script>
+  <script src="assets/collection.js?v=10" defer></script>
 </body>
 </html>

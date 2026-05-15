@@ -133,6 +133,7 @@
     search: document.getElementById("search-input"),
     searchClear: document.getElementById("search-clear"),
     chips: Array.prototype.slice.call(document.querySelectorAll(".chip[data-sort]")),
+    filterFavoritedBtn: document.getElementById("filter-favorited"),
     status: document.getElementById("status"),
     grid: document.getElementById("card-grid"),
     pager: document.getElementById("pager"),
@@ -178,6 +179,7 @@
     pageSize: 60,
     sort: "newest",
     query: "",
+    filterFavorited: false,
     total: 0,
     items: [],
     inflight: null,
@@ -323,6 +325,7 @@
     qs.set("page_size", String(state.pageSize));
     qs.set("sort", state.sort);
     if (state.query) qs.set("q", state.query);
+    if (state.filterFavorited) qs.set("favorited", "1");
     return "/api/me/collection?" + qs.toString();
   }
 
@@ -380,11 +383,15 @@
       els.pager.hidden = true;
       setStatus(
         STATUS_KIND.EMPTY,
-        state.query
-          ? "No cards in your collection match <strong>" +
-              escapeHtml(state.query) +
-              "</strong>."
-          : "Your collection is empty. Run <code>pcd</code> in Discord to claim your first card."
+        state.filterFavorited
+          ? state.query
+            ? "No favorited copies match <strong>" + escapeHtml(state.query) + "</strong>."
+            : "You have no favorited copies yet. Star a card in your collection or with <code>cv c</code> in Discord."
+          : state.query
+            ? "No cards in your collection match <strong>" +
+                escapeHtml(state.query) +
+                "</strong>."
+            : "Your collection is empty. Run <code>pcd</code> in Discord to claim your first card."
       );
       return;
     }
@@ -394,6 +401,7 @@
         state.total.toLocaleString() +
         "</strong> card" +
         (state.total === 1 ? "" : "s") +
+        (state.filterFavorited ? " (favorites)" : "") +
         (state.query ? ' matching "' + escapeHtml(state.query) + '"' : "") +
         " · sorted by <strong>" +
         sortLabel(state.sort) +
@@ -910,6 +918,17 @@
     }
     els.search.focus();
   });
+
+  if (els.filterFavoritedBtn) {
+    els.filterFavoritedBtn.addEventListener("click", function () {
+      state.filterFavorited = !state.filterFavorited;
+      var on = state.filterFavorited;
+      els.filterFavoritedBtn.classList.toggle("is-active", on);
+      els.filterFavoritedBtn.setAttribute("aria-pressed", on ? "true" : "false");
+      state.page = 1;
+      loadCollection(false);
+    });
+  }
 
   els.chips.forEach(function (chip) {
     chip.addEventListener("click", function () {
