@@ -417,7 +417,7 @@
       clearInviteSuggestions();
       return;
     }
-    state.inviteSearchDebounce = setTimeout(fetchInviteUserSuggestions, 150);
+    state.inviteSearchDebounce = setTimeout(fetchInviteUserSuggestions, 55);
   }
 
   async function fetchInviteUserSuggestions() {
@@ -441,6 +441,9 @@
         return;
       }
       var j = await r.json();
+      if (inviteSearchQuery() !== raw) {
+        return;
+      }
       var users = j.users || [];
       els.inviteSuggestions.innerHTML = "";
       if (!users.length) {
