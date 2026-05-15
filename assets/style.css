@@ -1274,6 +1274,23 @@ main {
   align-items: center;
 }
 
+#modal-sell-btn.btn-primary {
+  background: #dc2626;
+  color: #fff !important;
+}
+
+#modal-sell-btn.btn-primary:hover:not(:disabled) {
+  background: #ef4444;
+  transform: translateY(-1px);
+}
+
+#modal-sell-btn.btn-primary:disabled {
+  background: #7f1d1d;
+  color: rgba(255, 255, 255, 0.55) !important;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .modal-sell-msg {
   margin: 0.55rem 0 0;
   font-size: 0.84rem;
