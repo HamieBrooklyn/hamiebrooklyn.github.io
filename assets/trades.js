@@ -70,6 +70,7 @@
     roomMsg: document.getElementById("trade-room-msg"),
     btnReady: document.getElementById("btn-ready"),
     btnCancelTrade: document.getElementById("btn-cancel-trade"),
+    btnLeaveTrade: document.getElementById("btn-leave-trade"),
     sideMineCards: document.getElementById("side-mine-cards"),
     sideTheirsCards: document.getElementById("side-theirs-cards"),
     sideMineLabel: document.getElementById("side-mine-label"),
@@ -835,6 +836,7 @@
 
   // ---- Trade room ----
   async function enterRoom(id) {
+    document.body.classList.add("trade-room-active");
     els.listSection.hidden = true;
     els.inviteSection.hidden = true;
     els.room.hidden = false;
@@ -845,6 +847,7 @@
   }
 
   function leaveRoom() {
+    document.body.classList.remove("trade-room-active");
     stopPolling();
     state.activeTrade = null;
     state.selectedCardIds = [];
@@ -1079,22 +1082,15 @@
       var el = document.createElement("div");
       el.className = "picker-card";
       if (state.selectedCardIds.indexOf(c.instance_id) >= 0) el.classList.add("is-selected");
-      if (c.is_favorite) el.classList.add("is-favorite");
       var img = c.image_small_url ? '<img src="' + c.image_small_url + '" alt="" loading="lazy" />' : "";
-      var label = (c.name || "Card") + (c.is_favorite ? ' <span class="picker-fav">⭐</span>' : "");
-      el.innerHTML = img + "<div>" + label + "</div>";
-      if (c.is_favorite || c.blocked_reason) {
-        el.title = c.blocked_reason || "Favorited — cannot trade";
-        el.setAttribute("aria-disabled", "true");
-      } else {
-        el.onclick = function () {
-          if (state.selectedCardIds.indexOf(c.instance_id) >= 0) {
-            removeCard(c.instance_id);
-          } else {
-            addCard(c.instance_id);
-          }
-        };
-      }
+      el.innerHTML = img + "<div>" + (c.name || "Card") + "</div>";
+      el.onclick = function () {
+        if (state.selectedCardIds.indexOf(c.instance_id) >= 0) {
+          removeCard(c.instance_id);
+        } else {
+          addCard(c.instance_id);
+        }
+      };
       els.pickerResults.appendChild(el);
     });
     var totalPages = Math.max(1, Math.ceil(state.pickerTotal / PICKER_PAGE_SIZE));
@@ -1151,6 +1147,11 @@
     if (els.btnCancelTrade) els.btnCancelTrade.addEventListener("click", function () {
       if (state.activeTrade) cancelTrade(state.activeTrade.id);
     });
+    if (els.btnLeaveTrade) {
+      els.btnLeaveTrade.addEventListener("click", function () {
+        if (state.activeTrade) leaveRoom();
+      });
+    }
     if (els.btnSaveSide) els.btnSaveSide.addEventListener("click", saveSide);
     if (els.pickerSearch) els.pickerSearch.addEventListener("input", pickerSearchChanged);
 

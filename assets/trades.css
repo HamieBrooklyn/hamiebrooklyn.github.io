@@ -172,30 +172,164 @@
 }
 
 /* Trade room */
+body.trade-room-active .page-head,
+body.trade-room-active #trade-invite-section,
+body.trade-room-active #trade-list-section {
+  display: none;
+}
+
+body.trade-room-active .app-main {
+  padding-top: 0.25rem;
+}
+
 .trade-room-header {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border);
 }
 
-.trade-room-header h2 { margin: 0; }
+.trade-room-header-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.65rem 1rem;
+  min-width: 0;
+}
+
+.trade-room-back {
+  flex-shrink: 0;
+}
+
+.trade-room-header h2 { margin: 0; font-size: 1.15rem; }
 
 .trade-room-actions {
   display: flex;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
+.trade-offers-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: stretch;
+}
+
+@media (max-width: 760px) {
+  .trade-offers-compare {
+    grid-template-columns: 1fr;
+  }
+}
+
+.trade-offer-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+}
+
+.trade-offer-mine {
+  border-color: rgba(91, 140, 255, 0.35);
+}
+
+.trade-offer-theirs {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.trade-offer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.trade-offer-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.trade-offer-cards,
+.trade-side-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-content: flex-start;
+  min-height: 4.5rem;
+  max-height: min(28vh, 220px);
+  overflow-y: auto;
+  margin-bottom: 0.65rem;
+  padding: 0.35rem;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px dashed var(--border);
+}
+
+.trade-offer-currency {
+  margin-top: auto;
+  margin-bottom: 0;
+}
+
+.trade-picker-panel {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.trade-picker-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  border-bottom: 1px solid transparent;
+}
+
+.trade-picker-panel[open] .trade-picker-summary {
+  border-bottom-color: var(--border);
+}
+
+.trade-picker-summary::-webkit-details-marker {
+  display: none;
+}
+
+.trade-picker-summary::before {
+  content: "▸";
+  color: var(--accent);
+  transition: transform 0.15s ease;
+}
+
+.trade-picker-panel[open] .trade-picker-summary::before {
+  transform: rotate(90deg);
+}
+
+.trade-picker-panel .trade-card-picker {
+  padding: 0.85rem 1rem 1rem;
+}
+
+/* Legacy side blocks (picker moved out) */
 .trade-room-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.25rem;
-}
-
-@media (max-width: 680px) {
-  .trade-room-grid { grid-template-columns: 1fr; }
 }
 
 .trade-side {
@@ -208,14 +342,6 @@
 .trade-side h3 {
   margin: 0 0 0.75rem;
   font-size: 1rem;
-}
-
-.trade-side-cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  min-height: 3rem;
-  margin-bottom: 0.75rem;
 }
 
 .trade-card-chip {
@@ -299,7 +425,6 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: flex-end;
-  margin-bottom: 0.75rem;
 }
 
 .trade-currency-inputs input {
@@ -313,12 +438,6 @@
   margin-bottom: 0.5rem;
 }
 
-.trade-card-picker h4 {
-  margin: 0 0 0.5rem;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
 .trade-card-picker input {
   width: 100%;
   padding: 0.4rem 0.6rem;
@@ -327,14 +446,14 @@
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.65rem;
 }
 
 .picker-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
   gap: 0.4rem;
-  max-height: 300px;
+  max-height: min(42vh, 360px);
   overflow-y: auto;
 }
 
