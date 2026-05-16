@@ -1589,6 +1589,12 @@ main {
   color: #86efac;
 }
 
+.card-tile-img--slab,
+.modal-img--slab {
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.2);
+}
+
 .card-tile-grade {
   position: absolute;
   top: 0.45rem;

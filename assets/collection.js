@@ -197,6 +197,7 @@
     favoriteInFlight: false,
     gradeInFlight: false,
     modalSlabObjectUrl: null,
+    tileSlabUrls: {},
   };
 
   var modalHistory = { card: false, evo: false };
@@ -415,6 +416,7 @@
         "</strong>"
     );
 
+    revokeTileSlabUrls();
     var frag = document.createDocumentFragment();
     state.items.forEach(function (it, idx) {
       frag.appendChild(buildTile(it, idx));
@@ -508,9 +510,9 @@
     var img = document.createElement("img");
     img.loading = "lazy";
     img.decoding = "async";
-    img.src = card.image_small_url || card.image_large_url || "";
     img.alt = card.name || "Card";
     img.className = "card-tile-img";
+    setTileCardImage(img, item);
 
     var meta = document.createElement("div");
     meta.className = "card-tile-meta";
@@ -596,26 +598,81 @@
     }
   }
 
+  function revokeTileSlabUrls() {
+    var cache = state.tileSlabUrls || {};
+    Object.keys(cache).forEach(function (pid) {
+      try {
+        URL.revokeObjectURL(cache[pid]);
+      } catch (_) {}
+    });
+    state.tileSlabUrls = {};
+  }
+
+  function slabPathForItem(item) {
+    var g = item && item.grading;
+    if (!g || g.grade == null || !item.public_id) return null;
+    return g.slab_url || "/api/me/cards/" + encodeURIComponent(item.public_id) + "/slab";
+  }
+
+  function fetchSlabBlobUrl(path) {
+    return apiFetch(path)
+      .then(function (r) {
+        if (!r.ok) throw new Error("slab");
+        return r.blob();
+      })
+      .then(function (blob) {
+        return URL.createObjectURL(blob);
+      });
+  }
+
   function setModalCardImage(item) {
     revokeModalSlabUrl();
     var card = (item && item.card) || {};
-    var grading = item && item.grading;
-    if (grading && grading.grade && grading.slab_url) {
-      apiFetch(grading.slab_url)
-        .then(function (r) {
-          if (!r.ok) throw new Error("slab");
-          return r.blob();
-        })
-        .then(function (blob) {
-          state.modalSlabObjectUrl = URL.createObjectURL(blob);
-          els.modalImg.src = state.modalSlabObjectUrl;
+    var slabPath = slabPathForItem(item);
+    if (slabPath) {
+      fetchSlabBlobUrl(slabPath)
+        .then(function (url) {
+          state.modalSlabObjectUrl = url;
+          els.modalImg.src = url;
+          els.modalImg.classList.add("modal-img--slab");
         })
         .catch(function () {
+          els.modalImg.classList.remove("modal-img--slab");
           els.modalImg.src = card.image_large_url || card.image_small_url || "";
         });
     } else {
+      els.modalImg.classList.remove("modal-img--slab");
       els.modalImg.src = card.image_large_url || card.image_small_url || "";
     }
+  }
+
+  function setTileCardImage(img, item) {
+    var card = (item && item.card) || {};
+    var slabPath = slabPathForItem(item);
+    if (!slabPath) {
+      img.classList.remove("card-tile-img--slab");
+      img.src = card.image_small_url || card.image_large_url || "";
+      return;
+    }
+    var pid = item.public_id;
+    var cache = state.tileSlabUrls || {};
+    if (cache[pid]) {
+      img.classList.add("card-tile-img--slab");
+      img.src = cache[pid];
+      return;
+    }
+    img.classList.remove("card-tile-img--slab");
+    img.src = card.image_small_url || card.image_large_url || "";
+    fetchSlabBlobUrl(slabPath)
+      .then(function (url) {
+        if (!state.tileSlabUrls) state.tileSlabUrls = {};
+        state.tileSlabUrls[pid] = url;
+        if (img.isConnected) {
+          img.classList.add("card-tile-img--slab");
+          img.src = url;
+        }
+      })
+      .catch(function () {});
   }
 
   function renderGradeUi(item) {
@@ -689,6 +746,7 @@
           renderSellUi(d.card);
           renderEvolutionUi(d.card);
           renderFavoriteBtn(d.card);
+          loadCollection(false);
           return;
         }
         if (els.modalGradeMsg) {
@@ -734,6 +792,7 @@
           renderSellUi(d.card);
           renderEvolutionUi(d.card);
           renderFavoriteBtn(d.card);
+          loadCollection(false);
           return;
         }
         if (els.modalGradeMsg) {
