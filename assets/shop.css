@@ -143,22 +143,20 @@
 .shop-grid-compact {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1.1rem;
 }
 
 .shop-pack {
-  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: auto auto auto;
-  gap: 0.2rem 1.15rem;
-  padding: 1rem 1rem 1rem 0.9rem;
-  padding-top: 1.15rem;
-  min-height: 4.75rem;
+  grid-auto-rows: auto;
+  gap: 0.3rem 1.25rem;
+  padding: 1rem 1.1rem;
+  min-height: 4.5rem;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--bg-elev);
-  align-items: center;
+  align-items: start;
 }
 
 .shop-pack-crystals {
@@ -174,24 +172,19 @@
 }
 
 .shop-pack-badge {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.85rem;
-  right: auto;
-  font-size: 0.6rem;
+  grid-column: 1;
+  position: static;
+  justify-self: start;
+  margin: 0 0 0.15rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 0.2rem 0.5rem;
+  padding: 0.22rem 0.55rem;
   border-radius: 999px;
   background: rgba(251, 191, 36, 0.2);
   color: #fde68a;
-  z-index: 1;
-}
-
-.shop-pack.is-popular .shop-pack-price,
-.shop-pack.is-best_value .shop-pack-price {
-  margin-top: 0.15rem;
+  line-height: 1.2;
 }
 
 .shop-pack.is-best_value .shop-pack-badge {
@@ -201,22 +194,22 @@
 
 .shop-pack-price {
   grid-column: 1;
-  grid-row: 1;
   font-family: var(--mono);
   font-size: 1.1rem;
   font-weight: 700;
   color: #fde68a;
   margin: 0;
+  line-height: 1.25;
 }
 
 .shop-pack-grant {
   grid-column: 1;
-  grid-row: 2;
   font-family: var(--mono);
   font-size: 0.95rem;
   font-weight: 600;
   margin: 0;
   color: var(--text);
+  line-height: 1.3;
 }
 
 .shop-pack-crystals .shop-pack-grant {
@@ -225,11 +218,11 @@
 
 .shop-pack-title {
   grid-column: 1;
-  grid-row: 3;
   font-size: 0.78rem;
   font-weight: 600;
   margin: 0;
   color: var(--muted);
+  line-height: 1.35;
 }
 
 .shop-pack-desc {
@@ -238,7 +231,7 @@
 
 .shop-pack .btn {
   grid-column: 2;
-  grid-row: 1 / span 3;
+  grid-row: 1 / -1;
   align-self: center;
   justify-self: end;
   min-width: 6.25rem;
