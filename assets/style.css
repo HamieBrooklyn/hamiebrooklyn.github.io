@@ -1533,11 +1533,18 @@ main {
   color: #86efac;
 }
 
-.modal-grade {
+.modal-footer .modal-sell:first-child {
   margin-top: 0;
   padding-top: 0;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border);
+  border-top: none;
+}
+
+.modal-footer .modal-grade {
+  margin-top: 0;
+  padding-top: 0.85rem;
+  padding-bottom: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: none;
 }
 
 .modal-grade-heading {
