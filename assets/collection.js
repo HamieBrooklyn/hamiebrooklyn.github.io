@@ -189,6 +189,7 @@
     total: 0,
     items: [],
     sections: [],
+    sectionsInflight: null,
     inflight: null,
     searchDebounce: 0,
     modalItem: null,
@@ -343,6 +344,48 @@
     return "/api/me/collection?" + qs.toString();
   }
 
+  function buildEvolutionSectionsPath() {
+    var qs = new URLSearchParams();
+    qs.set("page_size", String(state.pageSize));
+    qs.set("sort", state.sort);
+    qs.set("q", state.query);
+    if (state.filterFavorited) qs.set("favorited", "1");
+    return "/api/me/collection/evolution-sections?" + qs.toString();
+  }
+
+  function loadEvolutionSections() {
+    if (!state.authenticated || !state.query || state.page !== 1) {
+      state.sections = [];
+      if (els.evoSections) {
+        els.evoSections.innerHTML = "";
+        els.evoSections.hidden = true;
+      }
+      return;
+    }
+    if (state.sectionsInflight) state.sectionsInflight.abort();
+    var ctrl = new AbortController();
+    state.sectionsInflight = ctrl;
+    apiFetch(buildEvolutionSectionsPath(), { signal: ctrl.signal })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (body) {
+        state.sectionsInflight = null;
+        if ((body.query || "") !== state.query || state.page !== 1) return;
+        state.sections = Array.isArray(body.sections) ? body.sections : [];
+        renderEvolutionSections();
+        if (state.total === 0 && hasEvolutionSections()) {
+          els.pager.hidden = true;
+          setStatus(STATUS_KIND.INFO, "No exact name match — see evolution lines below.");
+        }
+      })
+      .catch(function (err) {
+        if (err.name === "AbortError") return;
+        state.sectionsInflight = null;
+      });
+  }
+
   function loadCollection(scrollTop) {
     if (!state.authenticated) {
       renderUnauthenticated();
@@ -371,11 +414,12 @@
       .then(function (body) {
         state.inflight = null;
         state.items = Array.isArray(body.items) ? body.items : [];
-        state.sections = Array.isArray(body.sections) ? body.sections : [];
+        state.sections = [];
         state.total = Number(body.total) || 0;
         state.page = Number(body.page) || 1;
         state.pageSize = Number(body.page_size) || state.pageSize;
         renderCollection();
+        loadEvolutionSections();
         if (scrollTop) window.scrollTo({ top: 0, behavior: "smooth" });
       })
       .catch(function (err) {
@@ -911,6 +955,15 @@
     }
 
     if (sell.quote_pokedollars == null) {
+      if (sell.can_sell) {
+        els.modalSellQuote.textContent = "Loading sell quote…";
+        els.modalSellBtn.disabled = true;
+        els.modalSellBtn.textContent = "Sell to shop";
+        els.modalSellBack.hidden = true;
+        state.sellUiStep = 0;
+        updateModalFooter();
+        return;
+      }
       els.modalSellQuote.textContent = "Sell quote unavailable (missing rarity data).";
       els.modalSellBtn.disabled = true;
       els.modalSellBtn.textContent = "Cannot sell";
@@ -1204,7 +1257,7 @@
       state.query = value;
       state.page = 1;
       loadCollection(false);
-    }, 280);
+    }, 200);
   });
 
   els.searchClear.addEventListener("click", function () {

@@ -62,6 +62,7 @@
     pickerPage: 1,
     pickerTotal: 0,
     pickerSections: [],
+    pickerSectionsInflight: null,
     pickerDebounce: 0,
     pickerInflight: null,
     pickerCards: [],
@@ -495,6 +496,38 @@
     return "/api/me/collection?" + qs.toString();
   }
 
+  function buildPickerEvolutionSectionsPath() {
+    var qs = new URLSearchParams();
+    qs.set("page_size", String(PICKER_PAGE_SIZE));
+    qs.set("sort", "newest");
+    qs.set("q", state.pickerQuery);
+    if (state.pickerFavoritedOnly) qs.set("favorited", "1");
+    return "/api/me/collection/evolution-sections?" + qs.toString();
+  }
+
+  async function loadPickerEvolutionSections() {
+    if (!state.pickerQuery || state.pickerPage !== 1) {
+      state.pickerSections = [];
+      renderPickerEvoSections();
+      return;
+    }
+    if (state.pickerSectionsInflight) state.pickerSectionsInflight.abort();
+    var ctrl = new AbortController();
+    state.pickerSectionsInflight = ctrl;
+    try {
+      var r = await apiFetch(buildPickerEvolutionSectionsPath(), { signal: ctrl.signal });
+      if (!r.ok) return;
+      var j = await r.json();
+      state.pickerSectionsInflight = null;
+      if ((j.query || "") !== state.pickerQuery || state.pickerPage !== 1) return;
+      state.pickerSections = Array.isArray(j.sections) ? j.sections : [];
+      renderPickerEvoSections();
+    } catch (e) {
+      if (e.name === "AbortError") return;
+      state.pickerSectionsInflight = null;
+    }
+  }
+
   function updatePickerSelectedHint(card) {
     if (!els.pickerSelected) return;
     if (!state.selectedPublicId) {
@@ -539,8 +572,9 @@
         };
       });
       state.pickerTotal = Number(j.total) || 0;
-      state.pickerSections = Array.isArray(j.sections) ? j.sections : [];
+      state.pickerSections = [];
       renderPicker();
+      loadPickerEvolutionSections();
     } catch (e) {
       if (e.name === "AbortError") return;
       state.pickerInflight = null;
@@ -556,7 +590,7 @@
       state.pickerQuery = value;
       state.pickerPage = 1;
       loadPickerCollection();
-    }, 280);
+    }, 200);
   }
 
   function pickerHasEvoSections() {
@@ -580,7 +614,7 @@
   }
 
   function appendPickerCard(parent, c) {
-    var el = document.createElement("div");
+    var el = document.createElement("motion");
     el.className = "picker-card";
     if (state.selectedPublicId && c.public_id === state.selectedPublicId) {
       el.classList.add("is-selected");
@@ -749,10 +783,6 @@
             els.createMsg.innerHTML =
               '<div class="auction-msg-ok">Listed as auction #' + j.auction_id + "</div>";
           }
-          state.selectedPublicId = "";
-          if (els.createPid) els.createPid.value = "";
-          updatePickerSelectedHint(null);
-          await loadPickerCollection();
           await loadList();
         } catch (e) {
           if (els.createMsg) {

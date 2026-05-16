@@ -39,6 +39,7 @@
     pickerPage: 1,
     pickerTotal: 0,
     pickerSections: [],
+    pickerSectionsInflight: null,
     pickerDebounce: 0,
     pickerInflight: null,
     selectedPartnerId: null,
@@ -1098,6 +1099,38 @@
     return "/api/me/collection?" + qs.toString();
   }
 
+  function buildPickerEvolutionSectionsPath() {
+    var qs = new URLSearchParams();
+    qs.set("page_size", String(PICKER_PAGE_SIZE));
+    qs.set("sort", "newest");
+    qs.set("q", state.pickerQuery);
+    if (state.pickerFavoritedOnly) qs.set("favorited", "1");
+    return "/api/me/collection/evolution-sections?" + qs.toString();
+  }
+
+  async function loadPickerEvolutionSections() {
+    if (!state.pickerQuery || state.pickerPage !== 1) {
+      state.pickerSections = [];
+      renderPickerEvoSections();
+      return;
+    }
+    if (state.pickerSectionsInflight) state.pickerSectionsInflight.abort();
+    var ctrl = new AbortController();
+    state.pickerSectionsInflight = ctrl;
+    try {
+      var r = await apiFetch(buildPickerEvolutionSectionsPath(), { signal: ctrl.signal });
+      if (!r.ok) return;
+      var j = await r.json();
+      state.pickerSectionsInflight = null;
+      if ((j.query || "") !== state.pickerQuery || state.pickerPage !== 1) return;
+      state.pickerSections = Array.isArray(j.sections) ? j.sections : [];
+      renderPickerEvoSections();
+    } catch (e) {
+      if (e.name === "AbortError") return;
+      state.pickerSectionsInflight = null;
+    }
+  }
+
   async function loadMyCollection() {
     if (state.pickerInflight) { state.pickerInflight.abort(); }
     var ctrl = new AbortController();
@@ -1119,8 +1152,9 @@
         };
       });
       state.pickerTotal = Number(j.total) || 0;
-      state.pickerSections = Array.isArray(j.sections) ? j.sections : [];
+      state.pickerSections = [];
       renderPicker();
+      loadPickerEvolutionSections();
     } catch (e) {
       if (e.name === "AbortError") return;
       state.pickerInflight = null;
@@ -1135,7 +1169,7 @@
       state.pickerQuery = value;
       state.pickerPage = 1;
       loadMyCollection();
-    }, 280);
+    }, 200);
   }
 
   function pickerHasEvoSections() {
@@ -1227,7 +1261,7 @@
       } else if (state.pickerQuery) {
         if (!pickerHasEvoSections()) {
           els.pickerResults.innerHTML =
-            '<div class="trade-muted">No cards match "' + state.pickerQuery + '"</motion>';
+            '<div class="trade-muted">No cards match "' + state.pickerQuery + '"</div>';
         }
       }
       renderPickerEvoSections();
