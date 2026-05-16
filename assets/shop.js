@@ -159,24 +159,27 @@
     var disabled = !item.available;
     var btnLabel = state.authenticated
       ? disabled
-        ? "Coming soon"
-        : "Buy now"
-      : "Sign in to buy";
+        ? "Soon"
+        : "Buy"
+      : "Sign in";
+    var priceHtml = "";
+    if (item.price && item.price.display) {
+      priceHtml =
+        '<p class="shop-pack-price">' + escapeHtml(item.price.display) + "</p>";
+    }
 
     return (
       '<article class="shop-pack' +
       extraClass +
       '">' +
       badge +
+      priceHtml +
       '<p class="shop-pack-grant">' +
       escapeHtml(item.grant_label) +
       "</p>" +
       '<h3 class="shop-pack-title">' +
       escapeHtml(item.title) +
       "</h3>" +
-      '<p class="shop-pack-desc">' +
-      escapeHtml(item.description) +
-      "</p>" +
       '<button type="button" class="btn btn-primary shop-buy-btn" data-sku="' +
       escapeHtml(item.id) +
       '"' +

@@ -7,27 +7,42 @@
   <link rel="apple-touch-icon" href="assets/favicon.png" />
   <title>PokePon — Discord bot</title>
   <meta name="description" content="PokePon: Pokémon TCG gacha, collection, trades, duels, and auctions on Discord." />
-  <link rel="stylesheet" href="assets/style.css?v=18" />
+  <link rel="stylesheet" href="assets/style.css?v=19" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
 </head>
 <body>
   <div class="bg-grid"></div>
-  <header class="site-header">
-    <a class="logo" href="./">PokePon</a>
-    <nav class="nav">
-      <a href="/collection/">Collection</a>
-      <a href="/deck/">Deck Editor</a>
-      <a href="/auctions/">Auctions</a>
-      <a href="/leaderboard/">Leaderboards</a>
-      <a href="/shop/">Shop</a>
-      <a href="https://top.gg/bot/1496227239803748362/vote" target="_blank" rel="noopener noreferrer">Vote</a>
-      <a href="https://discord.gg/fzmTA894We" target="_blank" rel="noopener noreferrer">Discord</a>
-      <a href="#player-guide">Player guide</a>
-      <a href="/terms/">Terms of Service</a>
-      <a href="/privacy/">Privacy Policy</a>
-      <a class="nav-cta" href="https://github.com/HamieBrooklyn/Poke-Cards" target="_blank" rel="noopener noreferrer">GitHub</a>
+  <header class="site-header site-header-home">
+    <div class="site-header-row">
+      <a class="logo" href="./">PokePon</a>
+      <div class="site-header-cta">
+        <a class="btn btn-ghost btn-small" href="https://discord.gg/fzmTA894We" target="_blank" rel="noopener noreferrer">Join Discord</a>
+        <a class="btn btn-primary btn-small" href="https://top.gg/bot/1496227239803748362/vote" target="_blank" rel="noopener noreferrer">Vote on Top.gg</a>
+      </div>
+    </div>
+    <nav class="home-nav" aria-label="Site sections">
+      <div class="home-nav-group">
+        <span class="home-nav-label">Web app</span>
+        <div class="home-nav-links">
+          <a href="/collection/">Collection</a>
+          <a href="/deck/">Deck</a>
+          <a href="/trades/">Trades</a>
+          <a href="/auctions/">Auctions</a>
+          <a href="/leaderboard/">Leaderboards</a>
+          <a href="/shop/">Shop</a>
+        </div>
+      </div>
+      <details class="home-nav-more">
+        <summary>More</summary>
+        <div class="home-nav-more-menu">
+          <a href="#player-guide">Player guide</a>
+          <a href="/terms/">Terms</a>
+          <a href="/privacy/">Privacy</a>
+          <a href="https://github.com/HamieBrooklyn/Poke-Cards" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
+      </details>
     </nav>
   </header>
 
@@ -40,8 +55,42 @@
       </p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="https://discord.com/oauth2/authorize?client_id=YOUR_APPLICATION_ID&permissions=277025508416&scope=bot%20applications.commands" target="_blank" rel="noopener noreferrer">Add to Discord</a>
-        <a class="btn btn-ghost" href="https://github.com/HamieBrooklyn/Poke-Cards" target="_blank" rel="noopener noreferrer">Source &amp; self-host</a>
+        <a class="btn btn-ghost" href="/collection/">Open web app</a>
+        <a class="btn btn-ghost" href="https://github.com/HamieBrooklyn/Poke-Cards" target="_blank" rel="noopener noreferrer">Source</a>
       </div>
+
+      <section class="home-features" aria-label="Website tools">
+        <a class="home-feature-card" href="/collection/">
+          <span class="home-feature-icon" aria-hidden="true">▣</span>
+          <h3>Collection</h3>
+          <p>Search your binder, sell to the shop, grade cards.</p>
+        </a>
+        <a class="home-feature-card" href="/deck/">
+          <span class="home-feature-icon" aria-hidden="true">⚔</span>
+          <h3>Deck editor</h3>
+          <p>Build duel decks with drag-and-drop.</p>
+        </a>
+        <a class="home-feature-card" href="/trades/">
+          <span class="home-feature-icon" aria-hidden="true">⇄</span>
+          <h3>Trades</h3>
+          <p>Trade cards and currency with other players.</p>
+        </a>
+        <a class="home-feature-card" href="/auctions/">
+          <span class="home-feature-icon" aria-hidden="true">⚖</span>
+          <h3>Auctions</h3>
+          <p>Bid on listings in ₽ or Crystals.</p>
+        </a>
+        <a class="home-feature-card" href="/leaderboard/">
+          <span class="home-feature-icon" aria-hidden="true">★</span>
+          <h3>Leaderboards</h3>
+          <p>Global rankings for stats and sales.</p>
+        </a>
+        <a class="home-feature-card home-feature-card-shop" href="/shop/">
+          <span class="home-feature-icon" aria-hidden="true">◆</span>
+          <h3>Shop</h3>
+          <p>Top up Pokedollars and Crystals via Stripe.</p>
+        </a>
+      </section>
       <p class="hero-note">
         Replace the invite URL’s <code>client_id</code> with your application’s ID from the
         <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer">Discord Developer Portal</a>.

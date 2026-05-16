@@ -7,8 +7,8 @@
   <link rel="apple-touch-icon" href="/assets/favicon.png" />
   <title>Shop — PokePon</title>
   <meta name="description" content="Buy PokePon Pokedollars and Crystals securely with Stripe. Instant delivery to your Discord-linked account." />
-  <link rel="stylesheet" href="/assets/style.css?v=18" />
-  <link rel="stylesheet" href="/assets/shop.css?v=1" />
+  <link rel="stylesheet" href="/assets/style.css?v=19" />
+  <link rel="stylesheet" href="/assets/shop.css?v=2" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -113,12 +113,11 @@
     </aside>
 
     <main class="app-main">
-      <header class="page-head shop-hero">
+      <header class="page-head shop-hero shop-hero-compact">
         <p class="hero-kicker">Top up</p>
-        <h1>PokePon Shop</h1>
-        <p class="page-lead">
-          Secure checkout powered by <strong>Stripe</strong>. Pokedollars and Crystals land in your
-          collection account seconds after payment — use them in Discord and on the site.
+        <h1>Shop</h1>
+        <p class="page-lead shop-hero-lead">
+          Stripe checkout · instant delivery to your Discord account
         </p>
       </header>
 
@@ -141,23 +140,21 @@
         </div>
       </section>
 
-      <p class="shop-status" id="shop-status" aria-live="polite"></p>
+            <div class="shop-layout">
+        <section class="shop-column" aria-labelledby="shop-pd-heading">
+          <h2 class="shop-column-title" id="shop-pd-heading">
+            <span class="shop-section-icon" aria-hidden="true">₽</span> Pokedollars
+          </h2>
+          <div class="shop-grid shop-grid-compact" id="shop-grid-pd" aria-live="polite"></div>
+        </section>
 
-      <section class="shop-section" aria-labelledby="shop-pd-heading">
-        <h2 class="shop-section-title" id="shop-pd-heading">
-          <span class="shop-section-icon" aria-hidden="true">₽</span> Pokedollars
-        </h2>
-        <p class="shop-section-lead">Fuel packs, auctions, duels, and the in-game economy.</p>
-        <div class="shop-grid" id="shop-grid-pd" aria-live="polite"></div>
-      </section>
-
-      <section class="shop-section" aria-labelledby="shop-cr-heading">
-        <h2 class="shop-section-title" id="shop-cr-heading">
-          <span class="shop-section-icon shop-section-icon-crystal" aria-hidden="true">💎</span> Crystals
-        </h2>
-        <p class="shop-section-lead">Premium currency for crystal packs, grading, and special buys.</p>
-        <div class="shop-grid" id="shop-grid-cr" aria-live="polite"></div>
-      </section>
+        <section class="shop-column" aria-labelledby="shop-cr-heading">
+          <h2 class="shop-column-title" id="shop-cr-heading">
+            <span class="shop-section-icon shop-section-icon-crystal" aria-hidden="true">💎</span> Crystals
+          </h2>
+          <div class="shop-grid shop-grid-compact" id="shop-grid-cr" aria-live="polite"></div>
+        </section>
+      </div>
 
       <p class="shop-footnote muted">
         Virtual goods only — no cash value or refunds unless required by law. By purchasing you agree to our
@@ -203,6 +200,6 @@
     })();
   </script>
   <script src="/assets/app-shell.js?v=1" defer></script>
-  <script src="/assets/shop.js?v=1" defer></script>
+  <script src="/assets/shop.js?v=2" defer></script>
 </body>
 </html>
