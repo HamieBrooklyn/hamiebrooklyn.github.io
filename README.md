@@ -5,7 +5,7 @@ Static site for **PokePon** (landing + legal). Deploy as a [GitHub Pages](https:
 ## Publish
 
 1. Create or use the repo `HamieBrooklyn/hamiebrooklyn.github.io`.
-2. Copy the contents of this folder to the **root** of that repository (`index.html`, `collection/`, `deck/`, `trades/`, `auctions/`, `terms/`, `privacy/`, `assets/`, …).
+2. Copy the contents of this folder to the **root** of that repository (`index.html`, `guide.html`, `terms.html`, `privacy.html`, `assets/`).
 3. In the repo **Settings → Pages**, set Source to **Deploy from branch** (usually `main` / root).
 4. Update **`index.html`**: replace `YOUR_APPLICATION_ID` in the Discord invite URL with your app’s client ID.
 
@@ -17,7 +17,7 @@ After DNS propagates, the site will be available at `https://hamiebrooklyn.githu
 
 ## Collection HTTP API (website)
 
-The [collection binder](https://hamiebrooklyn.github.io/collection/) talks to the **running bot** (`WEB_PORT` + OAuth + session cookie). Deploy [Poke-Cards](https://github.com/HamieBrooklyn/Poke-Cards) **master** with the collection sell API ([`97c5d1f`](https://github.com/HamieBrooklyn/Poke-Cards/commit/97c5d1f) or newer).
+The [collection binder](https://hamiebrooklyn.github.io/collection.html) talks to the **running bot** (`WEB_PORT` + OAuth + session cookie). Deploy [Poke-Cards](https://github.com/HamieBrooklyn/Poke-Cards) **master** with the collection sell API ([`97c5d1f`](https://github.com/HamieBrooklyn/Poke-Cards/commit/97c5d1f) or newer).
 
 | Method | Path | Purpose |
 |--------|------|---------|
@@ -29,16 +29,4 @@ Configure the page’s **`pokepon-api-base`** meta tag (or `?api=` override) to 
 
 ## Legal
 
-`terms/` and `privacy/` are templates for a Discord bot. Review and adjust with your counsel before relying on them in production.
-
-## Clean URLs and custom domain
-
-App pages use folder URLs (no `.html` in the address bar), e.g. `/collection/`, `/deck/`. Old `*.html` links redirect automatically.
-
-To use your own domain (e.g. `pokepon.app`):
-
-1. Buy the name at a registrar (check availability on [Namecheap](https://www.namecheap.com) or [Cloudflare Registrar](https://www.cloudflare.com/products/registrar/)).
-2. Copy `CNAME.example` to `CNAME` in the repo root and set the domain inside (one line, no `https://`).
-3. Point DNS: `CNAME` record `@` or `www` → `hamiebrooklyn.github.io` (GitHub’s [custom domain docs](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site)).
-4. In repo **Settings → Pages**, enable **Enforce HTTPS** after DNS verifies.
-5. Update the bot’s `WEB_ALLOWED_ORIGINS` and `WEB_FRONTEND_URL` to `https://your-domain/collection/`.
+`terms.html` and `privacy.html` are templates for a Discord bot. Review and adjust with your counsel before relying on them in production.

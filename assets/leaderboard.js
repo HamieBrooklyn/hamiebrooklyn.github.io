@@ -8,22 +8,23 @@
   }
 
   var SESSION_KEY = "pokepon-session";
+  var TOPGG_VOTE_URL = "https://top.gg/bot/1496227239803748362/vote";
 
   var CATEGORY_META = {
     strongest: {
-      lead: "Players ranked by the highest attack damage on any card they own.",
+      lead: "Players ranked by the highest attack damage on any card they own. Tap a player to preview their card.",
       icon: "⚡",
     },
     tankiest: {
-      lead: "Players ranked by the highest HP on any Pokémon they own.",
+      lead: "Players ranked by the highest HP on any Pokémon they own. Tap a player to preview their card.",
       icon: "❤",
     },
     rarest: {
-      lead: "Players ranked by their rarest owned card (by rarity tier).",
+      lead: "Players ranked by their rarest owned card. Tap a player to preview that card.",
       icon: "✦",
     },
     auction: {
-      lead: "Individual completed auction sales, highest final bids first.",
+      lead: "Completed auction sales — tap a seller to preview the card that sold.",
       icon: "₽",
     },
   };
@@ -88,9 +89,20 @@
   }
 
   function defaultAvatar() {
-    return "data:image/svg+xml," + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect fill="#1e293b" width="64" height="64"/><circle cx="32" cy="24" r="12" fill="#64748b"/><path fill="#64748b" d="M8 58c4-14 16-20 24-20s20 6 24 20z"/></svg>'
+    return (
+      "data:image/svg+xml," +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect fill="#1e293b" width="64" height="64"/><circle cx="32" cy="24" r="12" fill="#64748b"/><path fill="#64748b" d="M8 58c4-14 16-20 24-20s20 6 24 20z"/></svg>'
+      )
     );
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
   var state = {
@@ -99,11 +111,13 @@
     me: null,
     authenticated: false,
     inflight: null,
+    entriesByRank: {},
   };
 
   var els = {
     title: document.getElementById("lb-title"),
     lead: document.getElementById("lb-lead"),
+    previewHint: document.getElementById("lb-preview-hint"),
     viewerRank: document.getElementById("lb-viewer-rank"),
     status: document.getElementById("lb-status"),
     podium: document.getElementById("lb-podium"),
@@ -118,7 +132,37 @@
     userName: document.getElementById("user-name"),
     btnLogin: document.getElementById("btn-login"),
     btnLogout: document.getElementById("btn-logout"),
+    cardModal: document.getElementById("lb-card-modal"),
+    modalImg: document.getElementById("lb-modal-img"),
+    modalSet: document.getElementById("lb-modal-set"),
+    modalTitle: document.getElementById("lb-modal-title"),
+    modalRarity: document.getElementById("lb-modal-rarity"),
+    modalPlayer: document.getElementById("lb-modal-player"),
+    modalHp: document.getElementById("lb-modal-hp"),
+    modalStat: document.getElementById("lb-modal-stat"),
   };
+
+  function hasCardPreview(entry) {
+    return !!(entry && entry.card && (entry.card.image_large_url || entry.card.image_small_url));
+  }
+
+  function userBlockHtml(user, extraClass) {
+    var cls = "lb-user" + (extraClass ? " " + extraClass : "");
+    return (
+      '<div class="' +
+      cls +
+      '">' +
+      '<img class="lb-avatar" src="' +
+      (user.avatar_url || defaultAvatar()) +
+      '" alt="" loading="lazy" />' +
+      '<div class="lb-user-text">' +
+      '<div class="lb-display-name">' +
+      escapeHtml(displayName(user)) +
+      "</div>" +
+      "</div>" +
+      "</div>"
+    );
+  }
 
   function setSidebarState(mode) {
     if (!els.sidebarUser) return;
@@ -165,6 +209,9 @@
     });
     var meta = CATEGORY_META[state.category];
     if (els.lead && meta) els.lead.textContent = meta.lead;
+    if (els.previewHint) {
+      els.previewHint.hidden = false;
+    }
   }
 
   function setStatus(text, isError) {
@@ -186,6 +233,17 @@
     return "";
   }
 
+  function clickableAttrs(entry) {
+    if (!hasCardPreview(entry)) return "";
+    return (
+      ' data-lb-rank="' +
+      entry.rank +
+      '" tabindex="0" role="button" aria-label="View ' +
+      escapeHtml(entry.card_name || "card") +
+      '"'
+    );
+  }
+
   function renderPodium(entries) {
     if (!els.podium) return;
     var top = entries.filter(function (e) {
@@ -205,10 +263,14 @@
       if (!entry) return;
       var user = entry.user || {};
       var sc = statClass(entry);
+      var clickCls = hasCardPreview(entry) ? " lb-user-clickable" : "";
       html +=
         '<article class="lb-podium-card rank-' +
         rank +
-        '">' +
+        clickCls +
+        '"' +
+        clickableAttrs(entry) +
+        ">" +
         '<div class="lb-podium-medal">' +
         medalForRank(rank) +
         "</div>" +
@@ -232,14 +294,6 @@
     els.podium.hidden = !html;
   }
 
-  function escapeHtml(s) {
-    return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
   function renderList(entries) {
     if (!els.list) return;
     var meId = state.me && state.me.id ? String(state.me.id) : "";
@@ -258,6 +312,7 @@
         var user = entry.user || {};
         var isViewer = meId && String(user.id) === meId;
         var sc = statClass(entry);
+        var clickCls = hasCardPreview(entry) ? " lb-user-clickable" : "";
         return (
           '<li class="lb-row' +
           (isViewer ? " is-viewer" : "") +
@@ -267,7 +322,11 @@
           '">' +
           entry.rank +
           "</span>" +
-          '<div class="lb-user">' +
+          '<div class="lb-user' +
+          clickCls +
+          '"' +
+          clickableAttrs(entry) +
+          ">" +
           '<img class="lb-avatar" src="' +
           (user.avatar_url || defaultAvatar()) +
           '" alt="" loading="lazy" />' +
@@ -324,11 +383,87 @@
     }
   }
 
+  function indexEntries(entries) {
+    state.entriesByRank = {};
+    (entries || []).forEach(function (e) {
+      state.entriesByRank[e.rank] = e;
+    });
+  }
+
+  function openCardModal(entry) {
+    if (!els.cardModal || !entry || !entry.card) return;
+    var card = entry.card;
+    var img =
+      card.image_large_url || card.image_small_url || "";
+    if (els.modalImg) {
+      els.modalImg.src = img;
+      els.modalImg.alt = card.name || "Card";
+    }
+    if (els.modalSet) {
+      var setBits = [card.set_name, card.set_code, card.collector_number]
+        .filter(Boolean)
+        .join(" · ");
+      els.modalSet.textContent = setBits || "";
+      els.modalSet.hidden = !setBits;
+    }
+    if (els.modalTitle) els.modalTitle.textContent = card.name || entry.card_name || "—";
+    if (els.modalRarity) {
+      var rLabel = card.rarity_display || card.tcg_rarity || "";
+      els.modalRarity.textContent = rLabel;
+      els.modalRarity.className = "modal-rarity " + rarityClass(rLabel);
+      els.modalRarity.hidden = !rLabel;
+    }
+    if (els.modalPlayer) {
+      var label =
+        state.category === "auction"
+          ? "Sold by " + displayName(entry.user)
+          : "Leading card for " + displayName(entry.user);
+      els.modalPlayer.textContent = label;
+    }
+    if (els.modalHp) els.modalHp.textContent = card.hp || "—";
+    if (els.modalStat) {
+      els.modalStat.textContent = (entry.stat && entry.stat.label) || "—";
+    }
+    els.cardModal.hidden = false;
+    els.cardModal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+  }
+
+  function closeCardModal() {
+    if (!els.cardModal) return;
+    els.cardModal.hidden = true;
+    els.cardModal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+  }
+
+  function onEntryActivate(rank) {
+    var entry = state.entriesByRank[rank];
+    if (entry && hasCardPreview(entry)) openCardModal(entry);
+  }
+
+  function bindEntryClicks(root) {
+    if (!root) return;
+    root.querySelectorAll("[data-lb-rank]").forEach(function (node) {
+      node.addEventListener("click", function () {
+        onEntryActivate(parseInt(node.getAttribute("data-lb-rank"), 10));
+      });
+      node.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onEntryActivate(parseInt(node.getAttribute("data-lb-rank"), 10));
+        }
+      });
+    });
+  }
+
   function render(data) {
     if (els.title && data.title) els.title.textContent = data.title;
+    indexEntries(data.entries || []);
     renderViewerRank(data);
     renderPodium(data.entries || []);
     renderList(data.entries || []);
+    bindEntryClicks(els.podium);
+    bindEntryClicks(els.list);
     renderPager(data);
     if (!data.total) {
       setStatus(
@@ -377,6 +512,7 @@
     setStatus("Loading rankings…");
     setActiveTab();
     syncUrl();
+    closeCardModal();
 
     var path =
       "/api/leaderboards?category=" +
@@ -463,6 +599,18 @@
         loadLeaderboard();
       });
     }
+
+    if (els.cardModal) {
+      els.cardModal.querySelectorAll("[data-lb-close]").forEach(function (node) {
+        node.addEventListener("click", closeCardModal);
+      });
+    }
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && els.cardModal && !els.cardModal.hidden) {
+        closeCardModal();
+      }
+    });
   }
 
   async function init() {

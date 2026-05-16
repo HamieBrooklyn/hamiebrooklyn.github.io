@@ -3,12 +3,279 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="canonical" href="https://hamiebrooklyn.github.io/trades/" />
-  <meta http-equiv="refresh" content="0; url=/trades/" />
-  <title>Redirecting…</title>
-  <script>location.replace("/trades/");</script>
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/favicon.png" />
+  <title>Trades — PokePon</title>
+  <meta name="description" content="Trade cards, Pokedollars and Crystals with other players on PokePon." />
+  <link rel="stylesheet" href="assets/style.css?v=18" />
+  <link rel="stylesheet" href="assets/trades.css?v=8" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
 </head>
-<body>
-  <p>Redirecting… <a href="/trades/">Continue</a></p>
+<body class="app-body">
+  <div class="bg-grid"></div>
+
+  <div class="app-shell" id="app">
+    <aside class="sidebar" id="sidebar" aria-label="Primary">
+      <div class="sidebar-top">
+        <a class="logo sidebar-logo" href="./">PokePon</a>
+        <button class="sidebar-toggle" type="button" id="sidebar-toggle" aria-controls="sidebar" aria-expanded="false">
+          <span class="sidebar-toggle-bar"></span>
+          <span class="sidebar-toggle-bar"></span>
+          <span class="sidebar-toggle-bar"></span>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Sections">
+        <ul>
+          <li>
+            <a class="sidebar-link" href="collection.html">
+              <span class="sidebar-link-icon" aria-hidden="true">▣</span>
+              <span class="sidebar-link-text">Collection</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link" href="deck.html">
+              <span class="sidebar-link-icon" aria-hidden="true">⚔</span>
+              <span class="sidebar-link-text">Deck Editor</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link is-active" href="trades.html" aria-current="page">
+              <span class="sidebar-link-icon" aria-hidden="true">⇄</span>
+              <span class="sidebar-link-text">Trades</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link" href="auctions.html">
+              <span class="sidebar-link-icon" aria-hidden="true">⚖</span>
+              <span class="sidebar-link-text">Auctions</span>
+            </a>
+          </li>
+        </ul>
+
+        <p class="sidebar-section">Help</p>
+        <ul>
+          <li><a class="sidebar-link" href="./#player-guide">Player guide</a></li>
+          <li><a class="sidebar-link" href="terms.html">Terms</a></li>
+          <li><a class="sidebar-link" href="privacy.html">Privacy</a></li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-user" id="sidebar-user" data-state="loading">
+        <div class="sidebar-user-loading">Checking session…</div>
+        <div class="sidebar-user-signedout" hidden>
+          <p>Sign in with Discord to trade.</p>
+          <button class="btn btn-primary btn-block" type="button" id="btn-login">Sign in with Discord</button>
+        </div>
+        <div class="sidebar-user-signedin" hidden>
+          <img class="sidebar-avatar" alt="" src="" id="user-avatar" />
+          <div class="sidebar-user-text">
+            <div class="sidebar-user-name" id="user-name">—</div>
+            <div class="sidebar-user-hint">Signed in</div>
+          </div>
+          <button class="btn-link" type="button" id="btn-logout" title="Sign out">Sign out</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <header class="page-head">
+        <p class="hero-kicker">Player-to-Player</p>
+        <h1>Trades</h1>
+        <p class="page-lead">
+          Search for someone who shares a Discord server with the bot, pick them from the list, then send an invite. You can also paste a numeric User ID.
+        </p>
+      </header>
+
+      <!-- invite form -->
+      <section class="trade-invite-section" id="trade-invite-section" hidden>
+        <h2>Start a trade</h2>
+        <div class="trade-invite-form">
+          <div class="trade-field trade-field-invite">
+            <label for="invite-input">Discord user</label>
+            <input id="invite-input" type="text" placeholder="Start typing a username…" autocomplete="off" />
+            <div id="invite-suggestions" class="invite-suggestions" role="listbox" aria-label="Matching users" hidden></div>
+          </div>
+          <button type="button" class="btn btn-primary" id="btn-invite">Send invite</button>
+        </div>
+        <div id="invite-msg"></div>
+      </section>
+
+      <!-- trade list -->
+      <section id="trade-list-section">
+        <div id="trade-list-error" class="trade-error" hidden></div>
+        <div id="trade-list"></div>
+        <p id="trade-list-empty" class="trade-muted" hidden>No active trades or invites.</p>
+      </section>
+
+      <!-- trade room (hidden until a session is active) -->
+      <section id="trade-room" class="trade-room" hidden>
+        <div class="trade-room-header">
+          <div class="trade-room-header-main">
+            <button type="button" class="btn btn-ghost btn-small trade-room-back" id="btn-leave-trade">← Trades</button>
+            <div>
+              <h2 id="trade-room-title">Trade room</h2>
+              <div class="trade-room-partner" id="trade-room-partner"></div>
+            </div>
+          </div>
+          <div class="trade-room-actions">
+            <button type="button" class="btn btn-accent" id="btn-ready">Ready</button>
+            <button type="button" class="btn btn-ghost" id="btn-cancel-trade">Cancel trade</button>
+          </div>
+        </div>
+        <div id="trade-room-msg"></div>
+
+        <div class="trade-offers-compare" aria-label="Trade offers">
+          <article class="trade-offer-panel trade-offer-mine">
+            <header class="trade-offer-head">
+              <h3 id="side-mine-label">Your offer</h3>
+            </header>
+            <div class="trade-offer-cards trade-side-cards" id="side-mine-cards"></div>
+            <div class="trade-currency-inputs trade-offer-currency">
+              <p class="trade-balance-hint" id="my-balance-hint" hidden>
+                Your balance:
+                <span id="my-balance-pd">₽0</span>
+                <span class="trade-balance-sep" aria-hidden="true">·</span>
+                <span id="my-balance-cr">💎 0</span>
+              </p>
+              <div class="trade-field">
+                <label for="my-pd">Pokedollars</label>
+                <input id="my-pd" type="number" min="0" value="0" inputmode="numeric" />
+              </div>
+              <div class="trade-field">
+                <label for="my-cr">Crystals</label>
+                <input id="my-cr" type="number" min="0" value="0" inputmode="numeric" />
+              </div>
+              <button type="button" class="btn btn-small" id="btn-save-side">Save offer</button>
+            </div>
+          </article>
+
+          <article class="trade-offer-panel trade-offer-theirs">
+            <header class="trade-offer-head">
+              <h3 id="side-theirs-label">Their offer</h3>
+              <div id="their-ready-status" class="trade-muted">Not ready</div>
+            </header>
+            <div class="trade-offer-cards trade-side-cards" id="side-theirs-cards"></div>
+            <div class="trade-currency-display trade-offer-currency">
+              <span id="their-pd">₽0</span>
+              <span id="their-cr">💎 0</span>
+            </div>
+          </article>
+        </div>
+
+        <details class="trade-picker-panel" id="trade-picker-panel" open>
+          <summary class="trade-picker-summary">Add cards from your collection</summary>
+          <div class="trade-card-picker">
+            <input id="picker-search" type="search" placeholder="Search your cards…" aria-label="Search your cards" />
+            <button type="button" class="chip chip-filter" id="picker-filter-favorited" aria-pressed="false">Favorites</button>
+            <div id="picker-results" class="picker-grid"></div>
+            <div id="picker-evo-sections" class="picker-evo-sections" hidden aria-live="polite"></div>
+          </div>
+        </details>
+      </section>      </section>
+    </main>
+  </div>
+
+  <div class="modal" id="card-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" role="document">
+      <button class="modal-close" type="button" data-close aria-label="Close">×</button>
+      <div class="modal-grid">
+        <div class="modal-image">
+          <img id="modal-img" alt="" />
+        </div>
+        <div class="modal-body">
+          <p class="modal-set" id="modal-set"></p>
+          <h2 class="modal-title" id="modal-title"></h2>
+          <p class="modal-rarity" id="modal-rarity"></p>
+
+          <dl class="modal-stats">
+            <div><dt>HP</dt><dd id="modal-hp">—</dd></div>
+            <div><dt>Max damage</dt><dd id="modal-damage">—</dd></div>
+            <div><dt>Types</dt><dd id="modal-types">—</dd></div>
+            <div class="modal-id-row"><dt>Card ID</dt><dd class="modal-id-dd"><code id="modal-pid">—</code> <button type="button" class="btn btn-ghost btn-copy-inline" id="modal-copy-id" aria-label="Copy Card ID">Copy</button></dd></div>
+          </dl>
+
+          <section class="modal-attacks" id="modal-attacks-section" hidden>
+            <h3>Attacks</h3>
+            <ul id="modal-attacks"></ul>
+          </section>
+
+          <p class="modal-obtained" id="modal-obtained"></p>
+
+          <section class="modal-evolve" id="modal-evolve-section" hidden aria-label="Evolution">
+            <h3 class="modal-evolve-heading">Evolution</h3>
+            <p class="modal-evolve-desc muted" id="modal-evo-desc">
+              Possible evolutions for this printing (view only).
+            </p>
+            <p class="modal-evolve-stages" id="modal-evo-stages"></p>
+            <p class="modal-evolve-block" id="modal-evo-block" hidden></p>
+            <div class="modal-evolve-targets" id="modal-evo-targets" role="list"></div>
+            <div class="modal-evolve-actions" id="modal-evo-actions" hidden>
+              <button type="button" class="btn btn-primary" id="modal-evo-btn" disabled>Evolve</button>
+            </div>
+            <p class="modal-evolve-msg" id="modal-evo-msg" hidden></p>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal evo-focus-modal" id="evo-focus-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="evo-focus-title">
+    <div class="modal-backdrop" data-evo-focus-close tabindex="-1"></div>
+    <div class="modal-card evo-focus-card" role="document">
+      <button class="modal-close" type="button" data-evo-focus-close aria-label="Close evolution preview">×</button>
+      <div class="modal-grid">
+        <div class="modal-image">
+          <img id="evo-focus-img" alt="" />
+        </div>
+        <div class="modal-body">
+          <p class="modal-set" id="evo-focus-set"></p>
+          <h2 class="modal-title" id="evo-focus-title"></h2>
+          <p class="modal-rarity" id="evo-focus-rarity"></p>
+          <p class="evo-focus-cost" id="evo-focus-cost" hidden></p>
+          <dl class="modal-stats">
+            <div><dt>Supertype</dt><dd id="evo-focus-supertype">—</dd></div>
+            <div><dt>HP</dt><dd id="evo-focus-hp">—</dd></div>
+            <div><dt>Max damage</dt><dd id="evo-focus-damage">—</dd></div>
+            <div><dt>Types</dt><dd id="evo-focus-types">—</dd></div>
+          </dl>
+          <section class="modal-attacks" id="evo-focus-attacks-section" hidden>
+            <h3>Attacks</h3>
+            <ul id="evo-focus-attacks"></ul>
+          </section>
+          <div class="evo-focus-actions">
+            <button type="button" class="btn btn-primary" id="evo-focus-choose" hidden>Choose this evolution</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <meta name="pokepon-api-base" content="https://unavailable-ruby-regionalistic.ngrok-free.dev" />
+  <script>
+    (function () {
+      var KEY = "pokepon-api-base";
+      function isValidBase(value) {
+        if (!value || !/^https?:\/\//i.test(value)) return false;
+        try { var u = new URL(value); return /^https?:$/.test(u.protocol) && !!u.hostname && !/[<>{}\s]/.test(u.hostname); } catch (_) { return false; }
+      }
+      var params = new URLSearchParams(window.location.search);
+      var override = params.get("api");
+      if (override === "clear" || override === "reset") { try { localStorage.removeItem(KEY); } catch (_) {} override = ""; }
+      if (override) { if (isValidBase(override)) { try { localStorage.setItem(KEY, override.replace(/\/+$/, "")); } catch (_) {} } }
+      var stored = ""; try { stored = localStorage.getItem(KEY) || ""; } catch (_) {}
+      if (stored && !isValidBase(stored)) { try { localStorage.removeItem(KEY); } catch (_) {} stored = ""; }
+      var meta = document.querySelector('meta[name="pokepon-api-base"]');
+      var fromMeta = (meta && meta.content && meta.content.trim()) || "";
+      if (fromMeta && !isValidBase(fromMeta)) fromMeta = "";
+      window.POKEPON_API_BASE = stored || fromMeta || "";
+    })();
+  </script>
+  <script src="assets/app-shell.js?v=1" defer></script>
+  <script src="assets/evo-focus.js?v=1" defer></script>
+  <script src="assets/trades.js?v=18" defer></script>
 </body>
 </html>

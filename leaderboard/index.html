@@ -8,7 +8,7 @@
   <title>Leaderboards — PokePon</title>
   <meta name="description" content="Global PokePon rankings: strongest cards, tankiest HP, rarest pulls, and top auction sales." />
   <link rel="stylesheet" href="/assets/style.css?v=18" />
-  <link rel="stylesheet" href="/assets/leaderboard.css?v=1" />
+  <link rel="stylesheet" href="/assets/leaderboard.css?v=2" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -61,6 +61,22 @@
           </li>
         </ul>
 
+        <p class="sidebar-section">Community</p>
+        <ul>
+          <li>
+            <a class="sidebar-link sidebar-link-external" href="https://top.gg/bot/1496227239803748362/vote" target="_blank" rel="noopener noreferrer">
+              <span class="sidebar-link-icon" aria-hidden="true">♥</span>
+              <span class="sidebar-link-text">Vote on Top.gg</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link sidebar-link-external" href="https://discord.gg/fzmTA894We" target="_blank" rel="noopener noreferrer">
+              <span class="sidebar-link-icon" aria-hidden="true">◈</span>
+              <span class="sidebar-link-text">Join Discord</span>
+            </a>
+          </li>
+        </ul>
+
         <p class="sidebar-section">Help</p>
         <ul>
           <li><a class="sidebar-link" href="/#player-guide">Player guide</a></li>
@@ -106,6 +122,8 @@
 
       <div class="lb-viewer-rank" id="lb-viewer-rank" hidden aria-live="polite"></div>
 
+      <p class="lb-preview-hint" id="lb-preview-hint">Tap a player to view the card behind their rank.</p>
+
       <nav class="lb-tabs" aria-label="Leaderboard category">
         <button type="button" class="lb-tab is-active" data-category="strongest" aria-pressed="true">Strongest</button>
         <button type="button" class="lb-tab" data-category="tankiest" aria-pressed="false">Tankiest</button>
@@ -127,6 +145,28 @@
         <button class="btn btn-ghost" type="button" id="lb-next">Next →</button>
       </nav>
     </main>
+  </div>
+
+  <div class="modal lb-card-modal" id="lb-card-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="lb-modal-title">
+    <div class="modal-backdrop" data-lb-close></div>
+    <div class="modal-card lb-modal-card" role="document">
+      <button class="modal-close" type="button" data-lb-close aria-label="Close">×</button>
+      <div class="lb-modal-grid">
+        <div class="lb-modal-image">
+          <img id="lb-modal-img" alt="" />
+        </div>
+        <div class="lb-modal-body">
+          <p class="modal-set" id="lb-modal-set"></p>
+          <h2 class="modal-title" id="lb-modal-title"></h2>
+          <p class="modal-rarity" id="lb-modal-rarity"></p>
+          <p class="lb-modal-player" id="lb-modal-player"></p>
+          <dl class="modal-stats lb-modal-stats">
+            <div><dt>HP</dt><dd id="lb-modal-hp">—</dd></div>
+            <div><dt>Rank stat</dt><dd id="lb-modal-stat">—</dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
   </div>
 
   <meta name="pokepon-api-base" content="https://unavailable-ruby-regionalistic.ngrok-free.dev" />
@@ -166,6 +206,6 @@
     })();
   </script>
   <script src="/assets/app-shell.js?v=1" defer></script>
-  <script src="/assets/leaderboard.js?v=1" defer></script>
+  <script src="/assets/leaderboard.js?v=2" defer></script>
 </body>
 </html>

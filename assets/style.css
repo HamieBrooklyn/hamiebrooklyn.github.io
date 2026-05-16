@@ -527,6 +527,13 @@ main {
   flex: 1 1 auto;
 }
 
+.sidebar-link-external .sidebar-link-text::after {
+  content: "↗";
+  margin-left: 0.35rem;
+  font-size: 0.75em;
+  opacity: 0.55;
+}
+
 .sidebar-pill {
   font-size: 0.65rem;
   font-weight: 600;
