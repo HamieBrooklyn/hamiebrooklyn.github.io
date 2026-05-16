@@ -161,6 +161,11 @@
     modalSellBtn: document.getElementById("modal-sell-btn"),
     modalSellBack: document.getElementById("modal-sell-back"),
     modalSellMsg: document.getElementById("modal-sell-msg"),
+    modalGradeSection: document.getElementById("modal-grade-section"),
+    modalGradeSummary: document.getElementById("modal-grade-summary"),
+    modalGradeMsg: document.getElementById("modal-grade-msg"),
+    modalGradeRollBtn: document.getElementById("modal-grade-roll-btn"),
+    modalGradeRemoveBtn: document.getElementById("modal-grade-remove-btn"),
     modalFooter: document.getElementById("modal-footer"),
     modalEvoFooter: document.getElementById("modal-evo-footer"),
     modalEvolveSection: document.getElementById("modal-evolve-section"),
@@ -190,6 +195,8 @@
     evoSelectedTargetId: null,
     evoInFlight: false,
     favoriteInFlight: false,
+    gradeInFlight: false,
+    modalSlabObjectUrl: null,
   };
 
   var modalHistory = { card: false, evo: false };
@@ -473,6 +480,7 @@
           renderFavoriteBtn(d.card);
           renderSellUi(d.card);
           renderEvolutionUi(d.card);
+          renderGradeUi(d.card);
           loadCollection(false);
           return;
         }
@@ -542,6 +550,13 @@
       favBadge.title = "Favorited";
       wrap.appendChild(favBadge);
     }
+    if (item.grading && item.grading.grade != null) {
+      var gradeBadge = document.createElement("span");
+      gradeBadge.className = "card-tile-grade";
+      gradeBadge.textContent = String(item.grading.grade);
+      gradeBadge.title = item.grading.grade_label || "Graded";
+      wrap.appendChild(gradeBadge);
+    }
 
     var copyBtn = document.createElement("button");
     copyBtn.type = "button";
@@ -568,7 +583,172 @@
     if (!els.modalFooter) return;
     var sellOn = els.modalSellSection && !els.modalSellSection.hidden;
     var evoOn = els.modalEvoFooter && !els.modalEvoFooter.hidden;
-    els.modalFooter.hidden = !sellOn && !evoOn;
+    var gradeOn = els.modalGradeSection && !els.modalGradeSection.hidden;
+    els.modalFooter.hidden = !sellOn && !evoOn && !gradeOn;
+  }
+
+  function revokeModalSlabUrl() {
+    if (state.modalSlabObjectUrl) {
+      try {
+        URL.revokeObjectURL(state.modalSlabObjectUrl);
+      } catch (_) {}
+      state.modalSlabObjectUrl = null;
+    }
+  }
+
+  function setModalCardImage(item) {
+    revokeModalSlabUrl();
+    var card = (item && item.card) || {};
+    var grading = item && item.grading;
+    if (grading && grading.grade && grading.slab_url) {
+      apiFetch(grading.slab_url)
+        .then(function (r) {
+          if (!r.ok) throw new Error("slab");
+          return r.blob();
+        })
+        .then(function (blob) {
+          state.modalSlabObjectUrl = URL.createObjectURL(blob);
+          els.modalImg.src = state.modalSlabObjectUrl;
+        })
+        .catch(function () {
+          els.modalImg.src = card.image_large_url || card.image_small_url || "";
+        });
+    } else {
+      els.modalImg.src = card.image_large_url || card.image_small_url || "";
+    }
+  }
+
+  function renderGradeUi(item) {
+    if (!els.modalGradeSection) return;
+    var g = item && item.grading;
+    els.modalGradeSection.hidden = false;
+    if (els.modalGradeMsg) {
+      els.modalGradeMsg.hidden = true;
+      els.modalGradeMsg.textContent = "";
+      els.modalGradeMsg.className = "modal-grade-msg";
+    }
+    if (!g) {
+      if (els.modalGradeSummary) els.modalGradeSummary.textContent = "Grading unavailable.";
+      if (els.modalGradeRollBtn) els.modalGradeRollBtn.disabled = true;
+      if (els.modalGradeRemoveBtn) els.modalGradeRemoveBtn.hidden = true;
+      updateModalFooter();
+      return;
+    }
+    var lines = [];
+    if (g.grade != null) {
+      lines.push(
+        "Current grade: <strong>" +
+          escapeHtml(String(g.grade)) +
+          "</strong>" +
+          (g.grade_label ? " — " + escapeHtml(g.grade_label) : "")
+      );
+    } else {
+      lines.push("Not graded yet.");
+    }
+    if (g.copy_index != null && g.total_copies != null) {
+      lines.push(
+        "Global copy rank: <strong>#" +
+          escapeHtml(String(g.copy_index)) +
+          "</strong> of <strong>" +
+          escapeHtml(String(g.total_copies)) +
+          "</strong> for this printing."
+      );
+    }
+    if (els.modalGradeSummary) els.modalGradeSummary.innerHTML = lines.join("<br>");
+    var cost = g.crystal_cost != null ? g.crystal_cost : 15;
+    if (els.modalGradeRollBtn) {
+      els.modalGradeRollBtn.disabled = !!state.gradeInFlight;
+      els.modalGradeRollBtn.textContent =
+        (g.grade != null ? "Reroll grade (" : "Roll grade (") + cost + " 💎)";
+    }
+    if (els.modalGradeRemoveBtn) {
+      els.modalGradeRemoveBtn.hidden = g.grade == null;
+      els.modalGradeRemoveBtn.disabled = !!state.gradeInFlight;
+    }
+    updateModalFooter();
+  }
+
+  function rollGradeAction() {
+    var item = state.modalItem;
+    if (!item || !item.public_id || state.gradeInFlight) return;
+    state.gradeInFlight = true;
+    renderGradeUi(item);
+    apiFetch("/api/me/cards/" + encodeURIComponent(item.public_id) + "/grade", { method: "POST" })
+      .then(function (r) {
+        return r.json().then(function (data) {
+          return { ok: r.ok, data: data };
+        });
+      })
+      .then(function (res) {
+        state.gradeInFlight = false;
+        var d = res.data || {};
+        if (res.ok && d.ok && d.card) {
+          state.modalItem = d.card;
+          applyModalCardFields(d.card);
+          renderGradeUi(d.card);
+          renderSellUi(d.card);
+          renderEvolutionUi(d.card);
+          renderFavoriteBtn(d.card);
+          return;
+        }
+        if (els.modalGradeMsg) {
+          els.modalGradeMsg.hidden = false;
+          els.modalGradeMsg.className = "modal-grade-msg is-error";
+          els.modalGradeMsg.textContent = plainDiscordMsg(
+            d.message || d.error || "Could not grade."
+          );
+        }
+        renderGradeUi(state.modalItem);
+      })
+      .catch(function () {
+        state.gradeInFlight = false;
+        if (els.modalGradeMsg) {
+          els.modalGradeMsg.hidden = false;
+          els.modalGradeMsg.className = "modal-grade-msg is-error";
+          els.modalGradeMsg.textContent = "Network error — try again.";
+        }
+        renderGradeUi(state.modalItem);
+      });
+  }
+
+  function removeGradeAction() {
+    var item = state.modalItem;
+    if (!item || !item.public_id || state.gradeInFlight) return;
+    state.gradeInFlight = true;
+    renderGradeUi(item);
+    apiFetch("/api/me/cards/" + encodeURIComponent(item.public_id) + "/grade/remove", {
+      method: "POST",
+    })
+      .then(function (r) {
+        return r.json().then(function (data) {
+          return { ok: r.ok, data: data };
+        });
+      })
+      .then(function (res) {
+        state.gradeInFlight = false;
+        var d = res.data || {};
+        if (res.ok && d.ok && d.card) {
+          state.modalItem = d.card;
+          applyModalCardFields(d.card);
+          renderGradeUi(d.card);
+          renderSellUi(d.card);
+          renderEvolutionUi(d.card);
+          renderFavoriteBtn(d.card);
+          return;
+        }
+        if (els.modalGradeMsg) {
+          els.modalGradeMsg.hidden = false;
+          els.modalGradeMsg.className = "modal-grade-msg is-error";
+          els.modalGradeMsg.textContent = plainDiscordMsg(
+            d.message || d.error || "Could not remove grade."
+          );
+        }
+        renderGradeUi(state.modalItem);
+      })
+      .catch(function () {
+        state.gradeInFlight = false;
+        renderGradeUi(state.modalItem);
+      });
   }
 
   function updateModalActionBack() {
@@ -765,6 +945,7 @@
         renderSellUi(detail);
         renderEvolutionUi(detail);
         renderFavoriteBtn(detail);
+        renderGradeUi(detail);
         applyModalCardFields(detail);
       })
       .catch(function () {});
@@ -773,7 +954,7 @@
   function applyModalCardFields(item) {
     var card = item.card || {};
     var rarity = card.rarity || {};
-    els.modalImg.src = card.image_large_url || card.image_small_url || "";
+    setModalCardImage(item);
     els.modalImg.alt = card.name || "Card";
     els.modalTitle.textContent = card.name || "Card";
     els.modalSet.textContent =
@@ -831,9 +1012,12 @@
     state.evoSelectedTargetId = null;
     state.evoInFlight = false;
     state.favoriteInFlight = false;
+    state.gradeInFlight = false;
+    revokeModalSlabUrl();
     if (els.modalFavoriteBtn) els.modalFavoriteBtn.hidden = true;
     if (els.modalEvolveSection) els.modalEvolveSection.hidden = true;
     if (els.modalSellSection) els.modalSellSection.hidden = true;
+    if (els.modalGradeSection) els.modalGradeSection.hidden = true;
     if (els.modalEvoFooter) els.modalEvoFooter.hidden = true;
     if (els.modalFooter) els.modalFooter.hidden = true;
     els.modal.hidden = true;
@@ -850,6 +1034,7 @@
     renderFavoriteBtn(item);
     renderEvolutionUi(item);
     renderSellUi(item);
+    renderGradeUi(item);
     refreshModalCardDetail(item);
     els.modal.hidden = false;
     els.modal.setAttribute("aria-hidden", "false");
@@ -980,6 +1165,17 @@
       copyCardId(els.modalPid.textContent, els.modalCopyId);
     });
   }
+  if (els.modalGradeRollBtn) {
+    els.modalGradeRollBtn.addEventListener("click", function () {
+      rollGradeAction();
+    });
+  }
+  if (els.modalGradeRemoveBtn) {
+    els.modalGradeRemoveBtn.addEventListener("click", function () {
+      removeGradeAction();
+    });
+  }
+
   if (els.modalFavoriteBtn) {
     els.modalFavoriteBtn.addEventListener("click", function (e) {
       e.stopPropagation();
