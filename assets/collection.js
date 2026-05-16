@@ -372,7 +372,9 @@
       })
       .then(function (body) {
         state.sectionsInflight = null;
-        if ((body.query || "") !== state.query || state.page !== 1) return;
+        if ((body.query || "").toLowerCase() !== (state.query || "").toLowerCase() || state.page !== 1) {
+          return;
+        }
         state.sections = Array.isArray(body.sections) ? body.sections : [];
         renderEvolutionSections();
         if (state.total === 0 && hasEvolutionSections()) {
@@ -394,6 +396,10 @@
     if (state.inflight) {
       // Discard old result — newer query supersedes it.
       state.inflight.abort();
+    }
+    if (state.sectionsInflight) {
+      state.sectionsInflight.abort();
+      state.sectionsInflight = null;
     }
     var ctrl = new AbortController();
     state.inflight = ctrl;
@@ -1254,7 +1260,7 @@
     clearTimeout(state.searchDebounce);
     state.searchDebounce = setTimeout(function () {
       if (value === state.query) return;
-      state.query = value;
+      state.query = value.toLowerCase();
       state.page = 1;
       loadCollection(false);
     }, 200);

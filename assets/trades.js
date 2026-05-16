@@ -1122,7 +1122,12 @@
       if (!r.ok) return;
       var j = await r.json();
       state.pickerSectionsInflight = null;
-      if ((j.query || "") !== state.pickerQuery || state.pickerPage !== 1) return;
+      if (
+        (j.query || "").toLowerCase() !== (state.pickerQuery || "").toLowerCase() ||
+        state.pickerPage !== 1
+      ) {
+        return;
+      }
       state.pickerSections = Array.isArray(j.sections) ? j.sections : [];
       renderPickerEvoSections();
     } catch (e) {
@@ -1133,6 +1138,10 @@
 
   async function loadMyCollection() {
     if (state.pickerInflight) { state.pickerInflight.abort(); }
+    if (state.pickerSectionsInflight) {
+      state.pickerSectionsInflight.abort();
+      state.pickerSectionsInflight = null;
+    }
     var ctrl = new AbortController();
     state.pickerInflight = ctrl;
     try {
@@ -1166,7 +1175,7 @@
     clearTimeout(state.pickerDebounce);
     state.pickerDebounce = setTimeout(function () {
       if (value === state.pickerQuery) return;
-      state.pickerQuery = value;
+      state.pickerQuery = value.toLowerCase();
       state.pickerPage = 1;
       loadMyCollection();
     }, 200);
