@@ -1,0 +1,294 @@
+/* Leaderboards page */
+
+.lb-discord-hint {
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  line-height: 1.5;
+}
+
+.lb-discord-hint code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+}
+
+.lb-viewer-rank {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(236, 72, 153, 0.12));
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  font-size: 0.95rem;
+}
+
+.lb-viewer-rank[hidden] {
+  display: none !important;
+}
+
+.lb-viewer-rank strong {
+  color: var(--text);
+}
+
+.lb-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.lb-tab {
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--muted);
+  font-family: var(--font);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.lb-tab:hover {
+  color: var(--text);
+  border-color: rgba(129, 140, 248, 0.45);
+}
+
+.lb-tab.is-active {
+  color: var(--text);
+  background: rgba(99, 102, 241, 0.22);
+  border-color: rgba(129, 140, 248, 0.55);
+}
+
+.lb-status {
+  min-height: 1.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.lb-status.is-error {
+  color: #f07178;
+}
+
+.lb-podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
+}
+
+.lb-podium[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .lb-podium {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+}
+
+.lb-podium-card {
+  position: relative;
+  padding: 1rem 0.85rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  text-align: center;
+  overflow: hidden;
+}
+
+.lb-podium-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--podium-accent, rgba(129, 140, 248, 0.6));
+}
+
+.lb-podium-card.rank-1 {
+  --podium-accent: linear-gradient(90deg, #fde68a, #fbbf24);
+  min-height: 11rem;
+  border-color: rgba(251, 191, 36, 0.45);
+  box-shadow: 0 12px 40px rgba(251, 191, 36, 0.12);
+}
+
+.lb-podium-card.rank-2 {
+  --podium-accent: linear-gradient(90deg, #e2e8f0, #94a3b8);
+  min-height: 9.5rem;
+}
+
+.lb-podium-card.rank-3 {
+  --podium-accent: linear-gradient(90deg, #fdba74, #ea580c);
+  min-height: 9rem;
+}
+
+.lb-podium-medal {
+  font-size: 1.35rem;
+  line-height: 1;
+  margin-bottom: 0.35rem;
+}
+
+.lb-podium-avatar {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 0.5rem;
+  border: 2px solid var(--border);
+  background: var(--bg);
+}
+
+.lb-podium-card.rank-1 .lb-podium-avatar {
+  width: 4rem;
+  height: 4rem;
+  border-color: rgba(251, 191, 36, 0.55);
+}
+
+.lb-podium-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.2rem;
+  word-break: break-word;
+}
+
+.lb-podium-card-name {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 0.45rem;
+  line-height: 1.35;
+}
+
+.lb-podium-stat {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #c4b5fd;
+}
+
+.lb-podium-stat.rarity-secret { color: #fde68a; }
+.lb-podium-stat.rarity-hyper { color: #fda4af; }
+.lb-podium-stat.rarity-ultra { color: #c4b5fd; }
+.lb-podium-stat.rarity-rare { color: #93c5fd; }
+
+.lb-list-wrap {
+  margin-bottom: 1rem;
+}
+
+.lb-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lb-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+
+.lb-row.is-viewer {
+  border-color: rgba(129, 140, 248, 0.5);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.lb-rank {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 1rem;
+  min-width: 2rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+.lb-rank.top {
+  color: #fde68a;
+}
+
+.lb-user {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.lb-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.lb-user-text {
+  min-width: 0;
+}
+
+.lb-display-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lb-card-name {
+  font-size: 0.82rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lb-stat {
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #c4b5fd;
+  white-space: nowrap;
+}
+
+.lb-stat.rarity-secret { color: #fde68a; }
+.lb-stat.rarity-hyper { color: #fda4af; }
+.lb-stat.rarity-ultra { color: #c4b5fd; }
+.lb-stat.rarity-rare { color: #93c5fd; }
+.lb-stat.rarity-uncommon { color: #86efac; }
+.lb-stat.rarity-common { color: #cbd5e1; }
+
+.lb-pager {
+  margin-top: 0.5rem;
+}
+
+.lb-pager[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 520px) {
+  .lb-row {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .lb-stat {
+    grid-column: 2;
+    text-align: left;
+    padding-left: calc(2.25rem + 0.65rem);
+  }
+}

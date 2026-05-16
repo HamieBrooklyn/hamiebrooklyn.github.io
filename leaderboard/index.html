@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="/assets/favicon.png" />
+  <link rel="apple-touch-icon" href="/assets/favicon.png" />
+  <title>Leaderboards — PokePon</title>
+  <meta name="description" content="Global PokePon rankings: strongest cards, tankiest HP, rarest pulls, and top auction sales." />
+  <link rel="stylesheet" href="/assets/style.css?v=18" />
+  <link rel="stylesheet" href="/assets/leaderboard.css?v=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+</head>
+<body class="app-body">
+  <div class="bg-grid"></div>
+
+  <div class="app-shell" id="app">
+    <aside class="sidebar" id="sidebar" aria-label="Primary">
+      <div class="sidebar-top">
+        <a class="logo sidebar-logo" href="/">PokePon</a>
+        <button class="sidebar-toggle" type="button" id="sidebar-toggle" aria-controls="sidebar" aria-expanded="false">
+          <span class="sidebar-toggle-bar"></span>
+          <span class="sidebar-toggle-bar"></span>
+          <span class="sidebar-toggle-bar"></span>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Sections">
+        <ul>
+          <li>
+            <a class="sidebar-link" href="/collection/">
+              <span class="sidebar-link-icon" aria-hidden="true">▣</span>
+              <span class="sidebar-link-text">Collection</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link" href="/deck/">
+              <span class="sidebar-link-icon" aria-hidden="true">⚔</span>
+              <span class="sidebar-link-text">Deck Editor</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link" href="/trades/">
+              <span class="sidebar-link-icon" aria-hidden="true">⇄</span>
+              <span class="sidebar-link-text">Trades</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link" href="/auctions/">
+              <span class="sidebar-link-icon" aria-hidden="true">⚖</span>
+              <span class="sidebar-link-text">Auctions</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link is-active" href="/leaderboard/" aria-current="page">
+              <span class="sidebar-link-icon" aria-hidden="true">★</span>
+              <span class="sidebar-link-text">Leaderboards</span>
+            </a>
+          </li>
+        </ul>
+
+        <p class="sidebar-section">Help</p>
+        <ul>
+          <li><a class="sidebar-link" href="/#player-guide">Player guide</a></li>
+          <li><a class="sidebar-link" href="/terms/">Terms</a></li>
+          <li><a class="sidebar-link" href="/privacy/">Privacy</a></li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-user" id="sidebar-user" data-state="loading">
+        <div class="sidebar-user-loading">Checking session…</div>
+
+        <div class="sidebar-user-signedout" hidden>
+          <p>Sign in to see your global rank on each leaderboard.</p>
+          <button class="btn btn-primary btn-block" type="button" id="btn-login">
+            Sign in with Discord
+          </button>
+        </div>
+
+        <div class="sidebar-user-signedin" hidden>
+          <img class="sidebar-avatar" alt="" src="" id="user-avatar" />
+          <div class="sidebar-user-text">
+            <div class="sidebar-user-name" id="user-name">—</div>
+            <div class="sidebar-user-hint">Signed in</div>
+          </div>
+          <button class="btn-link" type="button" id="btn-logout" title="Sign out">Sign out</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <header class="page-head">
+        <p class="hero-kicker">Rankings</p>
+        <h1 id="lb-title">Leaderboards</h1>
+        <p class="page-lead" id="lb-lead">
+          Global standings across all PokePon players. Each player’s best card counts for stat boards;
+          auction sales list individual completed sales.
+        </p>
+      </header>
+
+      <p class="lb-discord-hint">
+        For <strong>server-only</strong> rankings, use <code>/leaderboard</code> in Discord with scope <strong>Server</strong>.
+      </p>
+
+      <div class="lb-viewer-rank" id="lb-viewer-rank" hidden aria-live="polite"></div>
+
+      <nav class="lb-tabs" aria-label="Leaderboard category">
+        <button type="button" class="lb-tab is-active" data-category="strongest" aria-pressed="true">Strongest</button>
+        <button type="button" class="lb-tab" data-category="tankiest" aria-pressed="false">Tankiest</button>
+        <button type="button" class="lb-tab" data-category="rarest" aria-pressed="false">Rarest</button>
+        <button type="button" class="lb-tab" data-category="auction" aria-pressed="false">Top auctions</button>
+      </nav>
+
+      <section class="lb-status" id="lb-status" aria-live="polite"></section>
+
+      <section class="lb-podium" id="lb-podium" hidden aria-label="Top three"></section>
+
+      <section class="lb-list-wrap">
+        <ol class="lb-list" id="lb-list" aria-label="Rankings"></ol>
+      </section>
+
+      <nav class="pager lb-pager" id="lb-pager" hidden aria-label="Pagination">
+        <button class="btn btn-ghost" type="button" id="lb-prev">← Prev</button>
+        <span class="pager-info" id="lb-pager-info">Page 1</span>
+        <button class="btn btn-ghost" type="button" id="lb-next">Next →</button>
+      </nav>
+    </main>
+  </div>
+
+  <meta name="pokepon-api-base" content="https://unavailable-ruby-regionalistic.ngrok-free.dev" />
+  <script>
+    (function () {
+      var KEY = "pokepon-api-base";
+      function isValidBase(value) {
+        if (!value || !/^https?:\/\//i.test(value)) return false;
+        try {
+          var u = new URL(value);
+          return /^https?:$/.test(u.protocol) && !!u.hostname && !/[<>{}\s]/.test(u.hostname);
+        } catch (_) {
+          return false;
+        }
+      }
+      var params = new URLSearchParams(window.location.search);
+      var override = params.get("api");
+      if (override === "clear" || override === "reset") {
+        try { localStorage.removeItem(KEY); } catch (_) {}
+        override = "";
+      }
+      if (override) {
+        if (isValidBase(override)) {
+          try { localStorage.setItem(KEY, override.replace(/\/+$/, "")); } catch (_) {}
+        }
+      }
+      var stored = "";
+      try { stored = localStorage.getItem(KEY) || ""; } catch (_) {}
+      if (stored && !isValidBase(stored)) {
+        try { localStorage.removeItem(KEY); } catch (_) {}
+        stored = "";
+      }
+      var meta = document.querySelector('meta[name="pokepon-api-base"]');
+      var fromMeta = (meta && meta.content && meta.content.trim()) || "";
+      if (fromMeta && !isValidBase(fromMeta)) fromMeta = "";
+      window.POKEPON_API_BASE = stored || fromMeta || "";
+    })();
+  </script>
+  <script src="/assets/app-shell.js?v=1" defer></script>
+  <script src="/assets/leaderboard.js?v=1" defer></script>
+</body>
+</html>
