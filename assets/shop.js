@@ -159,9 +159,9 @@
     var disabled = !item.available;
     var btnLabel = state.authenticated
       ? disabled
-        ? "Soon"
+        ? "Coming soon"
         : "Buy now"
-      : "Sign in";
+      : "Sign in to buy";
     var priceHtml = "";
     if (item.price && item.price.display) {
       priceHtml =
@@ -180,6 +180,9 @@
       '<h3 class="shop-pack-title">' +
       escapeHtml(item.title) +
       "</h3>" +
+      '<p class="shop-pack-desc">' +
+      escapeHtml(item.description) +
+      "</p>" +
       '<button type="button" class="btn btn-primary shop-buy-btn" data-sku="' +
       escapeHtml(item.id) +
       '"' +
