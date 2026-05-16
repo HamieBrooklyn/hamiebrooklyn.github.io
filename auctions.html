@@ -7,8 +7,8 @@
   <link rel="apple-touch-icon" href="assets/favicon.png" />
   <title>Auctions — PokePon</title>
   <meta name="description" content="Browse PokePon card auctions: search, bid with Pokedollars or Crystals, list cards from your collection, and see live balances." />
-  <link rel="stylesheet" href="assets/style.css?v=4" />
-  <link rel="stylesheet" href="assets/auctions.css?v=3" />
+  <link rel="stylesheet" href="assets/style.css?v=17" />
+  <link rel="stylesheet" href="assets/auctions.css?v=4" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -128,10 +128,34 @@
         <p class="auction-muted">
           Your card must be in your bot collection. Duration examples: <code>2h</code>, <code>1d</code>, <code>45m</code>.
         </p>
+
+        <details class="auction-picker-panel" open>
+          <summary class="auction-picker-summary">Choose a card from your collection</summary>
+          <div class="auction-card-picker">
+            <input
+              id="auction-picker-search"
+              type="search"
+              placeholder="Search your cards…"
+              aria-label="Search your cards"
+            />
+            <button
+              type="button"
+              class="chip chip-filter"
+              id="auction-picker-filter-favorited"
+              aria-pressed="false"
+            >
+              Favorites
+            </button>
+            <div id="auction-picker-results" class="picker-grid"></div>
+            <div id="auction-picker-evo-sections" class="picker-evo-sections" hidden aria-live="polite"></div>
+            <p class="auction-muted auction-picker-selected" id="auction-picker-selected" hidden></p>
+          </div>
+        </details>
+
         <div class="auction-filters" style="margin-top:0.75rem">
           <div class="auction-field">
             <label for="c-pid">Card public ID</label>
-            <input id="c-pid" placeholder="from collection" />
+            <input id="c-pid" placeholder="from collection or paste ID" />
           </div>
           <div class="auction-field">
             <label for="c-cur">Currency</label>
@@ -220,6 +244,6 @@
       window.POKEPON_API_BASE = stored || fromMeta || "";
     })();
   </script>
-  <script src="assets/auctions.js?v=5" defer></script>
+  <script src="assets/auctions.js?v=6" defer></script>
 </body>
 </html>
