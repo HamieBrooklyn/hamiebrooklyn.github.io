@@ -859,6 +859,30 @@ main {
   gap: 1rem;
 }
 
+.collection-evo-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  margin-top: 1.75rem;
+}
+
+.collection-evo-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.collection-evo-heading {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.collection-evo-grid {
+  margin-top: 0;
+}
+
 .card-tile-wrap {
   display: flex;
   flex-direction: column;

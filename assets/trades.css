@@ -457,6 +457,30 @@ body.trade-room-active .app-main {
   overflow-y: auto;
 }
 
+.picker-evo-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.85rem;
+}
+
+.picker-evo-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.picker-evo-heading {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.picker-evo-grid {
+  max-height: min(28vh, 220px);
+}
+
 .picker-card {
   cursor: pointer;
   border: 1px solid var(--border);

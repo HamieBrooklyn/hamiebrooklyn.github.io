@@ -38,6 +38,7 @@
     pickerFavoritedOnly: false,
     pickerPage: 1,
     pickerTotal: 0,
+    pickerSections: [],
     pickerDebounce: 0,
     pickerInflight: null,
     selectedPartnerId: null,
@@ -85,6 +86,7 @@
     pickerSearch: document.getElementById("picker-search"),
     pickerFilterFavorited: document.getElementById("picker-filter-favorited"),
     pickerResults: document.getElementById("picker-results"),
+    pickerEvoSections: document.getElementById("picker-evo-sections"),
     sidebarToggle: document.getElementById("sidebar-toggle"),
     sidebar: document.getElementById("sidebar"),
     modal: document.getElementById("card-modal"),
@@ -1054,6 +1056,7 @@
         };
       });
       state.pickerTotal = Number(j.total) || 0;
+      state.pickerSections = Array.isArray(j.sections) ? j.sections : [];
       renderPicker();
     } catch (e) {
       if (e.name === "AbortError") return;
@@ -1072,39 +1075,103 @@
     }, 280);
   }
 
+  function pickerHasEvoSections() {
+    return !!(
+      state.pickerQuery &&
+      state.pickerPage === 1 &&
+      state.pickerSections &&
+      state.pickerSections.length
+    );
+  }
+
+  function mapPickerCard(c) {
+    return {
+      instance_id: c.instance_id,
+      public_id: c.public_id,
+      name: c.card ? c.card.name : "Card",
+      set_info: c.card
+        ? (c.card.set_name || "") + " #" + (c.card.collector_number || "")
+        : "",
+      image_small_url: c.card ? c.card.image_small_url : null,
+      is_favorite: !!c.is_favorite,
+      blocked_reason: c.sell && c.sell.blocked_reason ? c.sell.blocked_reason : null,
+    };
+  }
+
+  function appendPickerCard(parent, c) {
+    var el = document.createElement("div");
+    el.className = "picker-card";
+    if (state.selectedCardIds.indexOf(c.instance_id) >= 0) el.classList.add("is-selected");
+    if (c.is_favorite) el.classList.add("is-favorite");
+    var img = c.image_small_url ? '<img src="' + c.image_small_url + '" alt="" loading="lazy" />' : "";
+    var favMark = c.is_favorite ? '<span class="picker-fav" title="Favorited">⭐</span>' : "";
+    el.innerHTML = img + "<div>" + (c.name || "Card") + favMark + "</div>";
+    el.onclick = function () {
+      if (c.is_favorite) return;
+      if (state.selectedCardIds.indexOf(c.instance_id) >= 0) {
+        removeCard(c.instance_id);
+      } else {
+        addCard(c.instance_id);
+      }
+    };
+    parent.appendChild(el);
+  }
+
+  function renderPickerEvoSections() {
+    if (!els.pickerEvoSections) return;
+    els.pickerEvoSections.innerHTML = "";
+    if (!pickerHasEvoSections()) {
+      els.pickerEvoSections.hidden = true;
+      return;
+    }
+    els.pickerEvoSections.hidden = false;
+    state.pickerSections.forEach(function (sec) {
+      var items = Array.isArray(sec.items) ? sec.items : [];
+      if (!items.length) return;
+      var block = document.createElement("section");
+      block.className = "picker-evo-section";
+      var heading = document.createElement("h3");
+      heading.className = "picker-evo-heading";
+      heading.textContent = sec.label || "Evolution line";
+      var grid = document.createElement("div");
+      grid.className = "picker-grid picker-evo-grid";
+      items.forEach(function (raw) {
+        appendPickerCard(grid, mapPickerCard(raw));
+      });
+      block.appendChild(heading);
+      block.appendChild(grid);
+      els.pickerEvoSections.appendChild(block);
+    });
+  }
+
   function renderPicker() {
     if (!els.pickerResults) return;
     els.pickerResults.innerHTML = "";
+    if (els.pickerEvoSections) {
+      els.pickerEvoSections.innerHTML = "";
+      els.pickerEvoSections.hidden = true;
+    }
     if (!state.myCards.length) {
       if (state.pickerFavoritedOnly) {
-        els.pickerResults.innerHTML =
-          '<div class="trade-muted">' +
-          (state.pickerQuery
-            ? 'No favorited copies match "' + state.pickerQuery + '"'
-            : "You have no favorited copies.") +
-          "</div>";
+        if (!pickerHasEvoSections()) {
+          els.pickerResults.innerHTML =
+            '<div class="trade-muted">' +
+            (state.pickerQuery
+              ? 'No favorited copies match "' + state.pickerQuery + '"'
+              : "You have no favorited copies.") +
+            "</div>";
+        }
       } else if (state.pickerQuery) {
-        els.pickerResults.innerHTML = '<div class="trade-muted">No cards match "' + state.pickerQuery + '"</div>';
+        if (!pickerHasEvoSections()) {
+          els.pickerResults.innerHTML =
+            '<div class="trade-muted">No cards match "' + state.pickerQuery + '"</div>';
+        }
       }
+      renderPickerEvoSections();
       return;
     }
     state.myCards.forEach(function (c) {
-      var el = document.createElement("div");
-      el.className = "picker-card";
-      if (state.selectedCardIds.indexOf(c.instance_id) >= 0) el.classList.add("is-selected");
-      if (c.is_favorite) el.classList.add("is-favorite");
-      var img = c.image_small_url ? '<img src="' + c.image_small_url + '" alt="" loading="lazy" />' : "";
-      var favMark = c.is_favorite ? '<span class="picker-fav" title="Favorited">⭐</span>' : "";
-      el.innerHTML = img + "<div>" + (c.name || "Card") + favMark + "</div>";
-      el.onclick = function () {
-        if (c.is_favorite) return;
-        if (state.selectedCardIds.indexOf(c.instance_id) >= 0) {
-          removeCard(c.instance_id);
-        } else {
-          addCard(c.instance_id);
-        }
-      };
-      els.pickerResults.appendChild(el);
+      appendPickerCard(els.pickerResults, c);
     });
     var totalPages = Math.max(1, Math.ceil(state.pickerTotal / PICKER_PAGE_SIZE));
     if (totalPages > 1) {
@@ -1130,6 +1197,7 @@
       nav.appendChild(next);
       els.pickerResults.appendChild(nav);
     }
+    renderPickerEvoSections();
   }
 
   // ---- Init ----

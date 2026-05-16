@@ -136,6 +136,7 @@
     filterFavoritedBtn: document.getElementById("filter-favorited"),
     status: document.getElementById("status"),
     grid: document.getElementById("card-grid"),
+    evoSections: document.getElementById("evo-sections"),
     pager: document.getElementById("pager"),
     pagerPrev: document.getElementById("pager-prev"),
     pagerNext: document.getElementById("pager-next"),
@@ -187,6 +188,7 @@
     filterFavorited: false,
     total: 0,
     items: [],
+    sections: [],
     inflight: null,
     searchDebounce: 0,
     modalItem: null,
@@ -318,6 +320,10 @@
 
   function renderUnauthenticated() {
     els.grid.innerHTML = "";
+    if (els.evoSections) {
+      els.evoSections.innerHTML = "";
+      els.evoSections.hidden = true;
+    }
     els.pager.hidden = true;
     setStatus(
       STATUS_KIND.AUTH,
@@ -365,6 +371,7 @@
       .then(function (body) {
         state.inflight = null;
         state.items = Array.isArray(body.items) ? body.items : [];
+        state.sections = Array.isArray(body.sections) ? body.sections : [];
         state.total = Number(body.total) || 0;
         state.page = Number(body.page) || 1;
         state.pageSize = Number(body.page_size) || state.pageSize;
@@ -385,9 +392,44 @@
       });
   }
 
+  function hasEvolutionSections() {
+    return !!(state.query && state.page === 1 && state.sections && state.sections.length);
+  }
+
+  function renderEvolutionSections() {
+    if (!els.evoSections) return;
+    els.evoSections.innerHTML = "";
+    if (!hasEvolutionSections()) {
+      els.evoSections.hidden = true;
+      return;
+    }
+    els.evoSections.hidden = false;
+    state.sections.forEach(function (sec) {
+      var items = Array.isArray(sec.items) ? sec.items : [];
+      if (!items.length) return;
+      var block = document.createElement("section");
+      block.className = "collection-evo-section";
+      var heading = document.createElement("h2");
+      heading.className = "collection-evo-heading";
+      heading.textContent = sec.label || "Evolution line";
+      var grid = document.createElement("div");
+      grid.className = "card-grid collection-evo-grid";
+      items.forEach(function (it) {
+        grid.appendChild(buildTile(it, -1));
+      });
+      block.appendChild(heading);
+      block.appendChild(grid);
+      els.evoSections.appendChild(block);
+    });
+  }
+
   function renderCollection() {
-    if (state.total === 0) {
+    if (state.total === 0 && !hasEvolutionSections()) {
       els.grid.innerHTML = "";
+      if (els.evoSections) {
+        els.evoSections.innerHTML = "";
+        els.evoSections.hidden = true;
+      }
       els.pager.hidden = true;
       setStatus(
         STATUS_KIND.EMPTY,
@@ -401,6 +443,18 @@
                 "</strong>."
             : "Your collection is empty. Run <code>pcd</code> in Discord to claim your first card."
       );
+      return;
+    }
+    if (state.total === 0 && hasEvolutionSections()) {
+      els.grid.innerHTML = "";
+      els.pager.hidden = true;
+      setStatus(
+        STATUS_KIND.INFO,
+        'No cards match <strong>"' +
+          escapeHtml(state.query) +
+          '</strong> directly — see evolution line copies below.'
+      );
+      renderEvolutionSections();
       return;
     }
     setStatus(
@@ -429,6 +483,7 @@
     els.pagerPrev.disabled = state.page <= 1;
     els.pagerNext.disabled = state.page >= pages;
     els.pager.hidden = pages <= 1;
+    renderEvolutionSections();
   }
 
   function sortLabel(sort) {

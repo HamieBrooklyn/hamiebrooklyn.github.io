@@ -7,7 +7,7 @@
   <link rel="apple-touch-icon" href="assets/favicon.png" />
   <title>Collection — PokePon</title>
   <meta name="description" content="Browse your PokePon Discord-bot card collection: search, sort by rarity / HP / damage, and view focused card details." />
-  <link rel="stylesheet" href="assets/style.css?v=16" />
+  <link rel="stylesheet" href="assets/style.css?v=17" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -116,6 +116,8 @@
 
       <section class="card-grid" id="card-grid" aria-live="polite"></section>
 
+      <div id="evo-sections" class="collection-evo-sections" hidden aria-live="polite"></div>
+
       <nav class="pager" id="pager" hidden aria-label="Pagination">
         <button class="btn btn-ghost" type="button" id="pager-prev">← Prev</button>
         <span class="pager-info" id="pager-info">Page 1</span>
@@ -144,6 +146,22 @@
             </button>
           </div>
           <footer class="modal-footer" id="modal-footer" hidden>
+            <section class="modal-grade" id="modal-grade-section" hidden aria-label="Grade card">
+              <div class="modal-footer-grade-main">
+                <div class="modal-footer-grade-copy">
+                  <h3 class="modal-grade-heading">Grade</h3>
+                  <p class="modal-grade-summary" id="modal-grade-summary"></p>
+                  <p class="modal-grade-msg" id="modal-grade-msg" hidden></p>
+                </div>
+                <div class="modal-grade-actions">
+                  <button type="button" class="btn btn-primary" id="modal-grade-roll-btn">Roll grade</button>
+                  <button type="button" class="btn btn-ghost" id="modal-grade-remove-btn" hidden>Remove grade</button>
+                </div>
+              </div>
+              <p class="modal-grade-desc muted">
+                Costs <strong>15</strong> 💎 per roll. Earlier global copies of this printing grade better on average.
+              </p>
+            </section>
             <section class="modal-sell" id="modal-sell-section" hidden aria-label="Sell to shop">
               <div class="modal-footer-sell-main">
                 <div class="modal-footer-sell-copy">
@@ -169,22 +187,6 @@
               </div>
               <button type="button" class="btn btn-primary" id="modal-evo-btn" disabled>Evolve</button>
             </div>
-            <section class="modal-grade" id="modal-grade-section" hidden aria-label="Grade card">
-              <div class="modal-footer-grade-main">
-                <div class="modal-footer-grade-copy">
-                  <h3 class="modal-grade-heading">Grade</h3>
-                  <p class="modal-grade-summary" id="modal-grade-summary"></p>
-                  <p class="modal-grade-msg" id="modal-grade-msg" hidden></p>
-                </div>
-                <div class="modal-grade-actions">
-                  <button type="button" class="btn btn-primary" id="modal-grade-roll-btn">Roll grade</button>
-                  <button type="button" class="btn btn-ghost" id="modal-grade-remove-btn" hidden>Remove grade</button>
-                </div>
-              </div>
-              <p class="modal-grade-desc muted">
-                Costs <strong>15</strong> 💎 per roll. Earlier global copies of this printing grade better on average.
-              </p>
-            </section>
           </footer>
         </aside>
         <div class="modal-body">
@@ -312,6 +314,6 @@
     })();
   </script>
   <script src="assets/evo-focus.js?v=3" defer></script>
-  <script src="assets/collection.js?v=14" defer></script>
+  <script src="assets/collection.js?v=15" defer></script>
 </body>
 </html>
