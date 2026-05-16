@@ -1,0 +1,237 @@
+/* PokePon shop — Stripe top-ups */
+
+.shop-body .shop-hero h1 {
+  background: linear-gradient(135deg, #fde68a 0%, #c4b5fd 45%, #5b8cff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.shop-banner {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.shop-banner[hidden] {
+  display: none !important;
+}
+
+.shop-banner-success {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  color: #86efac;
+}
+
+.shop-banner-cancel {
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.shop-banner-error {
+  background: rgba(240, 113, 120, 0.12);
+  border: 1px solid rgba(240, 113, 120, 0.35);
+  color: #f07178;
+}
+
+.shop-balances {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.shop-balances[hidden] {
+  display: none !important;
+}
+
+.shop-balance {
+  flex: 1 1 12rem;
+  padding: 1rem 1.15rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+
+.shop-balance-pd {
+  border-color: rgba(91, 140, 255, 0.35);
+  box-shadow: 0 8px 32px rgba(91, 140, 255, 0.08);
+}
+
+.shop-balance-cr {
+  border-color: rgba(192, 132, 252, 0.35);
+  box-shadow: 0 8px 32px rgba(192, 132, 252, 0.1);
+}
+
+.shop-balance-label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+.shop-balance-value {
+  font-family: var(--mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.shop-status {
+  min-height: 1.25rem;
+  margin-bottom: 1rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.shop-status.is-error {
+  color: #f07178;
+}
+
+.shop-section {
+  margin-bottom: 2.25rem;
+}
+
+.shop-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  margin: 0 0 0.35rem;
+}
+
+.shop-section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 10px;
+  background: rgba(91, 140, 255, 0.15);
+  font-size: 1rem;
+}
+
+.shop-section-icon-crystal {
+  background: rgba(192, 132, 252, 0.18);
+}
+
+.shop-section-lead {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 1rem;
+}
+
+.shop-pack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 1.15rem 1.1rem 1rem;
+  border-radius: calc(var(--radius) + 2px);
+  border: 1px solid var(--border);
+  background: linear-gradient(165deg, var(--bg-elev) 0%, rgba(15, 23, 42, 0.6) 100%);
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.shop-pack::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 80% 0%, rgba(99, 102, 241, 0.12), transparent 55%);
+  pointer-events: none;
+}
+
+.shop-pack-crystals::before {
+  background: radial-gradient(ellipse at 80% 0%, rgba(192, 132, 252, 0.15), transparent 55%);
+}
+
+.shop-pack:hover {
+  transform: translateY(-3px);
+  border-color: rgba(129, 140, 248, 0.45);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+}
+
+.shop-pack.is-popular {
+  border-color: rgba(251, 191, 36, 0.45);
+}
+
+.shop-pack.is-best_value {
+  border-color: rgba(192, 132, 252, 0.5);
+}
+
+.shop-pack-badge {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.2);
+  color: #fde68a;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+.shop-pack.is-best_value .shop-pack-badge {
+  background: rgba(192, 132, 252, 0.22);
+  color: #e9d5ff;
+  border-color: rgba(192, 132, 252, 0.4);
+}
+
+.shop-pack-grant {
+  font-family: var(--mono);
+  font-size: 1.65rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  line-height: 1.2;
+}
+
+.shop-pack-crystals .shop-pack-grant {
+  color: #e9d5ff;
+}
+
+.shop-pack-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+}
+
+.shop-pack-desc {
+  flex: 1 1 auto;
+  margin: 0 0 1rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.shop-pack .btn {
+  width: 100%;
+  margin-top: auto;
+}
+
+.shop-pack .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.shop-footnote {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  max-width: 42rem;
+}
+
+.shop-footnote a {
+  color: var(--accent);
+}

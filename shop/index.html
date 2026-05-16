@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" href="/assets/favicon.png" />
   <link rel="apple-touch-icon" href="/assets/favicon.png" />
-  <title>Leaderboards — PokePon</title>
-  <meta name="description" content="Global PokePon rankings: strongest cards, tankiest HP, rarest pulls, and top auction sales." />
+  <title>Shop — PokePon</title>
+  <meta name="description" content="Buy PokePon Pokedollars and Crystals securely with Stripe. Instant delivery to your Discord-linked account." />
   <link rel="stylesheet" href="/assets/style.css?v=18" />
-  <link rel="stylesheet" href="/assets/leaderboard.css?v=2" />
+  <link rel="stylesheet" href="/assets/shop.css?v=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
 </head>
-<body class="app-body">
+<body class="app-body shop-body">
   <div class="bg-grid"></div>
 
   <div class="app-shell" id="app">
@@ -54,13 +54,13 @@
             </a>
           </li>
           <li>
-            <a class="sidebar-link is-active" href="/leaderboard/" aria-current="page">
+            <a class="sidebar-link" href="/leaderboard/">
               <span class="sidebar-link-icon" aria-hidden="true">★</span>
               <span class="sidebar-link-text">Leaderboards</span>
             </a>
           </li>
           <li>
-            <a class="sidebar-link" href="/shop/">
+            <a class="sidebar-link is-active" href="/shop/" aria-current="page">
               <span class="sidebar-link-icon" aria-hidden="true">◆</span>
               <span class="sidebar-link-text">Shop</span>
             </a>
@@ -95,7 +95,7 @@
         <div class="sidebar-user-loading">Checking session…</div>
 
         <div class="sidebar-user-signedout" hidden>
-          <p>Sign in to see your global rank on each leaderboard.</p>
+          <p>Sign in with Discord to buy packs. Currency is delivered to your bot account.</p>
           <button class="btn btn-primary btn-block" type="button" id="btn-login">
             Sign in with Discord
           </button>
@@ -113,66 +113,57 @@
     </aside>
 
     <main class="app-main">
-      <header class="page-head">
-        <p class="hero-kicker">Rankings</p>
-        <h1 id="lb-title">Leaderboards</h1>
-        <p class="page-lead" id="lb-lead">
-          Global standings across all PokePon players. Each player’s best card counts for stat boards;
-          auction sales list individual completed sales.
+      <header class="page-head shop-hero">
+        <p class="hero-kicker">Top up</p>
+        <h1>PokePon Shop</h1>
+        <p class="page-lead">
+          Secure checkout powered by <strong>Stripe</strong>. Pokedollars and Crystals land in your
+          collection account seconds after payment — use them in Discord and on the site.
         </p>
       </header>
 
-      <p class="lb-discord-hint">
-        For <strong>server-only</strong> rankings, use <code>/leaderboard</code> in Discord with scope <strong>Server</strong>.
-      </p>
+      <div class="shop-banner shop-banner-success" id="shop-banner-success" hidden role="status">
+        Payment received! Your balance should update shortly. If it doesn’t, refresh this page.
+      </div>
+      <div class="shop-banner shop-banner-cancel" id="shop-banner-cancel" hidden role="status">
+        Checkout cancelled — your card was not charged.
+      </div>
+      <div class="shop-banner shop-banner-error" id="shop-banner-error" hidden role="alert"></div>
 
-      <div class="lb-viewer-rank" id="lb-viewer-rank" hidden aria-live="polite"></div>
-
-      <p class="lb-preview-hint" id="lb-preview-hint">Tap a player to view the card behind their rank.</p>
-
-      <nav class="lb-tabs" aria-label="Leaderboard category">
-        <button type="button" class="lb-tab is-active" data-category="strongest" aria-pressed="true">Strongest</button>
-        <button type="button" class="lb-tab" data-category="tankiest" aria-pressed="false">Tankiest</button>
-        <button type="button" class="lb-tab" data-category="rarest" aria-pressed="false">Rarest</button>
-        <button type="button" class="lb-tab" data-category="auction" aria-pressed="false">Top auctions</button>
-      </nav>
-
-      <section class="lb-status" id="lb-status" aria-live="polite"></section>
-
-      <section class="lb-podium" id="lb-podium" hidden aria-label="Top three"></section>
-
-      <section class="lb-list-wrap">
-        <ol class="lb-list" id="lb-list" aria-label="Rankings"></ol>
+      <section class="shop-balances" id="shop-balances" hidden aria-label="Your balances">
+        <div class="shop-balance shop-balance-pd">
+          <span class="shop-balance-label">Pokedollars</span>
+          <span class="shop-balance-value" id="balance-pd">—</span>
+        </div>
+        <div class="shop-balance shop-balance-cr">
+          <span class="shop-balance-label">Crystals</span>
+          <span class="shop-balance-value" id="balance-cr">—</span>
+        </div>
       </section>
 
-      <nav class="pager lb-pager" id="lb-pager" hidden aria-label="Pagination">
-        <button class="btn btn-ghost" type="button" id="lb-prev">← Prev</button>
-        <span class="pager-info" id="lb-pager-info">Page 1</span>
-        <button class="btn btn-ghost" type="button" id="lb-next">Next →</button>
-      </nav>
-    </main>
-  </div>
+      <p class="shop-status" id="shop-status" aria-live="polite"></p>
 
-  <div class="modal lb-card-modal" id="lb-card-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="lb-modal-title">
-    <div class="modal-backdrop" data-lb-close></div>
-    <div class="modal-card lb-modal-card" role="document">
-      <button class="modal-close" type="button" data-lb-close aria-label="Close">×</button>
-      <div class="lb-modal-grid">
-        <div class="lb-modal-image">
-          <img id="lb-modal-img" alt="" />
-        </div>
-        <div class="lb-modal-body">
-          <p class="modal-set" id="lb-modal-set"></p>
-          <h2 class="modal-title" id="lb-modal-title"></h2>
-          <p class="modal-rarity" id="lb-modal-rarity"></p>
-          <p class="lb-modal-player" id="lb-modal-player"></p>
-          <dl class="modal-stats lb-modal-stats">
-            <div><dt>HP</dt><dd id="lb-modal-hp">—</dd></div>
-            <div><dt>Rank stat</dt><dd id="lb-modal-stat">—</dd></div>
-          </dl>
-        </div>
-      </div>
-    </div>
+      <section class="shop-section" aria-labelledby="shop-pd-heading">
+        <h2 class="shop-section-title" id="shop-pd-heading">
+          <span class="shop-section-icon" aria-hidden="true">₽</span> Pokedollars
+        </h2>
+        <p class="shop-section-lead">Fuel packs, auctions, duels, and the in-game economy.</p>
+        <div class="shop-grid" id="shop-grid-pd" aria-live="polite"></div>
+      </section>
+
+      <section class="shop-section" aria-labelledby="shop-cr-heading">
+        <h2 class="shop-section-title" id="shop-cr-heading">
+          <span class="shop-section-icon shop-section-icon-crystal" aria-hidden="true">💎</span> Crystals
+        </h2>
+        <p class="shop-section-lead">Premium currency for crystal packs, grading, and special buys.</p>
+        <div class="shop-grid" id="shop-grid-cr" aria-live="polite"></div>
+      </section>
+
+      <p class="shop-footnote muted">
+        Virtual goods only — no cash value or refunds unless required by law. By purchasing you agree to our
+        <a href="/terms/">Terms</a>. Payments are processed by Stripe; PokePon never sees your card number.
+      </p>
+    </main>
   </div>
 
   <meta name="pokepon-api-base" content="https://unavailable-ruby-regionalistic.ngrok-free.dev" />
@@ -212,6 +203,6 @@
     })();
   </script>
   <script src="/assets/app-shell.js?v=1" defer></script>
-  <script src="/assets/leaderboard.js?v=2" defer></script>
+  <script src="/assets/shop.js?v=1" defer></script>
 </body>
 </html>
