@@ -1233,6 +1233,19 @@ main {
   box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.22);
 }
 
+/* Enforce sell → evolve → grade even if an old cached collection.html has different DOM order */
+.modal-footer > .modal-sell {
+  order: 1;
+}
+
+.modal-footer > .modal-footer-evo {
+  order: 2;
+}
+
+.modal-footer > .modal-grade {
+  order: 3;
+}
+
 .modal-footer-sell-main,
 .modal-footer-evo {
   display: flex;
