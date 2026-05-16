@@ -19,6 +19,8 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -30,6 +32,14 @@ body {
   color: var(--text);
   background: var(--bg);
   position: relative;
+  overflow-x: clip;
+}
+
+img,
+video,
+svg {
+  max-width: 100%;
+  height: auto;
 }
 
 .bg-grid {
@@ -390,7 +400,7 @@ main {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
   min-height: 100vh;
   max-width: 1320px;
   margin: 0 auto;
@@ -855,7 +865,7 @@ main {
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 168px), 1fr));
   gap: 1rem;
 }
 
@@ -2225,18 +2235,52 @@ body.deck-editor-active .app-main {
 
 /* ----- Responsive ------------------------------------------------------- */
 
+/* Tablet / narrow desktop — keep sidebar, give main column room to shrink */
+@media (max-width: 1100px) {
+  .app-shell {
+    grid-template-columns: minmax(188px, 220px) minmax(0, 1fr);
+  }
+
+  .app-main {
+    padding: 1.5rem 1.25rem 3rem;
+  }
+
+  .toolbar-search {
+    flex: 1 1 100%;
+  }
+}
+
+/* Phone / small tablet — slide-out nav, single column layouts */
 @media (max-width: 880px) {
   .app-shell {
     grid-template-columns: 1fr;
   }
 
   .sidebar {
-    position: relative;
-    top: auto;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    width: 100%;
     height: auto;
+    max-height: none;
+    padding: 0.75rem 1rem;
     border-right: none;
     border-bottom: 1px solid var(--border);
-    padding: 1rem 1rem 0.75rem;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
+    transition: box-shadow 0.22s ease;
+  }
+
+  .sidebar.is-open {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(288px, 92vw);
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 1rem 1rem 1.25rem;
+    border-bottom: none;
+    border-right: 1px solid var(--border);
+    box-shadow: 12px 0 40px rgba(0, 0, 0, 0.45);
   }
 
   .sidebar-toggle {
@@ -2258,15 +2302,199 @@ body.deck-editor-active .app-main {
     padding-top: 0.5rem;
   }
 
-  .app-main {
-    padding: 1.25rem 1rem 3rem;
+  .app-shell::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    background: rgba(6, 8, 12, 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
   }
 
-  .modal-grid {
+  .app-shell:has(.sidebar.is-open)::after {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .app-main {
+    padding: 1rem 0.85rem 2.75rem;
+    min-height: 100vh;
+  }
+
+  .toolbar {
+    gap: 0.65rem;
+  }
+
+  .toolbar-sort {
+    width: 100%;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
+    gap: 0.65rem;
+  }
+
+  .modal {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .modal-card {
+    max-height: 100dvh;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .modal-grid,
+  #card-modal .modal-grid {
     grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  #card-modal .modal-card {
+    max-height: 100dvh;
+  }
+
+  #card-modal .modal-aside {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  #card-modal .modal-body {
+    overflow: visible;
   }
 
   .deck-bench {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 128px), 1fr));
+  }
+
+  .deck-workspace {
+    position: static;
+  }
+
+  .deck-workspace-actions {
+    width: 100%;
+  }
+
+  .deck-workspace-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .pager {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .site-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem 1.15rem;
+  }
+
+  .nav {
+    width: 100%;
+    gap: 0.4rem 0.85rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 600px) {
+  body {
+    font-size: 1rem;
+  }
+
+  .app-main {
+    padding: 0.85rem 0.75rem 2.5rem;
+  }
+
+  .page-head h1 {
+    font-size: clamp(1.35rem, 6vw, 1.75rem);
+  }
+
+  .toolbar-search {
+    flex: 1 1 100%;
+  }
+
+  .chip {
+    padding: 0.45rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 118px), 1fr));
+    gap: 0.5rem;
+  }
+
+  .modal-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-title {
+    font-size: 1.35rem;
+    padding-right: 2.25rem;
+  }
+
+  .deck-slot {
+    min-height: 150px;
+  }
+}
+
+@media (max-width: 400px) {
+  .card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Short viewports (phone landscape, small windows) — stack panels, limit scroll regions */
+@media (max-height: 520px) and (orientation: landscape) {
+  .app-main {
+    padding-top: 0.65rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .page-head {
+    margin-bottom: 0.85rem;
+  }
+
+  .page-head h1 {
+    font-size: 1.35rem;
+  }
+
+  .modal {
+    padding: 0.35rem;
+    align-items: center;
+  }
+
+  .modal-card {
+    max-height: calc(100dvh - 0.75rem);
+    border-radius: 12px;
+  }
+
+  #card-modal .modal-grid {
+    grid-template-columns: minmax(140px, 34%) minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  #card-modal .modal-aside .modal-image img {
+    max-height: min(36vh, 220px);
+  }
+
+  .deck-bench {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .deck-slot {
+    min-height: 0;
+    padding: 0.35rem 0.3rem;
+  }
+
+  .deck-slot-img {
+    width: 52px;
   }
 }

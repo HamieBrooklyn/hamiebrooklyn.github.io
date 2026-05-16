@@ -35,7 +35,9 @@
 
 .trade-field input,
 .trade-field select {
-  min-width: 10rem;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
   padding: 0.45rem 0.65rem;
   border-radius: 10px;
   border: 1px solid var(--border);
@@ -47,7 +49,7 @@
 .trade-field-invite {
   position: relative;
   flex: 1 1 14rem;
-  min-width: 12rem;
+  min-width: 0;
 }
 
 .invite-suggestions {
@@ -147,9 +149,10 @@
 /* Trade list items */
 .trade-list-item {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem 1rem;
   padding: 0.85rem 1rem;
   margin-bottom: 0.5rem;
   background: var(--bg-elev);
@@ -215,16 +218,10 @@ body.trade-room-active .app-main {
 
 .trade-offers-compare {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: 1rem;
   margin-bottom: 1rem;
   align-items: stretch;
-}
-
-@media (max-width: 760px) {
-  .trade-offers-compare {
-    grid-template-columns: 1fr;
-  }
 }
 
 .trade-offer-panel {
@@ -578,4 +575,74 @@ body.trade-room-active .app-main {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.5rem 0;
+}
+
+/* ----- Responsive ------------------------------------------------------- */
+
+@media (max-width: 600px) {
+  .trade-invite-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .trade-field-invite {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .trade-list-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .trade-list-actions {
+    justify-content: flex-end;
+  }
+
+  .trade-room-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .trade-room-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .trade-currency-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    align-items: end;
+  }
+
+  .trade-currency-inputs .trade-balance-hint {
+    grid-column: 1 / -1;
+  }
+
+  .trade-currency-inputs #btn-save-side {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .trade-card-chip {
+    max-width: 100%;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .trade-offer-cards,
+  .trade-side-cards {
+    max-height: min(22vh, 120px);
+  }
+
+  .picker-grid,
+  .picker-evo-grid {
+    max-height: min(30vh, 150px);
+  }
+
+  body.trade-room-active .trade-picker-panel {
+    max-height: min(38vh, 200px);
+    overflow-y: auto;
+  }
 }
