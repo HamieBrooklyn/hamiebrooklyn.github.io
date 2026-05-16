@@ -465,7 +465,10 @@
 
   function isEligible(item) {
     var card = item.card || {};
-    return (card.supertype || "").indexOf("Pok") !== -1 && !!card.hp;
+    var st = String(card.supertype || "").trim();
+    if (st && st.toLowerCase().indexOf("pok") === -1) return false;
+    var hp = Number(card.hp);
+    return !isNaN(hp) ? hp > 0 : !!card.hp;
   }
 
   function renderCollection() {
