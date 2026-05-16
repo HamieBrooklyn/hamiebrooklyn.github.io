@@ -49,6 +49,10 @@
     modalAllowEvolve: false,
     evoSelectedTargetId: null,
     evoInFlight: false,
+    serverPd: 0,
+    serverCr: 0,
+    currencyDirty: false,
+    currencySaveTimer: null,
   };
 
   var els = {
@@ -79,6 +83,9 @@
     sideTheirsLabel: document.getElementById("side-theirs-label"),
     myPd: document.getElementById("my-pd"),
     myCr: document.getElementById("my-cr"),
+    myBalanceHint: document.getElementById("my-balance-hint"),
+    myBalancePd: document.getElementById("my-balance-pd"),
+    myBalanceCr: document.getElementById("my-balance-cr"),
     btnSaveSide: document.getElementById("btn-save-side"),
     theirPd: document.getElementById("their-pd"),
     theirCr: document.getElementById("their-cr"),
@@ -114,6 +121,57 @@
 
   function fmtPd(n) { return "₽" + Number(n || 0).toLocaleString(); }
   function fmtCr(n) { return "💎 " + Number(n || 0).toLocaleString(); }
+
+  function parseCurrencyInput(el) {
+    if (!el) return 0;
+    var raw = String(el.value || "").trim();
+    if (raw === "") return 0;
+    var n = parseInt(raw, 10);
+    return isNaN(n) || n < 0 ? 0 : n;
+  }
+
+  function currencyInputsLocked() {
+    if (!els.myPd || !els.myCr) return false;
+    var ae = document.activeElement;
+    if (ae === els.myPd || ae === els.myCr) return true;
+    if (state.currencyDirty) return true;
+    return false;
+  }
+
+  function syncCurrencyInputsFromServer(mySide) {
+    var pd = mySide.pokedollars || 0;
+    var cr = mySide.crystals || 0;
+    state.serverPd = pd;
+    state.serverCr = cr;
+    if (!currencyInputsLocked()) {
+      els.myPd.value = String(pd);
+      els.myCr.value = String(cr);
+      state.currencyDirty = false;
+    }
+  }
+
+  function renderViewerBalance(balance) {
+    if (!balance || !els.myBalanceHint) return;
+    if (els.myBalancePd) els.myBalancePd.textContent = fmtPd(balance.pokedollars);
+    if (els.myBalanceCr) els.myBalanceCr.textContent = fmtCr(balance.crystals);
+    els.myBalanceHint.hidden = false;
+  }
+
+  function scheduleCurrencySave() {
+    state.currencyDirty = true;
+    if (state.currencySaveTimer) clearTimeout(state.currencySaveTimer);
+    state.currencySaveTimer = setTimeout(function () {
+      state.currencySaveTimer = null;
+      saveSide();
+    }, 700);
+  }
+
+  function clearCurrencySaveTimer() {
+    if (state.currencySaveTimer) {
+      clearTimeout(state.currencySaveTimer);
+      state.currencySaveTimer = null;
+    }
+  }
 
   function profileUser(u) {
     if (!u) return null;
@@ -853,8 +911,11 @@
   function leaveRoom() {
     document.body.classList.remove("trade-room-active");
     stopPolling();
+    clearCurrencySaveTimer();
+    state.currencyDirty = false;
     state.activeTrade = null;
     state.selectedCardIds = [];
+    if (els.myBalanceHint) els.myBalanceHint.hidden = true;
     els.room.hidden = true;
     els.listSection.hidden = false;
     if (state.authenticated && els.inviteSection) els.inviteSection.hidden = false;
@@ -907,8 +968,8 @@
 
       state.selectedCardIds = mySide.cards.map(function (c) { return c.instance_id; });
 
-      els.myPd.value = mySide.pokedollars || 0;
-      els.myCr.value = mySide.crystals || 0;
+      syncCurrencyInputsFromServer(mySide);
+      if (t.viewer_balance) renderViewerBalance(t.viewer_balance);
       els.theirPd.textContent = fmtPd(theirSide.pokedollars);
       els.theirCr.textContent = fmtCr(theirSide.crystals);
 
@@ -993,8 +1054,9 @@
 
   async function saveSide() {
     if (!state.activeTrade) return;
-    var pd = parseInt(els.myPd.value, 10) || 0;
-    var cr = parseInt(els.myCr.value, 10) || 0;
+    clearCurrencySaveTimer();
+    var pd = parseCurrencyInput(els.myPd);
+    var cr = parseCurrencyInput(els.myCr);
     try {
       var r = await apiFetch("/api/me/trades/" + state.activeTrade.id + "/update", {
         method: "POST",
@@ -1003,6 +1065,7 @@
       });
       var j = await r.json();
       if (!r.ok) throw new Error(j.message || j.error);
+      state.currencyDirty = false;
       await loadTradeState(state.activeTrade.id);
     } catch (e) {
       if (els.roomMsg) els.roomMsg.innerHTML = '<div class="trade-msg-err">' + String(e.message || e) + "</div>";
@@ -1164,7 +1227,7 @@
       } else if (state.pickerQuery) {
         if (!pickerHasEvoSections()) {
           els.pickerResults.innerHTML =
-            '<div class="trade-muted">No cards match "' + state.pickerQuery + '"</div>';
+            '<div class="trade-muted">No cards match "' + state.pickerQuery + '"</motion>';
         }
       }
       renderPickerEvoSections();
@@ -1234,6 +1297,24 @@
       });
     }
     if (els.btnSaveSide) els.btnSaveSide.addEventListener("click", saveSide);
+    function onCurrencyBlur() {
+      if (
+        parseCurrencyInput(els.myPd) === state.serverPd &&
+        parseCurrencyInput(els.myCr) === state.serverCr
+      ) {
+        state.currencyDirty = false;
+      }
+    }
+    if (els.myPd) {
+      els.myPd.addEventListener("input", scheduleCurrencySave);
+      els.myPd.addEventListener("focus", function () { state.currencyDirty = true; });
+      els.myPd.addEventListener("blur", onCurrencyBlur);
+    }
+    if (els.myCr) {
+      els.myCr.addEventListener("input", scheduleCurrencySave);
+      els.myCr.addEventListener("focus", function () { state.currencyDirty = true; });
+      els.myCr.addEventListener("blur", onCurrencyBlur);
+    }
     if (els.pickerSearch) els.pickerSearch.addEventListener("input", pickerSearchChanged);
     if (els.pickerFilterFavorited) {
       els.pickerFilterFavorited.addEventListener("click", function () {

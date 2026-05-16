@@ -420,6 +420,23 @@ body.trade-room-active .app-main {
   outline: none;
 }
 
+.trade-balance-hint {
+  flex: 1 1 100%;
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.trade-balance-hint span:not(.trade-balance-sep) {
+  font-family: var(--font-mono, var(--font));
+  color: var(--text);
+}
+
+.trade-balance-sep {
+  margin: 0 0.35rem;
+  opacity: 0.5;
+}
+
 .trade-currency-inputs {
   display: flex;
   flex-wrap: wrap;

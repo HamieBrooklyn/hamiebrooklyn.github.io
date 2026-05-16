@@ -8,7 +8,7 @@
   <title>Trades — PokePon</title>
   <meta name="description" content="Trade cards, Pokedollars and Crystals with other players on PokePon." />
   <link rel="stylesheet" href="assets/style.css?v=8" />
-  <link rel="stylesheet" href="assets/trades.css?v=6" />
+  <link rel="stylesheet" href="assets/trades.css?v=7" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -134,13 +134,19 @@
             </header>
             <div class="trade-offer-cards trade-side-cards" id="side-mine-cards"></div>
             <div class="trade-currency-inputs trade-offer-currency">
+              <p class="trade-balance-hint" id="my-balance-hint" hidden>
+                Your balance:
+                <span id="my-balance-pd">₽0</span>
+                <span class="trade-balance-sep" aria-hidden="true">·</span>
+                <span id="my-balance-cr">💎 0</span>
+              </p>
               <div class="trade-field">
                 <label for="my-pd">Pokedollars</label>
-                <input id="my-pd" type="number" min="0" value="0" />
+                <input id="my-pd" type="number" min="0" value="0" inputmode="numeric" />
               </div>
               <div class="trade-field">
                 <label for="my-cr">Crystals</label>
-                <input id="my-cr" type="number" min="0" value="0" />
+                <input id="my-cr" type="number" min="0" value="0" inputmode="numeric" />
               </div>
               <button type="button" class="btn btn-small" id="btn-save-side">Save offer</button>
             </div>
@@ -269,6 +275,6 @@
     })();
   </script>
   <script src="assets/evo-focus.js?v=1" defer></script>
-  <script src="assets/trades.js?v=15" defer></script>
+  <script src="assets/trades.js?v=16" defer></script>
 </body>
 </html>
