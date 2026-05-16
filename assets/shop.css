@@ -143,16 +143,18 @@
 .shop-grid-compact {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.75rem;
 }
 
 .shop-pack {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: auto auto auto;
-  gap: 0.15rem 0.75rem;
-  padding: 0.75rem 0.85rem;
+  gap: 0.2rem 1.15rem;
+  padding: 1rem 1rem 1rem 0.9rem;
+  padding-top: 1.15rem;
+  min-height: 4.75rem;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--bg-elev);
@@ -173,16 +175,23 @@
 
 .shop-pack-badge {
   position: absolute;
-  top: 0.45rem;
-  right: 0.45rem;
-  font-size: 0.58rem;
+  top: 0.5rem;
+  left: 0.85rem;
+  right: auto;
+  font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  padding: 0.15rem 0.4rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 999px;
   background: rgba(251, 191, 36, 0.2);
   color: #fde68a;
+  z-index: 1;
+}
+
+.shop-pack.is-popular .shop-pack-price,
+.shop-pack.is-best_value .shop-pack-price {
+  margin-top: 0.15rem;
 }
 
 .shop-pack.is-best_value .shop-pack-badge {
@@ -231,9 +240,13 @@
   grid-column: 2;
   grid-row: 1 / span 3;
   align-self: center;
+  justify-self: end;
+  min-width: 6.25rem;
+  min-height: 2.65rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
   white-space: nowrap;
-  padding: 0.45rem 0.85rem;
-  font-size: 0.85rem;
 }
 
 .shop-pack .btn:disabled {
@@ -261,12 +274,15 @@
   .shop-pack {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
+    min-height: 0;
+    padding-bottom: 1rem;
   }
 
   .shop-pack .btn {
     grid-column: 1;
     grid-row: auto;
     width: 100%;
-    margin-top: 0.35rem;
+    min-width: 0;
+    margin-top: 0.5rem;
   }
 }

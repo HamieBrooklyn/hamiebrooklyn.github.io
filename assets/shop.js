@@ -160,7 +160,7 @@
     var btnLabel = state.authenticated
       ? disabled
         ? "Soon"
-        : "Buy"
+        : "Buy now"
       : "Sign in";
     var priceHtml = "";
     if (item.price && item.price.display) {
