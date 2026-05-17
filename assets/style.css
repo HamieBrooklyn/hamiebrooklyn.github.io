@@ -201,6 +201,48 @@ a:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
+.referral-promo {
+  margin: 0 0 1.35rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: calc(var(--radius) + 2px);
+  border: 1px solid rgba(192, 132, 252, 0.4);
+  background: linear-gradient(
+    135deg,
+    rgba(192, 132, 252, 0.14) 0%,
+    rgba(91, 140, 255, 0.08) 55%,
+    var(--bg-elev) 100%
+  );
+  box-shadow: 0 12px 40px rgba(192, 132, 252, 0.12);
+}
+
+.referral-promo-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #e9d5ff;
+}
+
+.referral-promo-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.referral-promo-text {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+  line-height: 1.5;
+  max-width: 42rem;
+}
+
+.referral-promo-text strong {
+  color: var(--text);
+}
+
 .home-features {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
