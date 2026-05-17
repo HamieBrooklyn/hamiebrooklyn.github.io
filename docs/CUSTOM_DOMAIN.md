@@ -45,7 +45,8 @@ WEB_FRONTEND_URL=https://pokepon.org/collection/
 
 Keep `https://hamiebrooklyn.github.io` in origins during transition; remove it later if you want.
 
-`WEB_PUBLIC_URL` stays your **API** host (ngrok or production), not pokepon.org.
+`WEB_PUBLIC_URL` is your **API** host (`https://api.pokepon.org`), not the GitHub Pages site.  
+See **[API_SUBDOMAIN.md](./API_SUBDOMAIN.md)** for Cloudflare Tunnel from a home PC.
 
 ## 4. Discord Developer Portal
 
@@ -63,7 +64,8 @@ WEB_FRONTEND_URL=https://pokepon.org/shop/
 
 (or `/collection/` if that is your configured frontend base — shop checkout appends `/shop/`).
 
-Webhook URL remains: `https://<WEB_PUBLIC_URL host>/api/stripe/webhook`
+Stripe webhook: `https://api.pokepon.org/api/stripe/webhook`  
+Top.gg webhook: `https://api.pokepon.org/topgg/webhook`
 
 ## 6. Share links
 

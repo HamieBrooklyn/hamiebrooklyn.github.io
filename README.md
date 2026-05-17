@@ -25,7 +25,7 @@ The [collection binder](https://pokepon.org/collection/) talks to the **running 
 | `GET` | `/api/me/cards/{public_id}` | One card + same **`sell`** object. |
 | `POST` | `/api/me/cards/{public_id}/sell` | Body: `{ "expected_payout": <int>, "confirm_rare"?: true }`. |
 
-Configure each page’s **`pokepon-api-base`** meta tag (or `?api=` override) to your HTTPS bot URL. CORS must allow `https://pokepon.org` in the bot’s `WEB_ALLOWED_ORIGINS`.
+Production API base: **`https://api.pokepon.org`** (see [docs/API_SUBDOMAIN.md](docs/API_SUBDOMAIN.md) for Cloudflare Tunnel from a home PC). CORS must allow `https://pokepon.org` in the bot’s `WEB_ALLOWED_ORIGINS`.
 
 ## Legal
 
