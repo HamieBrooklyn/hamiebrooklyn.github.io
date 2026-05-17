@@ -8,6 +8,30 @@
   var SESSION_KEY = "pokepon-session";
   function readSessionToken() { try { return localStorage.getItem(SESSION_KEY) || ""; } catch (_) { return ""; } }
   function storeSessionToken(t) { try { localStorage.setItem(SESSION_KEY, t); } catch (_) {} }
+  function tradeIdFromQuery() {
+    var raw = new URLSearchParams(window.location.search).get("trade");
+    if (!raw) return null;
+    var n = parseInt(raw, 10);
+    return isFinite(n) && n > 0 ? n : null;
+  }
+
+  async function openTradeFromQuery() {
+    var id = tradeIdFromQuery();
+    if (!id || !state.authenticated) return;
+    try {
+      var r = await apiFetch("/api/me/trades/" + id);
+      if (!r.ok) return;
+      var t = await r.json();
+      if (t.status === "active") {
+        await enterRoom(id);
+      } else {
+        await loadList();
+      }
+    } catch (e) {
+      /* invite may still appear in list */
+    }
+  }
+
   function captureSessionFromFragment() {
     if (!window.location.hash) return;
     var p = new URLSearchParams(window.location.hash.slice(1));
@@ -1393,7 +1417,10 @@
 
     captureSessionFromFragment();
     bootAuth().then(function () {
-      loadList();
+      return loadList().then(function () {
+        return openTradeFromQuery();
+      });
+    }).then(function () {
       state.listTimer = setInterval(loadList, 10000);
     });
   }
