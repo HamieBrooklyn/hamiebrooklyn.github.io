@@ -196,6 +196,10 @@
       }
       var stored = "";
       try { stored = localStorage.getItem(KEY) || ""; } catch (_) {}
+      if (stored && /\.ngrok/i.test(stored)) {
+        try { localStorage.removeItem(KEY); } catch (_) {}
+        stored = "";
+      }
       if (stored && !isValidBase(stored)) {
         try { localStorage.removeItem(KEY); } catch (_) {}
         stored = "";
