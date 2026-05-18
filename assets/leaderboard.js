@@ -8,7 +8,9 @@
   }
 
   var SESSION_KEY = "pokepon-session";
-  var TOPGG_VOTE_URL = "https://top.gg/bot/1496227239803748362/vote";
+  var TOPGG_VOTE_URL =
+    (window.POKEPON_LINKS && window.POKEPON_LINKS.topggVote) ||
+    "https://top.gg/bot/1496227239803748362/vote";
 
   var CATEGORY_META = {
     strongest: {

@@ -19,8 +19,9 @@
     <div class="site-header-row">
       <a class="logo" href="./">PokePon</a>
       <div class="site-header-cta">
-        <a class="btn btn-ghost btn-small" href="https://discord.gg/MaSEAnxTBn" target="_blank" rel="noopener noreferrer">Join Discord</a>
-        <a class="btn btn-primary btn-small" href="https://top.gg/bot/1496227239803748362/vote" target="_blank" rel="noopener noreferrer">Vote on Top.gg</a>
+        <a class="btn btn-ghost btn-small" href="https://discord.gg/MaSEAnxTBn" data-pokepon-link="server-invite" target="_blank" rel="noopener noreferrer">Join server</a>
+        <a class="btn btn-ghost btn-small" href="https://discord.com/oauth2/authorize?client_id=1496227239803748362&amp;permissions=268954721&amp;integration_type=0&amp;scope=bot+applications.commands" data-pokepon-link="bot-invite" target="_blank" rel="noopener noreferrer">Add bot</a>
+        <a class="btn btn-primary btn-small" href="https://top.gg/bot/1496227239803748362/vote" data-pokepon-link="topgg-vote" target="_blank" rel="noopener noreferrer">Vote on Top.gg</a>
       </div>
     </div>
     <nav class="home-nav" aria-label="Site sections">
@@ -67,7 +68,7 @@
       </aside>
 
       <div class="hero-actions">
-        <a class="btn btn-primary" href="https://discord.com/oauth2/authorize?client_id=1496227239803748362&permissions=268954721&integration_type=0&scope=bot+applications.commands" target="_blank" rel="noopener noreferrer">Add to Discord</a>
+        <a class="btn btn-primary" href="https://discord.com/oauth2/authorize?client_id=1496227239803748362&amp;permissions=268954721&amp;integration_type=0&amp;scope=bot+applications.commands" data-pokepon-link="bot-invite" target="_blank" rel="noopener noreferrer">Add to Discord</a>
         <a class="btn btn-ghost" href="/collection/">Open web app</a>
         <a class="btn btn-ghost" href="https://github.com/HamieBrooklyn/Poke-Cards" target="_blank" rel="noopener noreferrer">Source</a>
       </div>
@@ -183,6 +184,7 @@
       <a href="/privacy/">Privacy</a>
     </span>
   </footer>
+  <script src="assets/site-links.js?v=1" defer></script>
   <script>
     document.getElementById("y").textContent = new Date().getFullYear();
   </script>

@@ -82,15 +82,21 @@
         <p class="sidebar-section">Community</p>
         <ul>
           <li>
-            <a class="sidebar-link sidebar-link-external" href="https://top.gg/bot/1496227239803748362/vote" target="_blank" rel="noopener noreferrer">
+            <a class="sidebar-link sidebar-link-external" href="https://top.gg/bot/1496227239803748362/vote" data-pokepon-link="topgg-vote" target="_blank" rel="noopener noreferrer">
               <span class="sidebar-link-icon" aria-hidden="true">♥</span>
               <span class="sidebar-link-text">Vote on Top.gg</span>
             </a>
           </li>
           <li>
-            <a class="sidebar-link sidebar-link-external" href="https://discord.gg/MaSEAnxTBn" target="_blank" rel="noopener noreferrer">
+            <a class="sidebar-link sidebar-link-external" href="https://discord.com/oauth2/authorize?client_id=1496227239803748362&amp;permissions=268954721&amp;integration_type=0&amp;scope=bot+applications.commands" data-pokepon-link="bot-invite" target="_blank" rel="noopener noreferrer">
+              <span class="sidebar-link-icon" aria-hidden="true">⊕</span>
+              <span class="sidebar-link-text">Add bot to server</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link sidebar-link-external" href="https://discord.gg/MaSEAnxTBn" data-pokepon-link="server-invite" target="_blank" rel="noopener noreferrer">
               <span class="sidebar-link-icon" aria-hidden="true">◈</span>
-              <span class="sidebar-link-text">Join Discord</span>
+              <span class="sidebar-link-text">Join server</span>
             </a>
           </li>
         </ul>
@@ -167,9 +173,9 @@
                 <p class="settings-muted">Send this link to friends — when they join and play, you earn Crystals.</p>
               </div>
               <div class="invite-card-actions">
-                <input class="invite-link-input" id="invite-link-input" type="text" readonly value="https://discord.gg/MaSEAnxTBn" />
+                <input class="invite-link-input" id="invite-link-input" type="text" readonly value="" placeholder="Sign in to load your personal link" />
                 <button type="button" class="btn btn-primary" id="btn-copy-invite">Copy link</button>
-                <a class="btn btn-ghost" id="btn-open-invite" href="https://discord.gg/MaSEAnxTBn" target="_blank" rel="noopener noreferrer">Open Discord</a>
+                <a class="btn btn-ghost" id="btn-open-invite" href="#" target="_blank" rel="noopener noreferrer">Open Discord</a>
               </div>
               <p class="settings-muted invite-hint" id="invite-hint" hidden></p>
               <span class="settings-save-msg" id="invite-copy-msg" hidden>Copied!</span>
@@ -241,7 +247,8 @@
       window.POKEPON_API_BASE = (stored && isValidBase(stored) ? stored : fromMeta) || "";
     })();
   </script>
-  <script src="/assets/app-shell.js?v=2" defer></script>
+  <script src="/assets/site-links.js?v=1" defer></script>
+  <script src="/assets/app-shell.js?v=3" defer></script>
   <script src="/assets/settings.js?v=3" defer></script>
 </body>
 </html>
