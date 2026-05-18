@@ -10,7 +10,7 @@
   <link rel="canonical" href="https://pokepon.org/settings/" />
   <meta name="pokepon-api-base" content="https://api.pokepon.org" />
   <link rel="stylesheet" href="/assets/style.css?v=19" />
-  <link rel="stylesheet" href="/assets/settings.css?v=2" />
+  <link rel="stylesheet" href="/assets/settings.css?v=3" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -169,8 +169,9 @@
               <div class="invite-card-actions">
                 <input class="invite-link-input" id="invite-link-input" type="text" readonly value="https://discord.gg/MaSEAnxTBn" />
                 <button type="button" class="btn btn-primary" id="btn-copy-invite">Copy link</button>
-                <a class="btn btn-ghost" href="https://discord.gg/MaSEAnxTBn" target="_blank" rel="noopener noreferrer">Open Discord</a>
+                <a class="btn btn-ghost" id="btn-open-invite" href="https://discord.gg/MaSEAnxTBn" target="_blank" rel="noopener noreferrer">Open Discord</a>
               </div>
+              <p class="settings-muted invite-hint" id="invite-hint" hidden></p>
               <span class="settings-save-msg" id="invite-copy-msg" hidden>Copied!</span>
             </div>
 
@@ -241,6 +242,6 @@
     })();
   </script>
   <script src="/assets/app-shell.js?v=2" defer></script>
-  <script src="/assets/settings.js?v=2" defer></script>
+  <script src="/assets/settings.js?v=3" defer></script>
 </body>
 </html>

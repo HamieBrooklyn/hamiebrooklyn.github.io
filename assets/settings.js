@@ -86,7 +86,9 @@
     notifySaveMsg: document.getElementById("notify-save-msg"),
     inviteLinkInput: document.getElementById("invite-link-input"),
     btnCopyInvite: document.getElementById("btn-copy-invite"),
+    btnOpenInvite: document.getElementById("btn-open-invite"),
     inviteCopyMsg: document.getElementById("invite-copy-msg"),
+    inviteHint: document.getElementById("invite-hint"),
   };
 
   var state = {
@@ -192,6 +194,8 @@
         statCard(s.rewards_remaining, "Rewards left");
     }
 
+    updateInviteCard(data.personal_invite_url);
+
     var list = data.referrals || [];
     if (els.referralsEmpty) els.referralsEmpty.hidden = list.length > 0;
     if (!els.referralList) return;
@@ -200,6 +204,22 @@
       els.referralList.appendChild(renderReferralRow(row, rules.cd_uses_required || 10));
     });
     state.referralsLoaded = true;
+  }
+
+  function updateInviteCard(url) {
+    if (url && els.inviteLinkInput) {
+      els.inviteLinkInput.value = url;
+      if (els.btnOpenInvite) els.btnOpenInvite.href = url;
+      if (els.inviteHint) {
+        els.inviteHint.hidden = false;
+        els.inviteHint.textContent =
+          "This link is yours — friends who join with it count as your referrals automatically.";
+      }
+    } else if (els.inviteHint) {
+      els.inviteHint.hidden = false;
+      els.inviteHint.textContent =
+        "Your personal invite is not available right now. The link below works for everyone, but referrals can only be attributed when you use your own link.";
+    }
   }
 
   function statCard(value, label) {
