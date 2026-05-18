@@ -491,7 +491,7 @@
             ? "No cards in your collection match <strong>" +
                 escapeHtml(state.query) +
                 "</strong>."
-            : "Your collection is empty. Run <code>pcd</code> in Discord to claim your first card."
+            : "Your collection is empty. Run <code>ppcd</code> in Discord to claim your first card."
       );
       return;
     }

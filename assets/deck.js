@@ -479,7 +479,7 @@
         "empty",
         state.query
           ? "No cards match <strong>" + escapeHtml(state.query) + "</strong>."
-          : "Your collection is empty. Drop cards with <code>pcd</code> in Discord first."
+          : "Your collection is empty. Drop cards with <code>ppcd</code> in Discord first."
       );
       return;
     }
