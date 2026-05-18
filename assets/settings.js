@@ -1,0 +1,392 @@
+(function () {
+  "use strict";
+
+  var API_BASE = (window.POKEPON_API_BASE || "").replace(/\/+$/, "");
+  var SESSION_KEY = "pokepon-session";
+
+  function api(path) {
+    return API_BASE + path;
+  }
+
+  function readSessionToken() {
+    try {
+      return localStorage.getItem(SESSION_KEY) || "";
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function storeSessionToken(token) {
+    try {
+      localStorage.setItem(SESSION_KEY, token);
+    } catch (_) {}
+  }
+
+  function clearSessionToken() {
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch (_) {}
+  }
+
+  function captureSessionFromFragment() {
+    if (!window.location.hash) return;
+    var params = new URLSearchParams(window.location.hash.slice(1));
+    var token = params.get("session");
+    if (!token) return;
+    storeSessionToken(token);
+    params.delete("session");
+    var nextHash = params.toString();
+    var cleanUrl =
+      window.location.pathname +
+      window.location.search +
+      (nextHash ? "#" + nextHash : "");
+    window.history.replaceState(null, "", cleanUrl);
+  }
+
+  function apiHeaders() {
+    var headers = { "ngrok-skip-browser-warning": "1" };
+    var token = readSessionToken();
+    if (token) headers.Authorization = "Bearer " + token;
+    return headers;
+  }
+
+  function apiFetch(path, options) {
+    options = options || {};
+    options.credentials = "include";
+    options.headers = Object.assign({}, apiHeaders(), options.headers || {});
+    return fetch(api(path), options);
+  }
+
+  var els = {
+    sidebarUser: document.getElementById("sidebar-user"),
+    btnLogin: document.getElementById("btn-login"),
+    btnLoginMain: document.getElementById("btn-login-main"),
+    btnLogout: document.getElementById("btn-logout"),
+    userAvatar: document.getElementById("user-avatar"),
+    userName: document.getElementById("user-name"),
+    settingsGate: document.getElementById("settings-gate"),
+    settingsPanel: document.getElementById("settings-panel"),
+    accountAvatar: document.getElementById("account-avatar"),
+    accountDisplayName: document.getElementById("account-display-name"),
+    accountUsername: document.getElementById("account-username"),
+    accountId: document.getElementById("account-id"),
+    tabButtons: document.querySelectorAll(".settings-tab"),
+    tabPanels: document.querySelectorAll(".settings-tab-panel"),
+    referralsLoading: document.getElementById("referrals-loading"),
+    referralsContent: document.getElementById("referrals-content"),
+    referralsRules: document.getElementById("referrals-rules"),
+    referralsStats: document.getElementById("referrals-stats"),
+    referralsEmpty: document.getElementById("referrals-empty"),
+    referralList: document.getElementById("referral-list"),
+    referralsError: document.getElementById("referrals-error"),
+    notifyForm: document.getElementById("notify-form"),
+    notifyTrades: document.getElementById("notify-trades"),
+    notifyAuctions: document.getElementById("notify-auctions"),
+    notifyReferrals: document.getElementById("notify-referrals"),
+    notifySaveMsg: document.getElementById("notify-save-msg"),
+  };
+
+  var state = {
+    user: null,
+    referralsLoaded: false,
+    settingsLoaded: false,
+  };
+
+  function displayName(user) {
+    return user.global_name || user.username || "Discord user";
+  }
+
+  function loginUrl() {
+    return api("/auth/discord/login?return_to=" + encodeURIComponent(window.location.href));
+  }
+
+  function setSidebarState(which) {
+    if (!els.sidebarUser) return;
+    els.sidebarUser.setAttribute("data-state", which);
+  }
+
+  function showSignedOut() {
+    setSidebarState("signed-out");
+    if (els.settingsGate) els.settingsGate.hidden = false;
+    if (els.settingsPanel) els.settingsPanel.hidden = true;
+  }
+
+  function showSignedIn(user) {
+    state.user = user;
+    setSidebarState("signed-in");
+    var name = displayName(user);
+    if (els.userName) els.userName.textContent = name;
+    if (els.userAvatar && user.avatar_url) {
+      els.userAvatar.src = user.avatar_url;
+      els.userAvatar.alt = name;
+    }
+    if (els.accountDisplayName) els.accountDisplayName.textContent = name;
+    if (els.accountUsername) {
+      els.accountUsername.textContent = user.username ? "@" + user.username : "";
+    }
+    if (els.accountId) els.accountId.textContent = "ID " + user.id;
+    if (els.accountAvatar && user.avatar_url) {
+      els.accountAvatar.src = user.avatar_url;
+      els.accountAvatar.alt = name;
+    }
+    if (els.settingsGate) els.settingsGate.hidden = true;
+    if (els.settingsPanel) els.settingsPanel.hidden = false;
+  }
+
+  function switchTab(tabId) {
+    els.tabButtons.forEach(function (btn) {
+      var on = btn.getAttribute("data-tab") === tabId;
+      btn.classList.toggle("is-active", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    els.tabPanels.forEach(function (panel) {
+      var on = panel.id === "tab-" + tabId;
+      panel.classList.toggle("is-active", on);
+      panel.hidden = !on;
+    });
+    if (tabId === "referrals" && !state.referralsLoaded) {
+      loadReferrals();
+    }
+    if (tabId === "notifications" && !state.settingsLoaded) {
+      loadSettings();
+    }
+    if (window.location.hash !== "#" + tabId) {
+      window.history.replaceState(null, "", "#" + tabId);
+    }
+  }
+
+  function tabFromHash() {
+    var h = (window.location.hash || "").replace(/^#/, "");
+    if (h === "referrals" || h === "notifications" || h === "account") return h;
+    return "account";
+  }
+
+  function statusLabel(status) {
+    if (status === "rewarded") return { text: "Rewarded", cls: "referral-badge--rewarded" };
+    if (status === "completed") return { text: "Complete", cls: "referral-badge--done" };
+    return { text: "In progress", cls: "referral-badge--progress" };
+  }
+
+  function renderReferrals(data) {
+    if (!els.referralsContent) return;
+    els.referralsLoading.hidden = true;
+    els.referralsContent.hidden = false;
+    els.referralsError.hidden = true;
+
+    var rules = data.rules || {};
+    if (els.referralsRules) {
+      els.referralsRules.textContent =
+        rules.how_it_works ||
+        "Invite friends to your Discord server; when they play, you earn Crystals.";
+    }
+
+    var s = data.summary || {};
+    if (els.referralsStats) {
+      els.referralsStats.innerHTML =
+        statCard(s.total_invited, "Invited") +
+        statCard(s.in_progress, "In progress") +
+        statCard(s.rewards_earned + " / " + s.rewards_cap, "Rewards earned") +
+        statCard(s.rewards_remaining, "Rewards left");
+    }
+
+    var list = data.referrals || [];
+    if (els.referralsEmpty) els.referralsEmpty.hidden = list.length > 0;
+    if (!els.referralList) return;
+    els.referralList.innerHTML = "";
+    list.forEach(function (row) {
+      els.referralList.appendChild(renderReferralRow(row, rules.cd_uses_required || 10));
+    });
+    state.referralsLoaded = true;
+  }
+
+  function statCard(value, label) {
+    return (
+      '<div class="settings-stat"><strong>' +
+      escapeHtml(String(value != null ? value : "—")) +
+      "</strong><span>" +
+      escapeHtml(label) +
+      "</span></div>"
+    );
+  }
+
+  function escapeHtml(s) {
+    return s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function renderReferralRow(row, required) {
+    var li = document.createElement("li");
+    li.className = "referral-row";
+    var inv = row.invitee || {};
+    var name = row.display_name || "User";
+    var uses = row.cd_uses || 0;
+    var pct = Math.min(100, Math.round((uses / required) * 100));
+    var badge = statusLabel(row.status);
+    var avatar = inv.avatar_url
+      ? '<img class="referral-row-avatar" src="' +
+        escapeHtml(inv.avatar_url) +
+        '" alt="" />'
+      : '<div class="referral-row-avatar"></div>';
+    var reward =
+      row.crystals_awarded > 0
+        ? " · +" + row.crystals_awarded + " 💎"
+        : "";
+    li.innerHTML =
+      avatar +
+      '<div class="referral-row-main">' +
+      '<p class="referral-row-name">' +
+      escapeHtml(name) +
+      "</p>" +
+      '<div class="referral-progress" aria-hidden="true"><div class="referral-progress-fill" style="width:' +
+      pct +
+      '%"></div></div>' +
+      '<p class="referral-row-meta">' +
+      uses +
+      " / " +
+      required +
+      " card drops" +
+      reward +
+      "</p>" +
+      "</div>" +
+      '<span class="referral-badge ' +
+      badge.cls +
+      '">' +
+      escapeHtml(badge.text) +
+      "</span>";
+    return li;
+  }
+
+  function loadReferrals() {
+    if (!state.user) return;
+    els.referralsLoading.hidden = false;
+    els.referralsContent.hidden = true;
+    apiFetch("/api/me/referrals")
+      .then(function (r) {
+        if (!r.ok) throw new Error("Could not load referrals (" + r.status + ")");
+        return r.json();
+      })
+      .then(renderReferrals)
+      .catch(function (err) {
+        els.referralsLoading.hidden = true;
+        els.referralsError.hidden = false;
+        els.referralsError.textContent = err.message || "Failed to load referrals.";
+      });
+  }
+
+  function applySettings(settings) {
+    if (els.notifyTrades) els.notifyTrades.checked = !!settings.notify_trades;
+    if (els.notifyAuctions) els.notifyAuctions.checked = !!settings.notify_auctions;
+    if (els.notifyReferrals) els.notifyReferrals.checked = !!settings.notify_referrals;
+    state.settingsLoaded = true;
+  }
+
+  function loadSettings() {
+    apiFetch("/api/me/settings")
+      .then(function (r) {
+        if (!r.ok) throw new Error("Could not load settings");
+        return r.json();
+      })
+      .then(function (data) {
+        applySettings(data.settings || {});
+      })
+      .catch(function () {
+        /* keep defaults checked in HTML */
+        state.settingsLoaded = true;
+      });
+  }
+
+  function saveSettings(ev) {
+    ev.preventDefault();
+    var body = {
+      notify_trades: els.notifyTrades.checked,
+      notify_auctions: els.notifyAuctions.checked,
+      notify_referrals: els.notifyReferrals.checked,
+    };
+    apiFetch("/api/me/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error("Save failed");
+        return r.json();
+      })
+      .then(function (data) {
+        applySettings(data.settings || body);
+        if (els.notifySaveMsg) {
+          els.notifySaveMsg.hidden = false;
+          els.notifySaveMsg.textContent = "Saved.";
+          setTimeout(function () {
+            els.notifySaveMsg.hidden = true;
+          }, 2500);
+        }
+      })
+      .catch(function () {
+        if (els.notifySaveMsg) {
+          els.notifySaveMsg.hidden = false;
+          els.notifySaveMsg.textContent = "Could not save — try again.";
+          els.notifySaveMsg.style.color = "#f87171";
+        }
+      });
+  }
+
+  function bootAuth() {
+    setSidebarState("loading");
+    return apiFetch("/api/me")
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (data) {
+        if (data.authenticated && data.user) {
+          showSignedIn(data.user);
+          switchTab(tabFromHash());
+          loadSettings();
+          if (tabFromHash() === "referrals") loadReferrals();
+        } else {
+          showSignedOut();
+        }
+      })
+      .catch(function () {
+        showSignedOut();
+      });
+  }
+
+  function bindEvents() {
+    if (els.btnLogin) {
+      els.btnLogin.addEventListener("click", function () {
+        window.location.href = loginUrl();
+      });
+    }
+    if (els.btnLoginMain) {
+      els.btnLoginMain.addEventListener("click", function () {
+        window.location.href = loginUrl();
+      });
+    }
+    if (els.btnLogout) {
+      els.btnLogout.addEventListener("click", function () {
+        clearSessionToken();
+        apiFetch("/auth/logout", { method: "POST" }).finally(function () {
+          window.location.reload();
+        });
+      });
+    }
+    els.tabButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        switchTab(btn.getAttribute("data-tab"));
+      });
+    });
+    if (els.notifyForm) {
+      els.notifyForm.addEventListener("submit", saveSettings);
+    }
+    window.addEventListener("hashchange", function () {
+      if (state.user) switchTab(tabFromHash());
+    });
+  }
+
+  captureSessionFromFragment();
+  bindEvents();
+  bootAuth();
+})();

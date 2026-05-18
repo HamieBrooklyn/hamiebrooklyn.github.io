@@ -68,6 +68,16 @@
           </li>
         </ul>
 
+        <p class="sidebar-section">Account</p>
+        <ul>
+          <li>
+            <a class="sidebar-link" href="/settings/">
+              <span class="sidebar-link-icon" aria-hidden="true">⚙</span>
+              <span class="sidebar-link-text">Profile</span>
+            </a>
+          </li>
+        </ul>
+
         <p class="sidebar-section">Community</p>
         <ul>
           <li>
@@ -283,7 +293,7 @@
     </div>
   </div>
 
-  <meta name="pokepon-api-base" content="https://api.pokepon.org" />
+  <meta name="pokepon-api-base" content="https://unavailable-ruby-regionalistic.ngrok-free.dev" />
   <script>
     (function () {
       var KEY = "pokepon-api-base";
@@ -296,10 +306,6 @@
       if (override === "clear" || override === "reset") { try { localStorage.removeItem(KEY); } catch (_) {} override = ""; }
       if (override) { if (isValidBase(override)) { try { localStorage.setItem(KEY, override.replace(/\/+$/, "")); } catch (_) {} } }
       var stored = ""; try { stored = localStorage.getItem(KEY) || ""; } catch (_) {}
-      if (stored && /\.ngrok/i.test(stored)) {
-        try { localStorage.removeItem(KEY); } catch (_) {}
-        stored = "";
-      }
       if (stored && !isValidBase(stored)) { try { localStorage.removeItem(KEY); } catch (_) {} stored = ""; }
       var meta = document.querySelector('meta[name="pokepon-api-base"]');
       var fromMeta = (meta && meta.content && meta.content.trim()) || "";
@@ -307,7 +313,7 @@
       window.POKEPON_API_BASE = stored || fromMeta || "";
     })();
   </script>
-  <script src="/assets/app-shell.js?v=1" defer></script>
+  <script src="/assets/app-shell.js?v=2" defer></script>
   <script src="/assets/evo-focus.js?v=1" defer></script>
   <script src="/assets/trades.js?v=19" defer></script>
 </body>
