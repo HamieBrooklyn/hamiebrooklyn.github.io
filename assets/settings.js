@@ -84,6 +84,9 @@
     notifyAuctions: document.getElementById("notify-auctions"),
     notifyReferrals: document.getElementById("notify-referrals"),
     notifySaveMsg: document.getElementById("notify-save-msg"),
+    inviteLinkInput: document.getElementById("invite-link-input"),
+    btnCopyInvite: document.getElementById("btn-copy-invite"),
+    inviteCopyMsg: document.getElementById("invite-copy-msg"),
   };
 
   var state = {
@@ -381,9 +384,42 @@
     if (els.notifyForm) {
       els.notifyForm.addEventListener("submit", saveSettings);
     }
+    if (els.btnCopyInvite) {
+      els.btnCopyInvite.addEventListener("click", copyInviteLink);
+    }
     window.addEventListener("hashchange", function () {
       if (state.user) switchTab(tabFromHash());
     });
+  }
+
+  function copyInviteLink() {
+    if (!els.inviteLinkInput) return;
+    var link = els.inviteLinkInput.value;
+    var done = function () {
+      if (!els.inviteCopyMsg) return;
+      els.inviteCopyMsg.hidden = false;
+      els.inviteCopyMsg.textContent = "Copied!";
+      setTimeout(function () {
+        els.inviteCopyMsg.hidden = true;
+      }, 2000);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(done).catch(fallback);
+    } else {
+      fallback();
+    }
+    function fallback() {
+      els.inviteLinkInput.select();
+      try {
+        document.execCommand("copy");
+        done();
+      } catch (_) {
+        if (els.inviteCopyMsg) {
+          els.inviteCopyMsg.hidden = false;
+          els.inviteCopyMsg.textContent = "Copy failed — select the link and use Cmd/Ctrl+C.";
+        }
+      }
+    }
   }
 
   captureSessionFromFragment();
