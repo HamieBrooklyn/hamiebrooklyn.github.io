@@ -6,6 +6,8 @@
   var deps = {};
   var pendingChoose = null;
   var historyPushed = false;
+  var viewStack = [];
+  var currentTarget = null;
 
   function escapeHtml(s) {
     return String(s == null ? "" : s)
@@ -48,8 +50,31 @@
       .join("");
   }
 
+  function renderNextSection(target) {
+    if (!els.nextSection || !els.nextTargets) return;
+    var next = Array.isArray(target.next_targets) ? target.next_targets : [];
+    if (!next.length) {
+      els.nextSection.hidden = true;
+      els.nextTargets.innerHTML = "";
+      return;
+    }
+    els.nextSection.hidden = false;
+    renderTargetRows(els.nextTargets, next, {
+      readonly: true,
+      canEvolve: false,
+      fmtCost: deps.fmtCost,
+    });
+  }
+
   function close(skipHistory) {
     if (!els.modal) return;
+    if (viewStack.length) {
+      var prev = viewStack.pop();
+      open(prev, { replace: true, _reopen: true });
+      return;
+    }
+    currentTarget = null;
+    viewStack = [];
     els.modal.hidden = true;
     els.modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("evo-focus-open");
@@ -67,6 +92,10 @@
   function open(target, opts) {
     if (!target || !els.modal) return;
     opts = opts || {};
+    if (!opts.replace && !opts._reopen && currentTarget != null) {
+      viewStack.push(currentTarget);
+    }
+    currentTarget = target;
     pendingChoose = typeof opts.onChoose === "function" ? opts.onChoose : null;
     var canChoose = !!opts.canChoose && !!pendingChoose;
 
@@ -99,6 +128,7 @@
       els.supertype.textContent = target.supertype || "—";
     }
     renderAttacks(target.attacks, els.attacks, els.attacksSection);
+    renderNextSection(target);
 
     if (els.cost) {
       if (target.cost_pokedollars != null && deps.fmtCost) {
@@ -147,6 +177,8 @@
     els.cost = document.getElementById("evo-focus-cost");
     els.attacksSection = document.getElementById("evo-focus-attacks-section");
     els.attacks = document.getElementById("evo-focus-attacks");
+    els.nextSection = document.getElementById("evo-focus-next-section");
+    els.nextTargets = document.getElementById("evo-focus-next-targets");
     els.chooseBtn = document.getElementById("evo-focus-choose");
 
     els.modal.querySelectorAll("[data-evo-focus-close]").forEach(function (node) {
