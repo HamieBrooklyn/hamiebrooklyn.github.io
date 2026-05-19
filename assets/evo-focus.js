@@ -8,6 +8,8 @@
   var historyPushed = false;
   var viewStack = [];
   var currentTarget = null;
+  var currentCanChoose = false;
+  var currentOnChoose = null;
 
   function escapeHtml(s) {
     return String(s == null ? "" : s)
@@ -62,6 +64,7 @@
     renderTargetRows(els.nextTargets, next, {
       readonly: true,
       canEvolve: false,
+      previewOnly: true,
       fmtCost: deps.fmtCost,
     });
   }
@@ -69,11 +72,18 @@
   function close(skipHistory) {
     if (!els.modal) return;
     if (viewStack.length) {
-      var prev = viewStack.pop();
-      open(prev, { replace: true, _reopen: true });
+      var frame = viewStack.pop();
+      open(frame.target, {
+        replace: true,
+        _reopen: true,
+        canChoose: frame.canChoose,
+        onChoose: frame.onChoose,
+      });
       return;
     }
     currentTarget = null;
+    currentCanChoose = false;
+    currentOnChoose = null;
     viewStack = [];
     els.modal.hidden = true;
     els.modal.setAttribute("aria-hidden", "true");
@@ -93,11 +103,19 @@
     if (!target || !els.modal) return;
     opts = opts || {};
     if (!opts.replace && !opts._reopen && currentTarget != null) {
-      viewStack.push(currentTarget);
+      viewStack.push({
+        target: currentTarget,
+        canChoose: currentCanChoose,
+        onChoose: currentOnChoose,
+      });
     }
     currentTarget = target;
-    pendingChoose = typeof opts.onChoose === "function" ? opts.onChoose : null;
-    var canChoose = !!opts.canChoose && !!pendingChoose;
+    var previewOnly = !!opts.previewOnly;
+    pendingChoose =
+      !previewOnly && typeof opts.onChoose === "function" ? opts.onChoose : null;
+    currentOnChoose = pendingChoose;
+    currentCanChoose = !!opts.canChoose && !!pendingChoose;
+    var canChoose = currentCanChoose;
 
     var img = target.image_large_url || target.image_small_url || "";
     if (els.img) {
@@ -131,7 +149,7 @@
     renderNextSection(target);
 
     if (els.cost) {
-      if (target.cost_pokedollars != null && deps.fmtCost) {
+      if (!previewOnly && target.cost_pokedollars != null && deps.fmtCost) {
         els.cost.hidden = false;
         els.cost.textContent = "Evolution cost: " + deps.fmtCost(target.cost_pokedollars);
       } else {
@@ -148,6 +166,9 @@
       } else if (canChoose) {
         els.chooseBtn.textContent = "Choose this evolution";
       }
+    }
+    if (els.actions) {
+      els.actions.hidden = !canChoose;
     }
 
     if (!historyPushed) {
@@ -180,6 +201,7 @@
     els.nextSection = document.getElementById("evo-focus-next-section");
     els.nextTargets = document.getElementById("evo-focus-next-targets");
     els.chooseBtn = document.getElementById("evo-focus-choose");
+    els.actions = document.querySelector(".evo-focus-actions");
 
     els.modal.querySelectorAll("[data-evo-focus-close]").forEach(function (node) {
       node.addEventListener("click", close);
@@ -263,13 +285,9 @@
 
       hit.addEventListener("click", function () {
         open(t, {
-          canChoose: !readonly && canEvolve,
-          onChoose: onSelect
-            ? function () {
-                onSelect(t.card_id);
-                syncSelection(container, t.card_id);
-              }
-            : null,
+          previewOnly: true,
+          canChoose: false,
+          onChoose: null,
         });
       });
       row.appendChild(hit);
