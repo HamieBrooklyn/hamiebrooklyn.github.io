@@ -1,4 +1,4 @@
-/* Global pack pool search — collection-style grid + card modal */
+/* Packs — browse series first, then card pool + odds per pack */
 (function () {
   "use strict";
 
@@ -67,29 +67,30 @@
     return "₽ " + x.toLocaleString();
   }
 
-  function sortLabel(sort) {
-    switch (sort) {
-      case "rarity":
-        return "rarest";
-      case "cost_high":
-        return "high shop sell";
-      case "cost_low":
-        return "low shop sell";
-      default:
-        return "top picks";
-    }
-  }
-
   var els = {
+    browse: document.getElementById("packs-browse"),
+    detail: document.getElementById("packs-detail"),
     status: document.getElementById("packs-status"),
-    search: document.getElementById("pack-search"),
-    searchClear: document.getElementById("pack-search-clear"),
-    chips: Array.prototype.slice.call(document.querySelectorAll(".chip[data-sort]")),
-    grid: document.getElementById("pack-card-grid"),
-    pager: document.getElementById("pack-pager"),
-    pagerPrev: document.getElementById("pack-pager-prev"),
-    pagerNext: document.getElementById("pack-pager-next"),
-    pagerInfo: document.getElementById("pack-pager-info"),
+    packSearch: document.getElementById("pack-search"),
+    packSearchClear: document.getElementById("pack-search-clear"),
+    packSortChips: Array.prototype.slice.call(
+      document.querySelectorAll("[data-pack-sort]")
+    ),
+    catalogGrid: document.getElementById("pack-catalog-grid"),
+    catalogPager: document.getElementById("pack-catalog-pager"),
+    catalogPrev: document.getElementById("pack-catalog-prev"),
+    catalogNext: document.getElementById("pack-catalog-next"),
+    catalogPagerInfo: document.getElementById("pack-catalog-pager-info"),
+    packBack: document.getElementById("pack-back"),
+    detailMain: document.getElementById("pack-detail-main"),
+    detailLoading: document.getElementById("pack-detail-loading"),
+    cardsMeta: document.getElementById("pack-cards-meta"),
+    cardFilter: document.getElementById("pack-card-filter"),
+    cardFilterClear: document.getElementById("pack-card-filter-clear"),
+    cardSortChips: Array.prototype.slice.call(
+      document.querySelectorAll("[data-card-sort]")
+    ),
+    cardsList: document.getElementById("pack-cards-list"),
     modal: document.getElementById("pack-card-modal"),
     modalImg: document.getElementById("pack-modal-img"),
     modalTitle: document.getElementById("pack-modal-title"),
@@ -101,8 +102,6 @@
     modalSell: document.getElementById("pack-modal-sell"),
     modalAttacksSection: document.getElementById("pack-modal-attacks-section"),
     modalAttacks: document.getElementById("pack-modal-attacks"),
-    modalPackName: document.getElementById("pack-modal-pack-name"),
-    modalPackMeta: document.getElementById("pack-modal-pack-meta"),
     modalOdds: document.getElementById("pack-modal-odds"),
     sidebarUser: document.getElementById("sidebar-user"),
     btnLogin: document.getElementById("btn-login"),
@@ -114,20 +113,33 @@
   };
 
   var state = {
-    query: "",
-    sort: "top",
-    packFilter: "",
-    page: 1,
-    pageSize: 60,
-    total: 0,
-    items: [],
-    searchDebounce: 0,
-    inflight: null,
-    modalRow: null,
+    view: "browse",
+    packQuery: "",
+    packSort: "name",
+    catalogPage: 1,
+    catalogPageSize: 40,
+    catalogTotal: 0,
+    catalog: [],
+    selectedCode: null,
+    detail: null,
+    cardQuery: "",
+    cardSort: "top",
+    catalogDebounce: 0,
+    cardFilterDebounce: 0,
+    catalogInflight: null,
+    detailInflight: null,
   };
 
   function packFromUrl() {
     return (new URLSearchParams(window.location.search).get("pack") || "").trim();
+  }
+
+  function syncUrl(code) {
+    var params = new URLSearchParams(window.location.search);
+    if (code) params.set("pack", code);
+    else params.delete("pack");
+    var qs = params.toString();
+    window.history.replaceState(null, "", window.location.pathname + (qs ? "?" + qs : ""));
   }
 
   function setStatus(kind, html) {
@@ -135,320 +147,362 @@
     if (!html) {
       els.status.hidden = true;
       els.status.innerHTML = "";
-      els.status.className = "packs-status collection-status";
       return;
     }
     els.status.hidden = false;
-    els.status.className =
-      "packs-status collection-status state-" + (kind || "empty");
+    els.status.className = "packs-status collection-status state-" + (kind || "empty");
     els.status.innerHTML = html;
   }
 
-  function searchUrl() {
+  function showBrowse() {
+    state.view = "browse";
+    state.selectedCode = null;
+    if (els.browse) els.browse.hidden = false;
+    if (els.detail) els.detail.hidden = true;
+    syncUrl("");
+  }
+
+  function showDetail(code) {
+    state.view = "detail";
+    state.selectedCode = code;
+    if (els.browse) els.browse.hidden = true;
+    if (els.detail) els.detail.hidden = false;
+    syncUrl(code);
+    loadPackDetail(code);
+  }
+
+  function sortCatalogClient(packs) {
+    var rows = packs.slice();
+    if (state.packSort === "price_high") {
+      rows.sort(function (a, b) {
+        return (b.crystal_price || 0) - (a.crystal_price || 0);
+      });
+    } else if (state.packSort === "price_low") {
+      rows.sort(function (a, b) {
+        return (a.crystal_price || 0) - (b.crystal_price || 0);
+      });
+    } else {
+      rows.sort(function (a, b) {
+        return String(a.display_name || a.code || "")
+          .toLowerCase()
+          .localeCompare(String(b.display_name || b.code || "").toLowerCase());
+      });
+    }
+    return rows;
+  }
+
+  function loadCatalog() {
+    if (state.catalogInflight) state.catalogInflight.abort();
+    var ctrl = new AbortController();
+    state.catalogInflight = ctrl;
+    setStatus("empty", "Loading packs…");
+    if (els.catalogGrid) els.catalogGrid.innerHTML = "";
+
     var qs = new URLSearchParams();
-    qs.set("page", String(state.page));
-    qs.set("page_size", String(state.pageSize));
-    qs.set("sort", state.sort);
-    if (state.query) qs.set("q", state.query);
-    if (state.packFilter) qs.set("pack", state.packFilter);
-    return "/api/packs/search?" + qs.toString();
-  }
+    qs.set("page", "1");
+    qs.set("page_size", "80");
+    if (state.packQuery) qs.set("q", state.packQuery);
 
-  function matchesQuery(row) {
-    var q = (state.query || "").trim().toLowerCase();
-    if (!q) return true;
-    var pack = row.pack || {};
-    var card = row.card || {};
-    var hay = [
-      pack.display_name,
-      pack.code,
-      card.name,
-      card.set_code,
-      card.set_name,
-    ]
-      .join(" ")
-      .toLowerCase();
-    return hay.indexOf(q) !== -1;
-  }
-
-  function sortRows(rows) {
-    var key = state.sort || "top";
-    function top(r) {
-      return Number((r.card || {}).combined_per_pack_chance_percent) || 0;
-    }
-    function rarity(r) {
-      return Number(((r.card || {}).rarity || {}).sort_order) || 0;
-    }
-    function sell(r) {
-      return Number((r.card || {}).shop_sell_pokedollars) || 0;
-    }
-    function packCost(r) {
-      return Number((r.pack || {}).crystal_price) || 0;
-    }
-    if (key === "rarity") {
-      return rows.slice().sort(function (a, b) {
-        return rarity(b) - rarity(a) || String((a.card || {}).name || "").localeCompare((b.card || {}).name || "");
-      });
-    }
-    if (key === "cost_high") {
-      return rows.slice().sort(function (a, b) {
-        return sell(b) - sell(a) || packCost(b) - packCost(a);
-      });
-    }
-    if (key === "cost_low") {
-      return rows.slice().sort(function (a, b) {
-        return sell(a) - sell(b) || packCost(a) - packCost(b);
-      });
-    }
-    return rows.slice().sort(function (a, b) {
-      return top(b) - top(a);
-    });
-  }
-
-  function paginateRows(rows) {
-    var total = rows.length;
-    var pages = Math.max(1, Math.ceil(total / state.pageSize));
-    var page = Math.min(Math.max(1, state.page), pages);
-    var start = (page - 1) * state.pageSize;
-    return {
-      total: total,
-      page: page,
-      items: rows.slice(start, start + state.pageSize),
-    };
-  }
-
-  function applyClientResult(rows, viaFallback) {
-    var filtered = rows.filter(matchesQuery);
-    if (state.packFilter) {
-      var want = state.packFilter.toLowerCase();
-      filtered = filtered.filter(function (r) {
-        return ((r.pack || {}).code || "").toLowerCase() === want;
-      });
-    }
-    var sorted = sortRows(filtered);
-    var page = paginateRows(sorted);
-    state.items = page.items;
-    state.total = page.total;
-    state.page = page.page;
-    if (viaFallback) {
-      state.viaFallback = true;
-    }
-    renderResults();
-  }
-
-  function loadSearchFallback(signal) {
-    setStatus("empty", "Loading pack pools (compat mode)…");
-    return apiFetch("/api/packs/catalog?page=1&page_size=80", { signal: signal })
+    apiFetch("/api/packs/catalog?" + qs.toString(), { signal: ctrl.signal })
       .then(function (r) {
         if (!r.ok) throw new Error("catalog_" + r.status);
         return r.json();
       })
-      .then(function (cat) {
-        var packs = cat.items || [];
-        if (state.packFilter) {
-          var want = state.packFilter.toLowerCase();
-          packs = packs.filter(function (p) {
-            return (p.code || "").toLowerCase() === want;
-          });
-        }
-        if (!packs.length) return [];
-        return Promise.all(
-          packs.map(function (p) {
-            return apiFetch(
-              "/api/packs/catalog/" +
-                encodeURIComponent(p.code) +
-                "?card_page=1&card_page_size=200",
-              { signal: signal }
-            )
-              .then(function (r) {
-                if (!r.ok) throw new Error("detail_" + r.status);
-                return r.json();
-              })
-              .then(function (detail) {
-                var series = detail.series || {};
-                var packMeta = {
-                  code: series.code || p.code,
-                  display_name: series.display_name || p.display_name,
-                  crystal_price: series.crystal_price != null ? series.crystal_price : p.crystal_price,
-                  pack_art_url: series.pack_art_url || p.pack_art_url,
-                };
-                return (detail.cards || []).map(function (card) {
-                  return { pack: packMeta, card: card };
-                });
-              });
-          })
-        ).then(function (chunks) {
-          var out = [];
-          chunks.forEach(function (chunk) {
-            out = out.concat(chunk);
-          });
-          return out;
-        });
-      })
-      .then(function (rows) {
-        applyClientResult(rows, true);
-      });
-  }
-
-  function loadSearch() {
-    if (state.inflight) state.inflight.abort();
-    var ctrl = new AbortController();
-    state.inflight = ctrl;
-    state.viaFallback = false;
-    setStatus("empty", "Loading pack pools…");
-    if (els.grid) els.grid.innerHTML = "";
-
-    apiFetch(searchUrl(), { signal: ctrl.signal })
-      .then(function (r) {
-        if (r.status === 404 || r.status === 501) {
-          return loadSearchFallback(ctrl.signal);
-        }
-        if (!r.ok) throw new Error("search_" + r.status);
-        return r.json().then(function (body) {
-          state.items = body.items || [];
-          state.total = body.total != null ? body.total : state.items.length;
-          state.page = body.page || state.page;
-          renderResults();
-        });
+      .then(function (body) {
+        var packs = sortCatalogClient(body.items || []);
+        state.catalogTotal = packs.length;
+        state.catalog = packs;
+        state.catalogPage = 1;
+        renderCatalog();
+        var urlCode = packFromUrl();
+        if (urlCode) showDetail(urlCode);
       })
       .catch(function (err) {
         if (err && err.name === "AbortError") return;
-        loadSearchFallback(ctrl.signal).catch(function (err2) {
-          if (err2 && err2.name === "AbortError") return;
-          state.items = [];
-          state.total = 0;
-          if (els.grid) els.grid.innerHTML = "";
-          setStatus(
-            "error",
-            "Pack data is not available on the API yet. Restart or redeploy the <strong>Poke-Cards</strong> bot " +
-              "(the build must include <code>poke_pon_bot/web/packs_api.py</code> and register it in " +
-              "<code>server.py</code>), then hard-refresh this page."
-          );
-          if (els.pager) els.pager.hidden = true;
-        });
+        setStatus(
+          "error",
+          "Could not load packs. Restart or redeploy the bot API with <code>packs_api.py</code>, then refresh."
+        );
+        if (els.catalogGrid) els.catalogGrid.innerHTML = "";
+        if (els.catalogPager) els.catalogPager.hidden = true;
       });
   }
 
-  function renderResults() {
-    var items = state.items;
-    var pages = Math.max(1, Math.ceil(state.total / state.pageSize));
+  function renderCatalog() {
+    var packs = state.catalog;
+    var pages = Math.max(1, Math.ceil(packs.length / state.catalogPageSize));
+    var page = Math.min(Math.max(1, state.catalogPage), pages);
+    var start = (page - 1) * state.catalogPageSize;
+    var slice = packs.slice(start, start + state.catalogPageSize);
 
-    if (!items.length) {
+    if (!packs.length) {
       setStatus(
         "empty",
-        state.query || state.packFilter
-          ? "No cards match your search."
-          : "No cards in active pack pools."
+        state.packQuery ? "No packs match your search." : "No active packs in the catalog."
       );
-      if (els.grid) els.grid.innerHTML = "";
-      if (els.pager) els.pager.hidden = true;
+      if (els.catalogGrid) els.catalogGrid.innerHTML = "";
+      if (els.catalogPager) els.catalogPager.hidden = true;
       return;
     }
 
-    var summary =
+    setStatus(
+      "empty",
       "<strong>" +
-      state.total.toLocaleString() +
-      "</strong> printing" +
-      (state.total === 1 ? "" : "s") +
-      (state.query ? ' matching "<strong>' + escapeHtml(state.query) + "</strong>\"" : "") +
-      (state.packFilter
-        ? ' in pack <strong>' + escapeHtml(state.packFilter) + "</strong>"
-        : " across all packs") +
-      " · sorted by <strong>" +
-      sortLabel(state.sort) +
-      "</strong>" +
-      (state.viaFallback ? ' <span class="muted">(compat mode)</span>' : "");
+        packs.length +
+        "</strong> pack" +
+        (packs.length === 1 ? "" : "s") +
+        (state.packQuery
+          ? ' matching "<strong>' + escapeHtml(state.packQuery) + "</strong>\""
+          : "") +
+        " · click a pack to view its card pool"
+    );
 
-    setStatus("empty", summary);
+    if (!els.catalogGrid) return;
+    els.catalogGrid.innerHTML = slice
+      .map(function (p) {
+        var art = p.pack_art_url
+          ? '<img class="packs-pack-art" src="' +
+            escapeHtml(p.pack_art_url) +
+            '" alt="" loading="lazy" />'
+          : '<span class="packs-pack-art packs-pack-art--empty" aria-hidden="true">▥</span>';
+        return (
+          '<button type="button" class="packs-pack-tile" data-code="' +
+          escapeHtml(p.code) +
+          '">' +
+          art +
+          '<span class="packs-pack-name">' +
+          escapeHtml(p.display_name || p.code) +
+          "</span>" +
+          '<span class="packs-pack-sub">' +
+          escapeHtml(
+            (p.cards_per_pack || 0) +
+              " cards" +
+              (p.code_cards_per_pack ? " + " + p.code_cards_per_pack + " code" : "")
+          ) +
+          "</span>" +
+          (p.crystal_price != null
+            ? '<span class="packs-pack-price">' + escapeHtml(String(p.crystal_price)) + " ◆</span>"
+            : "") +
+          "</button>"
+        );
+      })
+      .join("");
 
-    if (!els.grid) return;
-    els.grid.innerHTML = "";
-    items.forEach(function (row, idx) {
-      els.grid.appendChild(buildTile(row, idx));
-    });
-
-    if (els.pager) {
-      els.pager.hidden = pages <= 1;
-      if (els.pagerInfo) {
-        els.pagerInfo.textContent = "Page " + state.page + " / " + pages;
+    if (els.catalogPager) {
+      els.catalogPager.hidden = pages <= 1;
+      if (els.catalogPagerInfo) {
+        els.catalogPagerInfo.textContent = "Page " + page + " / " + pages;
       }
-      if (els.pagerPrev) els.pagerPrev.disabled = state.page <= 1;
-      if (els.pagerNext) els.pagerNext.disabled = state.page >= pages;
+      if (els.catalogPrev) els.catalogPrev.disabled = page <= 1;
+      if (els.catalogNext) els.catalogNext.disabled = page >= pages;
     }
+    state.catalogPage = page;
   }
 
-  function buildTile(row, idx) {
-    var card = row.card || {};
-    var pack = row.pack || {};
-    var rarity = card.rarity || {};
-    var wrap = document.createElement("div");
-    wrap.className = "card-tile-wrap";
-
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className =
-      "card-tile " + rarityClassFor(rarity.display_name || rarity.code);
-    btn.dataset.idx = String(idx);
-
-    var img = document.createElement("img");
-    img.loading = "lazy";
-    img.decoding = "async";
-    img.alt = card.name || "Card";
-    img.className = "card-tile-img";
-    img.src = card.image_small_url || card.image_large_url || "";
-
-    var meta = document.createElement("div");
-    meta.className = "card-tile-meta";
-    meta.innerHTML =
-      '<span class="card-tile-name">' +
-      escapeHtml(card.name) +
-      "</span>" +
-      '<span class="card-tile-sub">' +
-      escapeHtml(pack.display_name || pack.code || "Pack") +
-      " · " +
-      escapeHtml((card.set_name || card.set_code || "") + " #" + (card.collector_number || "?")) +
-      "</span>";
-
-    var statsRow = document.createElement("div");
-    statsRow.className = "card-tile-stats";
-    var stats = [];
-    if (card.hp) stats.push('<span title="HP">❤ ' + escapeHtml(card.hp) + "</span>");
-    if (card.max_damage) {
-      stats.push('<span title="Max damage">⚡ ' + escapeHtml(String(card.max_damage)) + "</span>");
-    }
-    stats.push(
-      '<span class="card-tile-rarity" title="Pull rate">' +
-        escapeHtml(formatPct(card.combined_per_pack_chance_percent)) +
-        "</span>"
-    );
-    if (card.shop_sell_pokedollars != null) {
-      stats.push(
-        '<span title="Shop sell value">' +
-          escapeHtml(fmtPd(card.shop_sell_pokedollars)) +
-          "</span>"
+  function tierTable(title, rows) {
+    if (!rows || !rows.length) {
+      return (
+        "<section class=\"packs-tier-block\"><h3>" +
+        escapeHtml(title) +
+        "</h3><p class=\"muted\">No eligible cards.</p></section>"
       );
     }
-    statsRow.innerHTML = stats.join("");
-
-    btn.appendChild(img);
-    btn.appendChild(meta);
-    btn.appendChild(statsRow);
-    btn.addEventListener("click", function () {
-      openModal(row);
-    });
-
-    wrap.appendChild(btn);
-    return wrap;
+    var body = rows
+      .map(function (t) {
+        return (
+          "<tr><td>" +
+          escapeHtml(t.display_name || t.code) +
+          "</td><td>" +
+          escapeHtml(String(t.card_count)) +
+          "</td><td>" +
+          formatPct(t.tier_chance_percent) +
+          "</td></tr>"
+        );
+      })
+      .join("");
+    return (
+      "<section class=\"packs-tier-block\"><h3>" +
+      escapeHtml(title) +
+      "</h3><div class=\"packs-tier-table-wrap\"><table class=\"packs-tier-table\"><thead><tr><th>Rarity</th><th>Cards</th><th>Per slot</th></tr></thead><tbody>" +
+      body +
+      "</tbody></table></div></section>"
+    );
   }
 
-  function openModal(row) {
-    if (!els.modal || !row) return;
-    state.modalRow = row;
-    var card = row.card || {};
-    var pack = row.pack || {};
+  function loadPackDetail(code) {
+    if (!code) return;
+    if (state.detailInflight) state.detailInflight.abort();
+    var ctrl = new AbortController();
+    state.detailInflight = ctrl;
+    if (els.detailLoading) els.detailLoading.hidden = false;
+    if (els.detailMain) {
+      els.detailMain.innerHTML =
+        '<p class="muted packs-detail-loading" id="pack-detail-loading">Loading pack…</p>';
+      els.detailLoading = document.getElementById("pack-detail-loading");
+    }
+    if (els.cardsList) els.cardsList.innerHTML = "";
+
+    apiFetch(
+      "/api/packs/catalog/" + encodeURIComponent(code) + "?card_page=1&card_page_size=200",
+      { signal: ctrl.signal }
+    )
+      .then(function (r) {
+        if (r.status === 404) throw new Error("not_found");
+        if (!r.ok) throw new Error("detail_" + r.status);
+        return r.json();
+      })
+      .then(function (body) {
+        state.detail = body;
+        state.cardQuery = "";
+        if (els.cardFilter) els.cardFilter.value = "";
+        if (els.cardFilterClear) els.cardFilterClear.hidden = true;
+        renderPackDetail();
+        renderCardList();
+      })
+      .catch(function (err) {
+        if (err && err.name === "AbortError") return;
+        if (els.detailMain) {
+          els.detailMain.innerHTML =
+            '<p class="packs-detail-error">Could not load this pack.</p>';
+        }
+        showBrowse();
+      });
+  }
+
+  function renderPackDetail() {
+    var d = state.detail;
+    if (!d || !els.detailMain) return;
+    var series = d.series || {};
+    var tiers = d.tiers || {};
+    var notes = d.notes || [];
+
+    var art = series.pack_art_url
+      ? '<img class="packs-detail-art" src="' + escapeHtml(series.pack_art_url) + '" alt="" />'
+      : "";
+    var notesHtml = notes.length
+      ? '<ul class="packs-notes">' +
+        notes.map(function (n) {
+          return "<li>" + escapeHtml(n) + "</li>";
+        }).join("") +
+        "</ul>"
+      : "";
+
+    els.detailMain.innerHTML =
+      '<header class="packs-detail-head">' +
+      art +
+      '<div class="packs-detail-head-text">' +
+      "<h2>" +
+      escapeHtml(series.display_name || series.code) +
+      "</h2>" +
+      (series.description
+        ? '<p class="packs-detail-desc">' + escapeHtml(series.description) + "</p>"
+        : "") +
+      (series.set_codes && series.set_codes.length
+        ? '<p class="muted packs-detail-sets">Sets: ' + escapeHtml(series.set_codes.join(", ")) + "</p>"
+        : "") +
+      '<p class="packs-detail-meta">' +
+      escapeHtml(String(series.cards_per_pack || 0)) +
+      " main slots" +
+      (series.code_cards_per_pack
+        ? ", " + escapeHtml(String(series.code_cards_per_pack)) + " code slot"
+        : "") +
+      (series.crystal_price != null
+        ? " · " + escapeHtml(String(series.crystal_price)) + " ◆ in shop"
+        : "") +
+      "</p></div></header>" +
+      notesHtml +
+      '<div class="packs-tiers">' +
+      tierTable("Main slots — rarity mix", tiers.regular) +
+      tierTable("Code slot — rarity mix", tiers.code) +
+      "</div>";
+  }
+
+  function filteredSortedCards() {
+    var cards = (state.detail && state.detail.cards) || [];
+    var q = (state.cardQuery || "").trim().toLowerCase();
+    if (q) {
+      cards = cards.filter(function (c) {
+        return (
+          (c.name || "").toLowerCase().indexOf(q) !== -1 ||
+          (c.set_code || "").toLowerCase().indexOf(q) !== -1 ||
+          (c.set_name || "").toLowerCase().indexOf(q) !== -1
+        );
+      });
+    }
+    cards = cards.slice();
+    if (state.cardSort === "rarity") {
+      cards.sort(function (a, b) {
+        var ra = ((a.rarity || {}).sort_order) || 0;
+        var rb = ((b.rarity || {}).sort_order) || 0;
+        return rb - ra || String(a.name || "").localeCompare(b.name || "");
+      });
+    } else if (state.cardSort === "cost_high") {
+      cards.sort(function (a, b) {
+        return (
+          (b.shop_sell_pokedollars || 0) - (a.shop_sell_pokedollars || 0) ||
+          String(a.name || "").localeCompare(b.name || "")
+        );
+      });
+    } else if (state.cardSort === "cost_low") {
+      cards.sort(function (a, b) {
+        return (
+          (a.shop_sell_pokedollars || 0) - (b.shop_sell_pokedollars || 0) ||
+          String(a.name || "").localeCompare(b.name || "")
+        );
+      });
+    } else {
+      cards.sort(function (a, b) {
+        return (
+          (b.combined_per_pack_chance_percent || 0) -
+            (a.combined_per_pack_chance_percent || 0) ||
+          String(a.name || "").localeCompare(b.name || "")
+        );
+      });
+    }
+    return cards;
+  }
+
+  function renderCardList() {
+    var cards = filteredSortedCards();
+    if (els.cardsMeta) {
+      els.cardsMeta.textContent =
+        cards.length + " card" + (cards.length === 1 ? "" : "s") + " in pool";
+    }
+    if (!els.cardsList) return;
+    if (!cards.length) {
+      els.cardsList.innerHTML = '<li class="muted">No cards match this filter.</li>';
+      return;
+    }
+    els.cardsList.innerHTML = cards
+      .map(function (c, idx) {
+        var img = c.image_small_url || c.image_large_url;
+        var thumb = img
+          ? '<img class="packs-card-thumb" src="' + escapeHtml(img) + '" alt="" loading="lazy" />'
+          : '<span class="packs-card-thumb packs-card-thumb--empty"></span>';
+        return (
+          '<li><button type="button" class="packs-card-row" data-idx="' +
+          idx +
+          '">' +
+          thumb +
+          '<span class="packs-card-text"><span class="packs-card-name">' +
+          escapeHtml(c.name) +
+          '</span><span class="packs-card-sub">' +
+          escapeHtml((c.rarity && c.rarity.display_name) || "") +
+          " · " +
+          escapeHtml(c.set_code || "") +
+          '</span></span><span class="packs-card-odds">' +
+          escapeHtml(formatPct(c.combined_per_pack_chance_percent)) +
+          "</span></button></li>"
+        );
+      })
+      .join("");
+  }
+
+  function openModal(card) {
+    if (!els.modal || !card) return;
     var rarity = card.rarity || {};
     var reg = card.regular || {};
-    var code = card.code_slot || {};
+    var codeSlot = card.code_slot || {};
 
     els.modal.hidden = false;
     els.modal.setAttribute("aria-hidden", "false");
@@ -459,39 +513,30 @@
     els.modalTitle.textContent = card.name || "Card";
     els.modalSet.textContent =
       (card.set_name || card.set_code || "") + " · #" + (card.collector_number || "?");
-    els.modalRarity.textContent = rarity.display_name || card.tcg_rarity || "Unknown rarity";
+    els.modalRarity.textContent = rarity.display_name || card.tcg_rarity || "Unknown";
     els.modalRarity.className =
       "modal-rarity " + rarityClassFor(rarity.display_name || rarity.code);
     els.modalHp.textContent = card.hp ? String(card.hp) : "—";
     els.modalDamage.textContent = card.max_damage ? String(card.max_damage) : "—";
-    var types =
+    els.modalTypes.textContent =
       Array.isArray(card.types) && card.types.length ? card.types.join(" · ") : "—";
-    els.modalTypes.textContent = types;
     els.modalSell.textContent =
       card.shop_sell_pokedollars != null
-        ? fmtPd(card.shop_sell_pokedollars) + " (if sold to shop)"
+        ? fmtPd(card.shop_sell_pokedollars) + " (shop quote)"
         : "—";
-
-    els.modalPackName.textContent = pack.display_name || pack.code || "—";
-    els.modalPackMeta.textContent =
-      (pack.crystal_price != null ? pack.crystal_price + " ◆ · " : "") +
-      "Series " +
-      (pack.code || "—");
 
     if (els.modalOdds) {
       els.modalOdds.innerHTML =
         "<div><dt>Per pack (any slot)</dt><dd>" +
         escapeHtml(formatPct(card.combined_per_pack_chance_percent)) +
-        "</dd></div>" +
-        "<div><dt>Main slots</dt><dd>" +
+        "</dd></div><div><dt>Main slots</dt><dd>" +
         escapeHtml(formatPct(reg.per_pack_chance_percent)) +
         ' <span class="muted">(' +
         escapeHtml(formatPct(reg.per_card_chance_percent)) +
-        " per slot)</span></dd></div>" +
-        "<div><dt>Code slot</dt><dd>" +
-        escapeHtml(formatPct(code.per_pack_chance_percent)) +
+        " per slot)</span></dd></div><div><dt>Code slot</dt><dd>" +
+        escapeHtml(formatPct(codeSlot.per_pack_chance_percent)) +
         ' <span class="muted">(' +
-        escapeHtml(formatPct(code.per_card_chance_percent)) +
+        escapeHtml(formatPct(codeSlot.per_card_chance_percent)) +
         " per slot)</span></dd></div>";
     }
 
@@ -511,9 +556,7 @@
             Array.isArray(atk.cost) && atk.cost.length
               ? '<span class="atk-cost">' + atk.cost.map(escapeHtml).join(" · ") + "</span>"
               : "";
-          var text = atk.text
-            ? '<p class="atk-text">' + escapeHtml(atk.text) + "</p>"
-            : "";
+          var text = atk.text ? '<p class="atk-text">' + escapeHtml(atk.text) + "</p>" : "";
           return (
             "<li><div class=\"atk-row\"><span class=\"atk-name\">" +
             name +
@@ -534,7 +577,11 @@
     els.modal.hidden = true;
     els.modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
-    state.modalRow = null;
+    if (els.cardsList) {
+      els.cardsList.querySelectorAll(".packs-card-row.is-active").forEach(function (n) {
+        n.classList.remove("is-active");
+      });
+    }
   }
 
   function showSignedOut() {
@@ -568,64 +615,128 @@
         if (body && body.authenticated && body.user) showSignedIn(body.user);
         else showSignedOut();
       })
-      .catch(function () {
-        showSignedOut();
-      });
+      .catch(showSignedOut);
   }
 
-  if (els.search) {
-    els.search.addEventListener("input", function (e) {
+  if (els.catalogGrid) {
+    els.catalogGrid.addEventListener("click", function (e) {
+      var btn = e.target.closest(".packs-pack-tile");
+      if (!btn) return;
+      var code = btn.getAttribute("data-code");
+      if (code) showDetail(code);
+    });
+  }
+
+  if (els.packSearch) {
+    els.packSearch.addEventListener("input", function (e) {
       var v = (e.target.value || "").trim();
-      if (els.searchClear) els.searchClear.hidden = !v;
-      clearTimeout(state.searchDebounce);
-      state.searchDebounce = setTimeout(function () {
-        state.query = v;
-        state.page = 1;
-        loadSearch();
-      }, 220);
+      if (els.packSearchClear) els.packSearchClear.hidden = !v;
+      clearTimeout(state.catalogDebounce);
+      state.catalogDebounce = setTimeout(function () {
+        state.packQuery = v;
+        state.catalogPage = 1;
+        loadCatalog();
+      }, 200);
     });
   }
 
-  if (els.searchClear) {
-    els.searchClear.addEventListener("click", function () {
-      if (els.search) els.search.value = "";
-      els.searchClear.hidden = true;
-      state.query = "";
-      state.page = 1;
-      loadSearch();
+  if (els.packSearchClear) {
+    els.packSearchClear.addEventListener("click", function () {
+      if (els.packSearch) els.packSearch.value = "";
+      els.packSearchClear.hidden = true;
+      state.packQuery = "";
+      loadCatalog();
     });
   }
 
-  els.chips.forEach(function (chip) {
+  els.packSortChips.forEach(function (chip) {
     chip.addEventListener("click", function () {
-      var sort = chip.dataset.sort;
-      if (!sort || sort === state.sort) return;
-      state.sort = sort;
-      state.page = 1;
-      els.chips.forEach(function (c) {
-        var on = c.dataset.sort === sort;
+      var sort = chip.getAttribute("data-pack-sort");
+      if (!sort || sort === state.packSort) return;
+      state.packSort = sort;
+      els.packSortChips.forEach(function (c) {
+        var on = c.getAttribute("data-pack-sort") === sort;
         c.classList.toggle("is-active", on);
         c.setAttribute("aria-pressed", on ? "true" : "false");
       });
-      loadSearch();
+      state.catalog = sortCatalogClient(state.catalog);
+      state.catalogPage = 1;
+      renderCatalog();
     });
   });
 
-  if (els.pagerPrev) {
-    els.pagerPrev.addEventListener("click", function () {
-      if (state.page <= 1) return;
-      state.page -= 1;
-      loadSearch();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+  if (els.catalogPrev) {
+    els.catalogPrev.addEventListener("click", function () {
+      if (state.catalogPage <= 1) return;
+      state.catalogPage -= 1;
+      renderCatalog();
     });
   }
-  if (els.pagerNext) {
-    els.pagerNext.addEventListener("click", function () {
-      var pages = Math.max(1, Math.ceil(state.total / state.pageSize));
-      if (state.page >= pages) return;
-      state.page += 1;
-      loadSearch();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+  if (els.catalogNext) {
+    els.catalogNext.addEventListener("click", function () {
+      var pages = Math.max(1, Math.ceil(state.catalog.length / state.catalogPageSize));
+      if (state.catalogPage >= pages) return;
+      state.catalogPage += 1;
+      renderCatalog();
+    });
+  }
+
+  if (els.packBack) {
+    els.packBack.addEventListener("click", function () {
+      closeModal();
+      showBrowse();
+      loadCatalog();
+    });
+  }
+
+  if (els.cardFilter) {
+    els.cardFilter.addEventListener("input", function (e) {
+      var v = (e.target.value || "").trim();
+      if (els.cardFilterClear) els.cardFilterClear.hidden = !v;
+      clearTimeout(state.cardFilterDebounce);
+      state.cardFilterDebounce = setTimeout(function () {
+        state.cardQuery = v;
+        renderCardList();
+      }, 180);
+    });
+  }
+
+  if (els.cardFilterClear) {
+    els.cardFilterClear.addEventListener("click", function () {
+      if (els.cardFilter) els.cardFilter.value = "";
+      els.cardFilterClear.hidden = true;
+      state.cardQuery = "";
+      renderCardList();
+    });
+  }
+
+  els.cardSortChips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      var sort = chip.getAttribute("data-card-sort");
+      if (!sort || sort === state.cardSort) return;
+      state.cardSort = sort;
+      els.cardSortChips.forEach(function (c) {
+        var on = c.getAttribute("data-card-sort") === sort;
+        c.classList.toggle("is-active", on);
+        c.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      renderCardList();
+    });
+  });
+
+  if (els.cardsList) {
+    els.cardsList.addEventListener("click", function (e) {
+      var btn = e.target.closest(".packs-card-row");
+      if (!btn) return;
+      var idx = parseInt(btn.getAttribute("data-idx"), 10);
+      var cards = filteredSortedCards();
+      var card = cards[idx];
+      if (!card) return;
+      els.cardsList.querySelectorAll(".packs-card-row").forEach(function (n) {
+        n.classList.remove("is-active");
+      });
+      btn.classList.add("is-active");
+      openModal(card);
     });
   }
 
@@ -658,12 +769,6 @@
     });
   }
 
-  state.packFilter = packFromUrl();
-  if (state.packFilter && els.search) {
-    els.search.placeholder =
-      "Search in " + state.packFilter + " (cards, sets)…";
-  }
-
   bootAuth();
-  loadSearch();
+  loadCatalog();
 })();

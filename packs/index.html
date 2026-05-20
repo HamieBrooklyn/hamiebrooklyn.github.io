@@ -6,9 +6,9 @@
   <link rel="icon" type="image/png" href="/assets/favicon.png" />
   <link rel="apple-touch-icon" href="/assets/favicon.png" />
   <title>Packs — PokePon</title>
-  <meta name="description" content="Search all PokePon booster packs and browse pull pools with odds, rarity, and shop sell values." />
+  <meta name="description" content="Search PokePon booster packs and browse each pack's card pool with pull odds." />
   <link rel="canonical" href="https://pokepon.org/packs/" />
-  <link rel="stylesheet" href="/assets/style.css?v=25" />
+  <link rel="stylesheet" href="/assets/style.css?v=26" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -141,41 +141,84 @@
         <p class="hero-kicker">Reference</p>
         <h1>Packs</h1>
         <p class="page-lead">
-          Search every booster pool at once — card name, set, or pack series. Tap a card for the full view and pull odds.
+          Search booster series, open a pack to see its pool, then pick any card for pull odds and details.
           Buy in Discord with <strong>/packv</strong>; open owned packs with <strong>/packcolv</strong>.
         </p>
       </header>
 
-      <section class="toolbar" aria-label="Pack search controls">
-        <div class="toolbar-search">
-          <span class="search-icon" aria-hidden="true">⌕</span>
-          <input
-            type="search"
-            id="pack-search"
-            placeholder="Search cards, sets, or pack names…"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <button class="search-clear" type="button" id="pack-search-clear" hidden aria-label="Clear search">×</button>
+      <div id="packs-browse">
+        <section class="toolbar" aria-label="Search packs">
+          <div class="toolbar-search">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <input
+              type="search"
+              id="pack-search"
+              class="toolbar-search-input"
+              placeholder="Search packs by name or code…"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button class="search-clear" type="button" id="pack-search-clear" hidden aria-label="Clear search">×</button>
+          </div>
+
+          <div class="toolbar-sort" role="group" aria-label="Sort packs">
+            <button class="chip is-active" type="button" data-pack-sort="name" aria-pressed="true">A–Z</button>
+            <button class="chip" type="button" data-pack-sort="price_high" aria-pressed="false">Price high</button>
+            <button class="chip" type="button" data-pack-sort="price_low" aria-pressed="false">Price low</button>
+          </div>
+        </section>
+
+        <section class="packs-status collection-status" id="packs-status"></section>
+        <section class="packs-grid" id="pack-catalog-grid" aria-live="polite"></section>
+        <nav class="pager" id="pack-catalog-pager" hidden aria-label="Pack list pagination">
+          <button class="btn btn-ghost" type="button" id="pack-catalog-prev">← Prev</button>
+          <span class="pager-info" id="pack-catalog-pager-info">Page 1</span>
+          <button class="btn btn-ghost" type="button" id="pack-catalog-next">Next →</button>
+        </nav>
+      </div>
+
+      <div id="packs-detail" hidden>
+        <div class="packs-detail-toolbar">
+          <button class="btn btn-ghost packs-back-btn" type="button" id="pack-back">← All packs</button>
         </div>
 
-        <div class="toolbar-sort" role="group" aria-label="Sort results">
-          <button class="chip" type="button" data-sort="top" aria-pressed="true">Top picks</button>
-          <button class="chip" type="button" data-sort="rarity" aria-pressed="false">Rarest</button>
-          <button class="chip" type="button" data-sort="cost_high" aria-pressed="false">High cost</button>
-          <button class="chip" type="button" data-sort="cost_low" aria-pressed="false">Low cost</button>
+        <div class="packs-detail-layout">
+          <section class="packs-detail-main" id="pack-detail-main" aria-label="Pack information">
+            <p class="muted packs-detail-loading" id="pack-detail-loading">Loading pack…</p>
+          </section>
+
+          <aside class="packs-detail-cards" aria-label="Cards in this pack">
+            <div class="packs-cards-head">
+              <h2 class="packs-cards-title">Pool</h2>
+              <p class="packs-cards-meta muted" id="pack-cards-meta"></p>
+            </div>
+
+            <div class="toolbar toolbar--compact" aria-label="Filter cards in pack">
+              <div class="toolbar-search">
+                <span class="search-icon" aria-hidden="true">⌕</span>
+                <input
+                  type="search"
+                  id="pack-card-filter"
+                  class="toolbar-search-input"
+                  placeholder="Filter cards in this pack…"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <button class="search-clear" type="button" id="pack-card-filter-clear" hidden aria-label="Clear card filter">×</button>
+              </div>
+
+              <div class="toolbar-sort" role="group" aria-label="Sort cards">
+                <button class="chip is-active" type="button" data-card-sort="top" aria-pressed="true">Top picks</button>
+                <button class="chip" type="button" data-card-sort="rarity" aria-pressed="false">Rarest</button>
+                <button class="chip" type="button" data-card-sort="cost_high" aria-pressed="false">High cost</button>
+                <button class="chip" type="button" data-card-sort="cost_low" aria-pressed="false">Low cost</button>
+              </div>
+            </div>
+
+            <ul class="packs-cards-list" id="pack-cards-list" aria-live="polite"></ul>
+          </aside>
         </div>
-      </section>
-
-      <section class="packs-status collection-status" id="packs-status"></section>
-
-      <section class="card-grid" id="pack-card-grid" aria-live="polite"></section>
-
-      <nav class="pager" id="pack-pager" hidden aria-label="Pagination">
-        <button class="btn btn-ghost" type="button" id="pack-pager-prev">← Prev</button>
-        <span class="pager-info" id="pack-pager-info">Page 1</span>
-        <button class="btn btn-ghost" type="button" id="pack-pager-next">Next →</button>
-      </nav>
+      </div>
     </main>
   </div>
 
@@ -189,13 +232,8 @@
             <img id="pack-modal-img" alt="" />
           </div>
           <footer class="modal-footer packs-modal-footer">
-            <section class="packs-modal-pack" aria-label="Booster pack">
-              <h3 class="packs-modal-pack-heading">Booster pack</h3>
-              <p class="packs-modal-pack-name" id="pack-modal-pack-name">—</p>
-              <p class="packs-modal-pack-meta muted" id="pack-modal-pack-meta"></p>
-            </section>
             <section class="packs-modal-odds" aria-label="Pull odds">
-              <h3 class="packs-modal-odds-heading">Pull odds</h3>
+              <h3 class="packs-modal-odds-heading">Pull odds in this pack</h3>
               <dl class="packs-modal-odds-list" id="pack-modal-odds"></dl>
             </section>
           </footer>
@@ -248,6 +286,6 @@
   </script>
   <script src="/assets/site-links.js?v=1" defer></script>
   <script src="/assets/app-shell.js?v=5" defer></script>
-  <script src="/assets/packs.js?v=4" defer></script>
+  <script src="/assets/packs.js?v=5" defer></script>
 </body>
 </html>
