@@ -8,12 +8,12 @@
   <title>Crafting — PokePon</title>
   <meta name="description" content="Craft random booster packs from 5 item or Energy cards and a trainer card in PokePon." />
   <link rel="canonical" href="https://pokepon.org/craft/" />
-  <link rel="stylesheet" href="/assets/style.css?v=19" />
+  <link rel="stylesheet" href="/assets/style.css?v=20" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
 </head>
-<body class="app-body">
+<body class="app-body craft-page">
   <div class="bg-grid"></div>
 
   <div class="app-shell" id="app">
@@ -135,59 +135,78 @@
         <p class="hero-kicker">Section</p>
         <h1>Crafting</h1>
         <p class="page-lead">
-          Combine <strong>5 item or Energy</strong> cards and <strong>1 trainer</strong> card to craft a random booster pack.
-          The trainer’s rarity sets the pack tier. Trainer cards have <strong>3 uses</strong> (purple dots).
+          Add <strong>5 item or Energy</strong> cards, then a <strong>trainer</strong> card, to craft a random booster pack.
+          Trainer rarity sets the tier. Trainers show <strong>3 purple uses</strong>.
         </p>
       </header>
 
       <section class="craft-status" id="craft-status"></section>
 
       <div id="craft-workspace" class="craft-workspace" hidden>
-        <section class="craft-step" id="craft-step-items">
-          <h2>Materials <span class="craft-step-count" id="craft-item-count">0 / 5</span></h2>
-          <p class="muted">Select 5 different Item trainer or Energy cards from your collection.</p>
-          <div class="craft-material-slots" id="craft-item-slots" aria-label="Selected item cards"></div>
+        <div class="craft-pipeline" role="list" aria-label="Crafting steps">
+          <section class="craft-node is-active" id="craft-node-materials" data-picker-role="item" role="listitem">
+            <div class="craft-node-rail" aria-hidden="true">
+              <span class="craft-node-badge">1</span>
+              <span class="craft-node-line"></span>
+            </div>
+            <div class="craft-node-body">
+              <div class="craft-node-head">
+                <h2>Item &amp; Energy cards</h2>
+                <span class="craft-step-count" id="craft-item-count">0 / 5</span>
+              </div>
+              <p class="craft-node-hint muted">Tap cards in the picker below to fill each slot.</p>
+              <div class="craft-slot-row" id="craft-item-slots" aria-label="Selected materials"></div>
+            </div>
+          </section>
+
+          <section class="craft-node" id="craft-node-trainer" data-picker-role="craft_trainer" role="listitem">
+            <div class="craft-node-rail" aria-hidden="true">
+              <span class="craft-node-badge">2</span>
+              <span class="craft-node-line"></span>
+            </div>
+            <div class="craft-node-body">
+              <div class="craft-node-head">
+                <h2>Trainer card</h2>
+              </div>
+              <p class="craft-node-hint muted">Supporter / Stadium / Tool — not an Item card.</p>
+              <div class="craft-slot-row craft-slot-row--single" id="craft-trainer-slot-wrap" aria-label="Selected trainer"></div>
+            </div>
+          </section>
+
+          <section class="craft-node" id="craft-node-output" role="listitem">
+            <div class="craft-node-rail" aria-hidden="true">
+              <span class="craft-node-badge">3</span>
+            </div>
+            <div class="craft-node-body">
+              <div class="craft-node-head">
+                <h2>Output pack</h2>
+              </div>
+              <div class="craft-output-slot" id="craft-output-slot">
+                <p class="craft-output-placeholder muted">Your crafted pack appears here.</p>
+              </div>
+              <button type="button" class="btn btn-primary btn-craft-main" id="btn-craft" disabled>Craft pack</button>
+              <p class="craft-msg" id="craft-msg" hidden></p>
+            </div>
+          </section>
+        </div>
+
+        <section class="craft-picker-panel" aria-label="Card picker">
+          <header class="craft-picker-head">
+            <h2 id="craft-picker-title">Pick materials</h2>
+            <p class="page-lead" id="craft-picker-lead">Item and Energy cards from your collection.</p>
+          </header>
+
+          <section class="toolbar" aria-label="Search">
+            <div class="toolbar-search">
+              <span class="search-icon" aria-hidden="true">⌕</span>
+              <input type="search" id="search-input" placeholder="Search by card name…" autocomplete="off" spellcheck="false" />
+              <button class="search-clear" type="button" id="search-clear" hidden aria-label="Clear search">×</button>
+            </div>
+          </section>
+
+          <section class="craft-picker-status" id="picker-status"></section>
+          <section class="card-grid craft-picker-grid" id="card-grid" aria-live="polite"></section>
         </section>
-
-        <section class="craft-step" id="craft-step-trainer" hidden>
-          <div class="craft-step-head">
-            <h2>Trainer card</h2>
-            <button type="button" class="btn btn-ghost btn-small" id="craft-back-items">← Back to items</button>
-          </div>
-          <p class="muted">Pick a Supporter / Stadium / Tool trainer (not an Item card). Uses shown as purple dots.</p>
-          <div class="craft-trainer-slot-wrap">
-            <div class="craft-trainer-slot" id="craft-trainer-slot"></div>
-          </div>
-          <button type="button" class="btn btn-primary" id="btn-craft" disabled>Craft pack</button>
-          <p class="craft-msg" id="craft-msg" hidden></p>
-        </section>
-
-        <section class="craft-step" id="craft-step-output" hidden>
-          <div class="craft-output" id="craft-output"></div>
-        </section>
-
-        <hr class="deck-divider" />
-
-        <header class="deck-picker-head">
-          <h2>Your collection</h2>
-          <p class="page-lead">Tap cards below to add them to the current step.</p>
-        </header>
-
-        <section class="toolbar" aria-label="Search">
-          <div class="toolbar-search">
-            <span class="search-icon" aria-hidden="true">⌕</span>
-            <input type="search" id="search-input" placeholder="Search by card name…" autocomplete="off" spellcheck="false" />
-            <button class="search-clear" type="button" id="search-clear" hidden aria-label="Clear search">×</button>
-          </div>
-        </section>
-
-        <section class="craft-picker-status" id="picker-status"></section>
-        <section class="card-grid craft-picker-grid" id="card-grid" aria-live="polite"></section>
-        <nav class="pager" id="pager" hidden aria-label="Pagination">
-          <button class="btn btn-ghost" type="button" id="pager-prev">← Prev</button>
-          <span class="pager-info" id="picker-pager-info">Page 1</span>
-          <button class="btn btn-ghost" type="button" id="pager-next">Next →</button>
-        </nav>
       </div>
     </main>
   </div>
@@ -217,6 +236,6 @@
   </script>
   <script src="/assets/site-links.js?v=1" defer></script>
   <script src="/assets/app-shell.js?v=3" defer></script>
-  <script src="/assets/craft.js?v=2" defer></script>
+  <script src="/assets/craft.js?v=3" defer></script>
 </body>
 </html>

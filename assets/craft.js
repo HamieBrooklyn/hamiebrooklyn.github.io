@@ -50,41 +50,62 @@
     sidebar: document.getElementById("sidebar"),
     status: document.getElementById("craft-status"),
     workspace: document.getElementById("craft-workspace"),
-    stepItems: document.getElementById("craft-step-items"),
-    stepTrainer: document.getElementById("craft-step-trainer"),
-    stepOutput: document.getElementById("craft-step-output"),
+    nodeMaterials: document.getElementById("craft-node-materials"),
+    nodeTrainer: document.getElementById("craft-node-trainer"),
+    nodeOutput: document.getElementById("craft-node-output"),
     itemSlots: document.getElementById("craft-item-slots"),
     itemCount: document.getElementById("craft-item-count"),
-    trainerSlot: document.getElementById("craft-trainer-slot"),
-    btnBackItems: document.getElementById("craft-back-items"),
+    trainerSlotWrap: document.getElementById("craft-trainer-slot-wrap"),
+    outputSlot: document.getElementById("craft-output-slot"),
     btnCraft: document.getElementById("btn-craft"),
     craftMsg: document.getElementById("craft-msg"),
-    outputPanel: document.getElementById("craft-output"),
+    pickerTitle: document.getElementById("craft-picker-title"),
+    pickerLead: document.getElementById("craft-picker-lead"),
     search: document.getElementById("search-input"),
     searchClear: document.getElementById("search-clear"),
     grid: document.getElementById("card-grid"),
     pickerStatus: document.getElementById("picker-status"),
-    pager: document.getElementById("pager"),
-    pagerPrev: document.getElementById("pager-prev"),
-    pagerNext: document.getElementById("pager-next"),
-    pagerInfo: document.getElementById("picker-pager-info"),
   };
 
   var state = {
     authenticated: false,
-    phase: "items",
-    itemIds: [],
-    trainerId: null,
+    pickerRole: "item",
+    itemSlots: [],
+    trainerEntry: null,
     query: "",
     page: 1,
     pageSize: 60,
-    total: 0,
     items: [],
     inflight: null,
     crafting: false,
-    lastPack: null,
     searchDebounce: 0,
   };
+
+  function rememberItem(item) {
+    if (!item || !item.public_id) return;
+    state.itemCache = state.itemCache || {};
+    state.itemCache[item.public_id] = item;
+  }
+
+  function itemIds() {
+    return state.itemSlots
+      .filter(Boolean)
+      .map(function (it) {
+        return it.public_id;
+      });
+  }
+
+  function trainerId() {
+    return state.trainerEntry ? state.trainerEntry.public_id : null;
+  }
+
+  function itemsFull() {
+    return state.itemSlots.filter(Boolean).length === ITEM_COUNT;
+  }
+
+  function craftReady() {
+    return itemsFull() && !!trainerId();
+  }
 
   function setStatus(kind, html) {
     if (!html) {
@@ -113,6 +134,13 @@
     return html;
   }
 
+  function cardSubline(card) {
+    card = card || {};
+    var set = card.set_name || card.set_code || "";
+    var num = card.collector_number != null ? card.collector_number : "?";
+    return (set ? set + " · " : "") + "#" + num;
+  }
+
   function buildCollectionPath(role) {
     var qs = new URLSearchParams();
     qs.set("page", String(state.page));
@@ -123,8 +151,36 @@
     return "/api/me/collection?" + qs.toString();
   }
 
+  function setPickerRole(role) {
+    state.pickerRole = role;
+    if (els.nodeMaterials) {
+      els.nodeMaterials.classList.toggle("is-active", role === "item");
+    }
+    if (els.nodeTrainer) {
+      els.nodeTrainer.classList.toggle("is-active", role === "craft_trainer");
+    }
+    if (els.pickerTitle) {
+      els.pickerTitle.textContent =
+        role === "craft_trainer" ? "Pick a trainer" : "Pick materials";
+    }
+    if (els.pickerLead) {
+      els.pickerLead.textContent =
+        role === "craft_trainer"
+          ? "Supporter, Stadium, or Tool trainers — not Item cards."
+          : "Item and Energy cards from your collection.";
+    }
+    if (els.search) {
+      els.search.placeholder =
+        role === "craft_trainer"
+          ? "Search trainers by name…"
+          : "Search items & energy by name…";
+    }
+    loadPicker(role);
+  }
+
   function loadPicker(role) {
     if (!state.authenticated) return;
+    role = role || state.pickerRole;
     if (state.inflight) state.inflight.abort();
     var ctrl = new AbortController();
     state.inflight = ctrl;
@@ -148,9 +204,8 @@
             return it.craft_role === "craft_trainer";
           });
         }
+        rows.forEach(rememberItem);
         state.items = rows;
-        state.total = rows.length;
-        state.page = Number(body.page) || 1;
         renderPicker(role);
       })
       .catch(function (err) {
@@ -186,7 +241,6 @@
             ? "No item or Energy cards in your collection yet — pull from packs."
             : "No craftable trainer cards yet."
       );
-      if (els.pager) els.pager.hidden = true;
       return;
     }
     setPickerStatus("info", state.items.length + " card(s) shown");
@@ -195,33 +249,36 @@
       frag.appendChild(buildPickerTile(it, role));
     });
     els.grid.appendChild(frag);
-    if (els.pager) els.pager.hidden = true;
   }
 
   function buildPickerTile(item, role) {
     var card = item.card || {};
     var wrap = document.createElement("button");
     wrap.type = "button";
-    wrap.className = "picker-tile craft-picker-tile";
+    wrap.className = "card-tile picker-tile craft-picker-tile";
     var selected =
       role === "item"
-        ? state.itemIds.indexOf(item.public_id) !== -1
-        : state.trainerId === item.public_id;
+        ? state.itemSlots.some(function (s) {
+            return s && s.public_id === item.public_id;
+          })
+        : state.trainerEntry && state.trainerEntry.public_id === item.public_id;
     if (selected) wrap.classList.add("is-selected");
     if (item.sell && item.sell.blocked_reason) wrap.classList.add("is-blocked");
 
     var img = document.createElement("img");
     img.loading = "lazy";
+    img.decoding = "async";
     img.alt = card.name || "Card";
     img.src = card.image_small_url || card.image_large_url || "";
+    img.className = "card-tile-img";
 
-    var meta = document.createElement("span");
-    meta.className = "picker-tile-meta";
+    var meta = document.createElement("div");
+    meta.className = "card-tile-meta";
     meta.innerHTML =
-      "<span class=\"picker-tile-name\">" +
+      '<span class="card-tile-name">' +
       escapeHtml(card.name) +
-      "</span><span class=\"picker-tile-sub\">" +
-      escapeHtml(item.public_id) +
+      '</span><span class="card-tile-sub">' +
+      escapeHtml(cardSubline(card)) +
       "</span>";
 
     wrap.appendChild(img);
@@ -229,115 +286,209 @@
     var dots = craftUsesDots(item.craft_uses);
     if (dots) {
       var du = document.createElement("span");
-      du.className = "craft-use-dots";
+      du.className = "card-tile-craft-uses craft-use-dots";
       du.innerHTML = dots;
       wrap.appendChild(du);
     }
 
     wrap.addEventListener("click", function () {
       if (item.sell && item.sell.blocked_reason) return;
-      if (role === "item") toggleItem(item.public_id);
-      else selectTrainer(item.public_id);
+      if (role === "item") toggleItem(item);
+      else selectTrainer(item);
     });
     return wrap;
   }
 
-  function toggleItem(pid) {
-    var idx = state.itemIds.indexOf(pid);
-    if (idx !== -1) state.itemIds.splice(idx, 1);
-    else {
-      if (state.itemIds.length >= ITEM_COUNT) return;
-      if (state.trainerId === pid) return;
-      state.itemIds.push(pid);
+  function ensureSlotArray() {
+    while (state.itemSlots.length < ITEM_COUNT) state.itemSlots.push(null);
+    if (state.itemSlots.length > ITEM_COUNT) {
+      state.itemSlots = state.itemSlots.slice(0, ITEM_COUNT);
     }
-    renderItemSlots();
-    updatePhaseUi();
-    loadPicker("item");
   }
 
-  function selectTrainer(pid) {
-    if (state.itemIds.indexOf(pid) !== -1) return;
-    state.trainerId = state.trainerId === pid ? null : pid;
+  function toggleItem(item) {
+    var pid = item.public_id;
+    var idx = -1;
+    var i;
+    for (i = 0; i < state.itemSlots.length; i++) {
+      if (state.itemSlots[i] && state.itemSlots[i].public_id === pid) {
+        idx = i;
+        break;
+      }
+    }
+    if (idx !== -1) {
+      state.itemSlots[idx] = null;
+    } else {
+      if (trainerId() === pid) return;
+      if (state.itemSlots.filter(Boolean).length >= ITEM_COUNT) return;
+      ensureSlotArray();
+      for (i = 0; i < ITEM_COUNT; i++) {
+        if (!state.itemSlots[i]) {
+          state.itemSlots[i] = item;
+          rememberItem(item);
+          break;
+        }
+      }
+    }
+    renderItemSlots();
+    updateCraftUi();
+    renderPicker("item");
+  }
+
+  function clearItemAt(idx) {
+    if (idx >= 0 && idx < ITEM_COUNT) {
+      state.itemSlots[idx] = null;
+      renderItemSlots();
+      updateCraftUi();
+      renderPicker(state.pickerRole);
+    }
+  }
+
+  function selectTrainer(item) {
+    var pid = item.public_id;
+    if (itemIds().indexOf(pid) !== -1) return;
+    if (state.trainerEntry && state.trainerEntry.public_id === pid) {
+      state.trainerEntry = null;
+    } else {
+      state.trainerEntry = item;
+      rememberItem(item);
+    }
     renderTrainerSlot();
-    updatePhaseUi();
-    loadPicker("craft_trainer");
+    updateCraftUi();
+    renderPicker("craft_trainer");
+  }
+
+  function buildFilledSlotCard(item, options) {
+    options = options || {};
+    var card = item.card || {};
+    var slot = document.createElement("div");
+    slot.className = "craft-slot-card is-filled";
+    if (options.label) {
+      var lbl = document.createElement("span");
+      lbl.className = "craft-slot-index";
+      lbl.textContent = options.label;
+      slot.appendChild(lbl);
+    }
+
+    var img = document.createElement("img");
+    img.className = "craft-slot-img";
+    img.loading = "lazy";
+    img.alt = card.name || "Card";
+    img.src = card.image_small_url || card.image_large_url || "";
+
+    var cap = document.createElement("div");
+    cap.className = "craft-slot-caption";
+    cap.innerHTML =
+      '<span class="craft-slot-name">' +
+      escapeHtml(card.name) +
+      "</span>";
+
+    var clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "craft-slot-clear";
+    clear.setAttribute("aria-label", "Remove card");
+    clear.textContent = "×";
+    clear.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (options.onClear) options.onClear();
+    });
+
+    slot.appendChild(img);
+    slot.appendChild(cap);
+    slot.appendChild(clear);
+
+    var dots = craftUsesDots(item.craft_uses);
+    if (dots) {
+      var du = document.createElement("span");
+      du.className = "craft-slot-uses";
+      du.innerHTML = dots;
+      slot.appendChild(du);
+    }
+    return slot;
+  }
+
+  function buildEmptySlot(label, onClick) {
+    var slot = document.createElement("button");
+    slot.type = "button";
+    slot.className = "craft-slot-card is-empty";
+    slot.innerHTML =
+      '<span class="craft-slot-index">' +
+      escapeHtml(label) +
+      '</span><span class="craft-slot-empty-label">+</span>';
+    if (onClick) {
+      slot.addEventListener("click", onClick);
+    }
+    return slot;
   }
 
   function renderItemSlots() {
     if (!els.itemSlots) return;
+    ensureSlotArray();
     els.itemSlots.innerHTML = "";
     var i;
     for (i = 0; i < ITEM_COUNT; i++) {
-      var slot = document.createElement("div");
-      slot.className = "craft-material-slot";
-      var pid = state.itemIds[i];
-      if (pid) {
-        slot.classList.add("is-filled");
-        slot.innerHTML =
-          '<span class="craft-slot-label">#' +
-          (i + 1) +
-          "</span><code>" +
-          escapeHtml(pid) +
-          '</code><button type="button" class="craft-slot-clear" data-idx="' +
-          i +
-          '">×</button>';
-        slot.querySelector(".craft-slot-clear").addEventListener("click", function (e) {
-          e.stopPropagation();
-          var idx2 = Number(this.dataset.idx);
-          if (!isNaN(idx2)) {
-            state.itemIds.splice(idx2, 1);
-            renderItemSlots();
-            updatePhaseUi();
-            loadPicker("item");
-          }
+      var item = state.itemSlots[i];
+      var el;
+      if (item) {
+        el = buildFilledSlotCard(item, {
+          label: String(i + 1),
+          onClear: function () {
+            clearItemAt(i);
+          },
         });
       } else {
-        slot.innerHTML = '<span class="craft-slot-label">#' + (i + 1) + "</span><span class=\"muted\">Empty</span>";
+        el = buildEmptySlot(String(i + 1), function () {
+          setPickerRole("item");
+        });
       }
-      els.itemSlots.appendChild(slot);
+      els.itemSlots.appendChild(el);
     }
+    var filled = state.itemSlots.filter(Boolean).length;
     if (els.itemCount) {
-      els.itemCount.textContent = state.itemIds.length + " / " + ITEM_COUNT;
+      els.itemCount.textContent = filled + " / " + ITEM_COUNT;
+    }
+    if (filled === ITEM_COUNT && state.pickerRole === "item") {
+      setPickerRole("craft_trainer");
     }
   }
 
   function renderTrainerSlot() {
-    if (!els.trainerSlot) return;
-    if (!state.trainerId) {
-      els.trainerSlot.innerHTML = '<span class="muted">Pick a trainer below</span>';
-      els.trainerSlot.classList.remove("is-filled");
+    if (!els.trainerSlotWrap) return;
+    els.trainerSlotWrap.innerHTML = "";
+    if (!state.trainerEntry) {
+      var empty = buildEmptySlot("Trainer", function () {
+        setPickerRole("craft_trainer");
+      });
+      empty.classList.add("craft-slot-card--trainer");
+      els.trainerSlotWrap.appendChild(empty);
       return;
     }
-    els.trainerSlot.classList.add("is-filled");
-    els.trainerSlot.innerHTML =
-      "<code>" + escapeHtml(state.trainerId) + "</code>";
+    var filled = buildFilledSlotCard(state.trainerEntry, {
+      onClear: function () {
+        state.trainerEntry = null;
+        renderTrainerSlot();
+        updateCraftUi();
+        if (state.pickerRole === "craft_trainer") renderPicker("craft_trainer");
+      },
+    });
+    filled.classList.add("craft-slot-card--trainer");
+    els.trainerSlotWrap.appendChild(filled);
   }
 
-  function updatePhaseUi() {
-    var itemsFull = state.itemIds.length === ITEM_COUNT;
-    if (els.stepItems) els.stepItems.hidden = state.phase !== "items";
-    if (els.stepTrainer) els.stepTrainer.hidden = state.phase !== "trainer";
-    if (els.stepOutput) els.stepOutput.hidden = state.phase !== "output";
+  function updateCraftUi() {
     if (els.btnCraft) {
-      els.btnCraft.disabled =
-        state.crafting || state.phase !== "trainer" || !state.trainerId || !itemsFull;
+      els.btnCraft.disabled = state.crafting || !craftReady();
     }
-    if (itemsFull && state.phase === "items") {
-      state.phase = "trainer";
-      if (els.stepItems) els.stepItems.hidden = true;
-      if (els.stepTrainer) els.stepTrainer.hidden = false;
-      loadPicker("craft_trainer");
+    if (els.nodeTrainer) {
+      els.nodeTrainer.classList.toggle("is-ready", itemsFull());
     }
-  }
-
-  function goToItemsPhase() {
-    state.phase = "items";
-    updatePhaseUi();
-    loadPicker("item");
+    if (els.nodeOutput) {
+      els.nodeOutput.classList.toggle("is-ready", craftReady());
+    }
   }
 
   function runCraft() {
-    if (state.crafting || state.itemIds.length !== ITEM_COUNT || !state.trainerId) return;
+    if (state.crafting || !craftReady()) return;
     state.crafting = true;
     if (els.craftMsg) {
       els.craftMsg.hidden = true;
@@ -349,8 +500,8 @@
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        item_public_ids: state.itemIds.slice(),
-        trainer_public_id: state.trainerId,
+        item_public_ids: itemIds(),
+        trainer_public_id: trainerId(),
       }),
     })
       .then(function (r) {
@@ -367,17 +518,16 @@
             els.craftMsg.className = "craft-msg is-error";
             els.craftMsg.textContent = d.message || d.error || "Craft failed.";
           }
-          updatePhaseUi();
+          updateCraftUi();
           return;
         }
-        state.lastPack = d.pack;
-        state.itemIds = [];
-        state.trainerId = null;
-        state.phase = "output";
+        state.itemSlots = [];
+        state.trainerEntry = null;
         renderItemSlots();
         renderTrainerSlot();
         renderOutput(d);
-        updatePhaseUi();
+        updateCraftUi();
+        setPickerRole("item");
       })
       .catch(function () {
         state.crafting = false;
@@ -386,35 +536,38 @@
           els.craftMsg.className = "craft-msg is-error";
           els.craftMsg.textContent = "Network error — try again.";
         }
-        updatePhaseUi();
+        updateCraftUi();
       });
   }
 
   function renderOutput(d) {
-    if (!els.outputPanel) return;
+    if (!els.outputSlot) return;
     var pack = d.pack || {};
     var series = pack.series || {};
     var art = series.pack_art_url
       ? '<img class="craft-pack-art" src="' +
         escapeHtml(series.pack_art_url) +
         '" alt="">'
-      : "";
+      : '<div class="craft-output-pack-icon" aria-hidden="true">📦</div>';
     var uses =
       d.trainer_uses_remaining != null
-        ? "<p>Trainer uses left: <strong>" + escapeHtml(String(d.trainer_uses_remaining)) + "</strong></p>"
-        : "<p class=\"muted\">Trainer card was fully used up.</p>";
-    els.outputPanel.innerHTML =
-      "<h2>Pack crafted</h2>" +
+        ? '<p class="craft-output-meta">Trainer uses left: <strong>' +
+          escapeHtml(String(d.trainer_uses_remaining)) +
+          "</strong></p>"
+        : '<p class="craft-output-meta muted">Trainer card was fully used up.</p>';
+
+    els.outputSlot.innerHTML =
+      '<div class="craft-output-result">' +
       art +
+      '<div class="craft-output-text">' +
       "<p><strong>" +
       escapeHtml(series.display_name || "Booster") +
-      "</strong> — tier from <strong>" +
+      "</strong></p>" +
+      '<p class="muted">Tier from <strong>' +
       escapeHtml(d.trainer_name || "trainer") +
-      "</strong>.</p>" +
-      "<p>Pack ID: <code id=\"craft-pack-id\">" +
-      escapeHtml(pack.public_id || "") +
-      "</code></p>" +
+      "</strong></p>" +
       uses +
+      "</div></div>" +
       '<div class="craft-output-actions">' +
       '<button type="button" class="btn btn-primary" id="btn-open-pack">Open pack</button>' +
       '<button type="button" class="btn btn-ghost" id="btn-craft-again">Craft another</button>' +
@@ -429,12 +582,9 @@
     }
     if (againBtn) {
       againBtn.addEventListener("click", function () {
-        state.phase = "items";
-        state.lastPack = null;
-        if (els.outputPanel) els.outputPanel.innerHTML = "";
-        renderItemSlots();
-        renderTrainerSlot();
-        goToItemsPhase();
+        els.outputSlot.innerHTML =
+          '<p class="craft-output-placeholder muted">Your crafted pack appears here.</p>';
+        setPickerRole("item");
       });
     }
   }
@@ -492,7 +642,8 @@
           if (els.workspace) els.workspace.hidden = false;
           renderItemSlots();
           renderTrainerSlot();
-          goToItemsPhase();
+          updateCraftUi();
+          setPickerRole("item");
         } else {
           showSignedOut();
           setStatus("auth", "Sign in with Discord to use crafting.");
@@ -513,11 +664,20 @@
       });
     });
   }
-  if (els.btnBackItems) {
-    els.btnBackItems.addEventListener("click", goToItemsPhase);
-  }
   if (els.btnCraft) {
     els.btnCraft.addEventListener("click", runCraft);
+  }
+  if (els.nodeMaterials) {
+    els.nodeMaterials.addEventListener("click", function (e) {
+      if (e.target.closest(".craft-slot-clear")) return;
+      setPickerRole("item");
+    });
+  }
+  if (els.nodeTrainer) {
+    els.nodeTrainer.addEventListener("click", function (e) {
+      if (e.target.closest(".craft-slot-clear")) return;
+      setPickerRole("craft_trainer");
+    });
   }
   if (els.search) {
     els.search.addEventListener("input", function (e) {
@@ -527,7 +687,7 @@
       state.searchDebounce = setTimeout(function () {
         state.query = v.toLowerCase();
         state.page = 1;
-        loadPicker(state.phase === "trainer" ? "craft_trainer" : "item");
+        loadPicker(state.pickerRole);
       }, 200);
     });
   }
@@ -536,7 +696,7 @@
       els.search.value = "";
       els.searchClear.hidden = true;
       state.query = "";
-      loadPicker(state.phase === "trainer" ? "craft_trainer" : "item");
+      loadPicker(state.pickerRole);
     });
   }
   if (els.sidebarToggle && els.sidebar) {
