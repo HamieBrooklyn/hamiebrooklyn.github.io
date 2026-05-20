@@ -67,6 +67,28 @@
     pickerStatus: document.getElementById("picker-status"),
   };
 
+  var CRAFT_TRAINER_SUBTYPES = ["Stadium", "Supporter", "Tool"];
+
+  function effectiveCraftRole(item) {
+    var role = item.craft_role;
+    var card = item.card || {};
+    var st = (card.supertype || "").trim();
+    var subs = Array.isArray(card.tcg_subtypes) ? card.tcg_subtypes : [];
+    if (st === "Energy") return "item";
+    if (st !== "Trainer") return role || "other";
+    if (subs.indexOf("Item") !== -1) return "item";
+    if (
+      subs.some(function (s) {
+        return CRAFT_TRAINER_SUBTYPES.indexOf(String(s).trim()) !== -1;
+      })
+    ) {
+      return "craft_trainer";
+    }
+    if (subs.length > 0) return "craft_trainer";
+    if (role === "item" || role === "craft_trainer") return role;
+    return "craft_trainer";
+  }
+
   var state = {
     authenticated: false,
     pickerRole: "item",
@@ -74,7 +96,7 @@
     trainerEntry: null,
     query: "",
     page: 1,
-    pageSize: 60,
+    pageSize: 120,
     items: [],
     inflight: null,
     crafting: false,
@@ -147,7 +169,11 @@
     qs.set("page_size", String(state.pageSize));
     qs.set("sort", "newest");
     if (state.query) qs.set("q", state.query);
-    if (role) qs.set("craft_role", role);
+    if (role === "craft_trainer") {
+      qs.set("supertype", "Trainer");
+    } else if (role === "item") {
+      qs.set("craft_role", "item");
+    }
     return "/api/me/collection?" + qs.toString();
   }
 
@@ -197,11 +223,11 @@
         var rows = Array.isArray(body.items) ? body.items : [];
         if (role === "item") {
           rows = rows.filter(function (it) {
-            return it.craft_role === "item";
+            return effectiveCraftRole(it) === "item";
           });
         } else if (role === "craft_trainer") {
           rows = rows.filter(function (it) {
-            return it.craft_role === "craft_trainer";
+            return effectiveCraftRole(it) === "craft_trainer";
           });
         }
         rows.forEach(rememberItem);
@@ -285,9 +311,10 @@
     wrap.appendChild(meta);
     var dots = craftUsesDots(item.craft_uses);
     if (dots) {
-      var du = document.createElement("span");
-      du.className = "card-tile-craft-uses craft-use-dots";
-      du.innerHTML = dots;
+      var du = document.createElement("div");
+      du.className = "card-tile-craft-uses";
+      du.setAttribute("aria-label", "Craft uses remaining");
+      du.innerHTML = '<span class="craft-uses-pill">' + dots + "</span>";
       wrap.appendChild(du);
     }
 

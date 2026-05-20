@@ -335,6 +335,28 @@
 
   // ------- collection fetch + render ------------------------------------
 
+  var CRAFT_TRAINER_SUBTYPES = ["Stadium", "Supporter", "Tool"];
+
+  function effectiveCraftRole(item) {
+    var role = item.craft_role;
+    var card = item.card || {};
+    var st = (card.supertype || "").trim();
+    var subs = Array.isArray(card.tcg_subtypes) ? card.tcg_subtypes : [];
+    if (st === "Energy") return "item";
+    if (st !== "Trainer") return role || "other";
+    if (subs.indexOf("Item") !== -1) return "item";
+    if (
+      subs.some(function (s) {
+        return CRAFT_TRAINER_SUBTYPES.indexOf(String(s).trim()) !== -1;
+      })
+    ) {
+      return "craft_trainer";
+    }
+    if (subs.length > 0) return "craft_trainer";
+    if (role === "item" || role === "craft_trainer") return role;
+    return "craft_trainer";
+  }
+
   function buildCollectionPath() {
     var qs = new URLSearchParams();
     qs.set("page", String(state.page));
@@ -342,22 +364,26 @@
     qs.set("sort", state.sort);
     if (state.query) qs.set("q", state.query);
     if (state.filterFavorited) qs.set("favorited", "1");
-    if (state.craftRole) qs.set("craft_role", state.craftRole);
+    if (state.craftRole === "craft_trainer") {
+      qs.set("supertype", "Trainer");
+    } else if (state.craftRole) {
+      qs.set("craft_role", state.craftRole);
+    }
     return "/api/me/collection?" + qs.toString();
   }
 
-  /** Align grid with API craft_role (Stadium etc. must not appear under Items). */
+  /** Align grid with craft role (Stadium/Supporter always under Trainers). */
   function filterRowsForCraftChip(rows) {
     var role = state.craftRole;
     if (!role) return rows;
     if (role === "item") {
       return rows.filter(function (it) {
-        return it.craft_role === "item";
+        return effectiveCraftRole(it) === "item";
       });
     }
     if (role === "craft_trainer") {
       return rows.filter(function (it) {
-        return it.craft_role === "craft_trainer";
+        return effectiveCraftRole(it) === "craft_trainer";
       });
     }
     return rows;
@@ -680,14 +706,15 @@
     statsRow.innerHTML = stats.join("");
 
     btn.appendChild(img);
+    btn.appendChild(meta);
     var usesDots = craftUsesDotsHtml(item.craft_uses);
     if (usesDots) {
-      var dotsEl = document.createElement("span");
+      var dotsEl = document.createElement("div");
       dotsEl.className = "card-tile-craft-uses";
-      dotsEl.innerHTML = usesDots;
+      dotsEl.setAttribute("aria-label", "Craft uses remaining");
+      dotsEl.innerHTML = '<span class="craft-uses-pill">' + usesDots + "</span>";
       btn.appendChild(dotsEl);
     }
-    btn.appendChild(meta);
     btn.appendChild(statsRow);
     btn.addEventListener("click", function () {
       openModal(item);

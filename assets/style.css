@@ -3068,33 +3068,42 @@ body.deck-editor-active .app-main {
   outline: none;
 }
 
-.craft-use-dots,
 .card-tile-craft-uses {
-  display: flex;
-  gap: 0.2rem;
-  justify-content: center;
-  margin-top: 0.25rem;
+  display: block;
+  margin: 0.2rem 0 0;
+  padding: 0;
+}
+
+.craft-uses-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  padding: 0.14rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.32);
+  box-shadow: 0 2px 8px -4px rgba(168, 85, 247, 0.45);
+}
+
+.craft-use-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
 }
 
 .craft-use-dot {
-  width: 0.55rem;
-  height: 0.55rem;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
   background: rgba(120, 120, 130, 0.55);
   flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.25);
 }
 
 .craft-use-dot.is-active {
   background: #a855f7;
-  box-shadow: 0 0 6px rgba(168, 85, 247, 0.65);
-}
-
-.card-tile-craft-uses {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 2.4rem;
-  pointer-events: none;
+  border-color: rgba(196, 181, 253, 0.65);
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.55);
 }
 
 @media (min-width: 720px) {
