@@ -336,25 +336,100 @@
   // ------- collection fetch + render ------------------------------------
 
   var CRAFT_TRAINER_SUBTYPES = ["Stadium", "Supporter", "Tool"];
+  var ITEM_NAME_HINTS = [
+    "Potion", "Ball", "Berry", "Mail", "Rod", "Stone", "Pass", "Candy",
+    "Module", "Toolkit", "Glove", "Charm", "Case", "Box", "Capsule",
+    "Ticket", "Disc", "Energy", "Tin", "Fossil", "Amber", "Incense",
+    "Repel", "Vest", "Coat", "Scroll",
+  ];
+
+  function nameLooksLikeItem(name) {
+    var n = String(name || "").trim();
+    if (!n) return false;
+    var lower = n.toLowerCase();
+    return ITEM_NAME_HINTS.some(function (hint) {
+      var h = hint.toLowerCase();
+      var re = new RegExp("\\b" + h.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b");
+      return re.test(lower);
+    });
+  }
+
+  function subtypeList(card) {
+    var subs = card && card.tcg_subtypes;
+    if (!Array.isArray(subs)) return [];
+    return subs.map(function (s) {
+      return String(s).trim();
+    });
+  }
+
+  function hasSubtype(subs, label) {
+    var want = label.toLowerCase();
+    return subs.some(function (s) {
+      return s.toLowerCase() === want;
+    });
+  }
 
   function effectiveCraftRole(item) {
     var role = item.craft_role;
     var card = item.card || {};
     var st = (card.supertype || "").trim();
-    var subs = Array.isArray(card.tcg_subtypes) ? card.tcg_subtypes : [];
+    var subs = subtypeList(card);
     if (st === "Energy") return "item";
     if (st !== "Trainer") return role || "other";
-    if (subs.indexOf("Item") !== -1) return "item";
+    if (hasSubtype(subs, "Item")) return "item";
     if (
-      subs.some(function (s) {
-        return CRAFT_TRAINER_SUBTYPES.indexOf(String(s).trim()) !== -1;
+      CRAFT_TRAINER_SUBTYPES.some(function (label) {
+        return hasSubtype(subs, label);
       })
     ) {
       return "craft_trainer";
     }
-    if (subs.length > 0) return "craft_trainer";
+    if (nameLooksLikeItem(card.name)) return "item";
     if (role === "item" || role === "craft_trainer") return role;
-    return "craft_trainer";
+    return "other";
+  }
+
+  function craftUsesForItem(item) {
+    if (item.craft_uses && item.craft_uses.max != null) return item.craft_uses;
+    if (effectiveCraftRole(item) === "craft_trainer") {
+      return { max: 3, remaining: 3, used: 0 };
+    }
+    return null;
+  }
+
+  function buildCraftUsesMeter(uses) {
+    if (!uses || uses.max == null) return null;
+    var max = Number(uses.max) || 3;
+    var rem = Number(uses.remaining);
+    if (isNaN(rem)) rem = max;
+    rem = Math.max(0, Math.min(max, rem));
+
+    var root = document.createElement("div");
+    root.className = "craft-uses-meter";
+    root.setAttribute("aria-label", rem + " of " + max + " craft uses remaining");
+
+    var label = document.createElement("span");
+    label.className = "craft-uses-meter-label";
+    label.textContent = "Uses";
+
+    var track = document.createElement("span");
+    track.className = "craft-uses-meter-track";
+    track.setAttribute("aria-hidden", "true");
+    var i;
+    for (i = 0; i < max; i++) {
+      var seg = document.createElement("span");
+      seg.className = "craft-uses-meter-seg" + (i < rem ? " is-filled" : "");
+      track.appendChild(seg);
+    }
+
+    var count = document.createElement("span");
+    count.className = "craft-uses-meter-count";
+    count.textContent = String(rem) + "/" + String(max);
+
+    root.appendChild(label);
+    root.appendChild(track);
+    root.appendChild(count);
+    return root;
   }
 
   function buildCollectionPath() {
@@ -645,21 +720,6 @@
       });
   }
 
-  function craftUsesDotsHtml(uses) {
-    if (!uses || uses.max == null) return "";
-    var max = Number(uses.max) || 3;
-    var rem = Number(uses.remaining);
-    if (isNaN(rem)) rem = max;
-    var html = "";
-    var i;
-    for (i = 0; i < max; i++) {
-      html +=
-        '<span class="craft-use-dot' +
-        (i < rem ? " is-active" : "") +
-        '" aria-hidden="true"></span>';
-    }
-    return html;
-  }
 
   function buildTile(item, idx) {
     var card = item.card || {};
@@ -707,14 +767,8 @@
 
     btn.appendChild(img);
     btn.appendChild(meta);
-    var usesDots = craftUsesDotsHtml(item.craft_uses);
-    if (usesDots) {
-      var dotsEl = document.createElement("div");
-      dotsEl.className = "card-tile-craft-uses";
-      dotsEl.setAttribute("aria-label", "Craft uses remaining");
-      dotsEl.innerHTML = '<span class="craft-uses-pill">' + usesDots + "</span>";
-      btn.appendChild(dotsEl);
-    }
+    var meter = buildCraftUsesMeter(craftUsesForItem(item));
+    if (meter) btn.appendChild(meter);
     btn.appendChild(statsRow);
     btn.addEventListener("click", function () {
       openModal(item);
