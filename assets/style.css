@@ -2979,12 +2979,6 @@ body.deck-editor-active .app-main {
   background: rgba(168, 85, 247, 0.75);
 }
 
-.craft-slot-uses {
-  display: flex;
-  gap: 0.15rem;
-  justify-content: center;
-}
-
 .craft-output-slot {
   border: 1px dashed var(--border);
   border-radius: 12px;
