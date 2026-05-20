@@ -156,6 +156,7 @@
     items: [],
     inflight: null,
     crafting: false,
+    lastPackId: null,
     searchDebounce: 0,
   };
 
@@ -580,9 +581,69 @@
     els.trainerSlotWrap.appendChild(filled);
   }
 
+  function copyPackId(packId, buttonEl) {
+    var pid = (packId || "").trim();
+    if (!pid) return;
+    var flash = function (ok) {
+      if (!buttonEl || !ok) return;
+      var orig = buttonEl.textContent;
+      buttonEl.textContent = "Copied!";
+      setTimeout(function () {
+        buttonEl.textContent = orig;
+      }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard
+        .writeText(pid)
+        .then(function () {
+          flash(true);
+        })
+        .catch(function () {
+          fallbackCopy();
+        });
+    } else {
+      fallbackCopy();
+    }
+    function fallbackCopy() {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = pid;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        flash(true);
+      } catch (_) {
+        setStatus("error", "Could not copy Pack ID.");
+      }
+    }
+  }
+
+  function resetCraftWorkspace() {
+    state.lastPackId = null;
+    if (els.outputSlot) {
+      els.outputSlot.innerHTML =
+        '<p class="craft-output-placeholder muted">Your crafted pack appears here.</p>';
+    }
+    if (els.craftMsg) {
+      els.craftMsg.hidden = true;
+      els.craftMsg.textContent = "";
+    }
+    setPickerRole("item");
+    updateCraftUi();
+  }
+
   function updateCraftUi() {
     if (els.btnCraft) {
-      els.btnCraft.disabled = state.crafting || !craftReady();
+      if (state.lastPackId) {
+        els.btnCraft.textContent = "Craft another";
+        els.btnCraft.disabled = state.crafting;
+      } else {
+        els.btnCraft.textContent = "Craft pack";
+        els.btnCraft.disabled = state.crafting || !craftReady();
+      }
     }
     if (els.nodeTrainer) {
       els.nodeTrainer.classList.toggle("is-ready", itemsFull());
@@ -628,11 +689,11 @@
         }
         state.itemSlots = [];
         state.trainerEntry = null;
+        state.lastPackId = (d.pack && d.pack.public_id) || null;
         renderItemSlots();
         renderTrainerSlot();
         renderOutput(d);
         updateCraftUi();
-        setPickerRole("item");
       })
       .catch(function () {
         state.crafting = false;
@@ -674,47 +735,20 @@
       escapeHtml(d.trainer_name || "trainer") +
       ")</p>" +
       uses +
+      '<p class="craft-output-meta muted">Pack ID: <code class="craft-pack-id">' +
+      escapeHtml(pack.public_id || "") +
+      "</code></p>" +
       "</div></div>" +
       '<div class="craft-output-actions">' +
-      '<button type="button" class="btn btn-primary" id="btn-open-pack">Open pack</button>' +
-      '<button type="button" class="btn btn-ghost" id="btn-craft-again">Craft another</button>' +
+      '<button type="button" class="btn btn-primary" id="btn-copy-pack-id">Copy ID</button>' +
       "</div>";
 
-    var openBtn = document.getElementById("btn-open-pack");
-    var againBtn = document.getElementById("btn-craft-again");
-    if (openBtn) {
-      openBtn.addEventListener("click", function () {
-        openPack(pack.public_id);
+    var copyBtn = document.getElementById("btn-copy-pack-id");
+    if (copyBtn && pack.public_id) {
+      copyBtn.addEventListener("click", function () {
+        copyPackId(pack.public_id, copyBtn);
       });
     }
-    if (againBtn) {
-      againBtn.addEventListener("click", function () {
-        els.outputSlot.innerHTML =
-          '<p class="craft-output-placeholder muted">Your crafted pack appears here.</p>';
-        setPickerRole("item");
-      });
-    }
-  }
-
-  function openPack(pid) {
-    apiFetch("/api/me/craft/open-pack", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pack_public_id: pid }),
-    })
-      .then(function (r) {
-        return r.json();
-      })
-      .then(function (d) {
-        if (d.ok) {
-          setStatus("info", d.message || "Pack opened — check your collection.");
-        } else {
-          setStatus("error", d.message || d.error || "Could not open pack.");
-        }
-      })
-      .catch(function () {
-        setStatus("error", "Network error opening pack.");
-      });
   }
 
   function showSignedOut() {
@@ -772,7 +806,13 @@
     });
   }
   if (els.btnCraft) {
-    els.btnCraft.addEventListener("click", runCraft);
+    els.btnCraft.addEventListener("click", function () {
+      if (state.lastPackId) {
+        resetCraftWorkspace();
+        return;
+      }
+      runCraft();
+    });
   }
   if (els.nodeMaterials) {
     els.nodeMaterials.addEventListener("click", function (e) {

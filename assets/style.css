@@ -3033,6 +3033,11 @@ body.deck-editor-active .app-main {
   margin-top: 0.65rem;
 }
 
+.craft-pack-id {
+  font-size: 0.82rem;
+  word-break: break-all;
+}
+
 .craft-picker-panel {
   border-top: 1px solid var(--border);
   padding-top: 1.25rem;
