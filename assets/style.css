@@ -3164,3 +3164,255 @@ body.deck-editor-active .app-main {
     padding-left: 0.25rem;
   }
 }
+
+/* Pack odds browser */
+.packs-layout {
+  display: grid;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .packs-layout {
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  }
+}
+
+.packs-catalog {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+}
+
+.packs-toolbar {
+  margin-bottom: 0.65rem;
+}
+
+.packs-catalog-meta {
+  font-size: 0.82rem;
+  margin: 0 0 0.5rem;
+}
+
+.packs-catalog-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: min(70vh, 640px);
+  overflow-y: auto;
+}
+
+.packs-catalog-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.5rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(12, 12, 18, 0.55);
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.packs-catalog-item:hover {
+  border-color: rgba(196, 181, 253, 0.35);
+  background: rgba(24, 20, 36, 0.75);
+}
+
+.packs-catalog-item.is-active {
+  border-color: rgba(168, 85, 247, 0.65);
+  background: rgba(88, 28, 135, 0.22);
+  box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.25);
+}
+
+.packs-catalog-art {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 6px;
+}
+
+.packs-catalog-art--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.packs-catalog-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.packs-catalog-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.packs-catalog-sub {
+  font-size: 0.72rem;
+}
+
+.packs-catalog-price {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #c4b5fd;
+  flex-shrink: 0;
+}
+
+.packs-detail-placeholder {
+  padding: 2rem 1rem;
+  text-align: center;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+}
+
+.packs-detail-head {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.packs-detail-art {
+  width: 5.5rem;
+  height: 5.5rem;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.packs-detail-head h2 {
+  margin: 0 0 0.35rem;
+}
+
+.packs-detail-desc {
+  margin: 0 0 0.35rem;
+  color: var(--text-muted, #a1a1aa);
+}
+
+.packs-notes {
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  color: var(--text-muted, #a1a1aa);
+}
+
+.packs-notes li {
+  margin-bottom: 0.25rem;
+}
+
+.packs-tiers {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 720px) {
+  .packs-tiers {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.packs-tier-block h3 {
+  font-size: 0.9rem;
+  margin: 0 0 0.45rem;
+}
+
+.packs-tier-table-wrap {
+  overflow-x: auto;
+}
+
+.packs-tier-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.packs-tier-table th,
+.packs-tier-table td {
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.packs-tier-table th {
+  color: var(--text-muted, #a1a1aa);
+  font-weight: 600;
+}
+
+.packs-cards-section {
+  margin-top: 0.5rem;
+}
+
+.packs-card-toolbar {
+  margin-bottom: 0.75rem;
+}
+
+.packs-card-grid .packs-odds-tile {
+  min-height: 100%;
+}
+
+.packs-odds-stats {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.packs-odds-stats dt {
+  color: var(--text-muted, #a1a1aa);
+  font-weight: 600;
+}
+
+.packs-odds-stats dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.packs-odds-highlight {
+  font-weight: 700;
+  color: #c4b5fd;
+}
+
+.packs-card-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.packs-status {
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+.packs-status.state-error {
+  background: rgba(127, 29, 29, 0.35);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+.packs-detail-error {
+  color: #fca5a5;
+}
+
+.packs-detail-loading {
+  padding: 2rem 0;
+  text-align: center;
+}
