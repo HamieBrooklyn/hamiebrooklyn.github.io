@@ -3416,3 +3416,48 @@ body.deck-editor-active .app-main {
   padding: 2rem 0;
   text-align: center;
 }
+
+.packs-modal-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-top: 0.5rem;
+}
+
+.packs-modal-pack-heading,
+.packs-modal-odds-heading {
+  margin: 0 0 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #c4b5fd;
+}
+
+.packs-modal-pack-name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.packs-modal-pack-meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+}
+
+.packs-modal-odds-list {
+  margin: 0;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+}
+
+.packs-modal-odds-list dt {
+  color: var(--text-muted, #a1a1aa);
+  font-weight: 600;
+}
+
+.packs-modal-odds-list dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}

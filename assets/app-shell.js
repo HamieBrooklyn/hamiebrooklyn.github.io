@@ -5,7 +5,7 @@
   var MAIN_NAV = [
     { key: "collection", href: "/collection/", icon: "▣", label: "Collection" },
     { key: "craft", href: "/craft/", icon: "⚗", label: "Crafting" },
-    { key: "packs", href: "/packs/", icon: "📦", label: "Pack odds" },
+    { key: "packs", href: "/packs/", icon: "▥", label: "Packs" },
     { key: "deck", href: "/deck/", icon: "⚔", label: "Deck Editor" },
     { key: "trades", href: "/trades/", icon: "⇄", label: "Trades" },
     { key: "auctions", href: "/auctions/", icon: "⚖", label: "Auctions" },

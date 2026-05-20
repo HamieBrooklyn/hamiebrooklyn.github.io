@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" href="/assets/favicon.png" />
   <link rel="apple-touch-icon" href="/assets/favicon.png" />
-  <title>Pack odds — PokePon</title>
-  <meta name="description" content="Search PokePon booster packs and see which cards can drop, with pull odds per rarity and per card." />
+  <title>Packs — PokePon</title>
+  <meta name="description" content="Search all PokePon booster packs and browse pull pools with odds, rarity, and shop sell values." />
   <link rel="canonical" href="https://pokepon.org/packs/" />
-  <link rel="stylesheet" href="/assets/style.css?v=24" />
+  <link rel="stylesheet" href="/assets/style.css?v=25" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -43,8 +43,8 @@
           </li>
           <li>
             <a class="sidebar-link is-active" href="/packs/" aria-current="page">
-              <span class="sidebar-link-icon" aria-hidden="true">📦</span>
-              <span class="sidebar-link-text">Pack odds</span>
+              <span class="sidebar-link-icon" aria-hidden="true">▥</span>
+              <span class="sidebar-link-text">Packs</span>
             </a>
           </li>
           <li>
@@ -139,34 +139,88 @@
     <main class="app-main">
       <header class="page-head">
         <p class="hero-kicker">Reference</p>
-        <h1>Pack odds</h1>
+        <h1>Packs</h1>
         <p class="page-lead">
-          Search booster series, see every card in the pool, and estimated pull rates.
+          Search every booster pool at once — card name, set, or pack series. Tap a card for the full view and pull odds.
           Buy in Discord with <strong>/packv</strong>; open owned packs with <strong>/packcolv</strong>.
         </p>
       </header>
 
-      <section class="packs-status" id="packs-status" hidden></section>
+      <section class="toolbar" aria-label="Pack search controls">
+        <div class="toolbar-search">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input
+            type="search"
+            id="pack-search"
+            placeholder="Search cards, sets, or pack names…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button class="search-clear" type="button" id="pack-search-clear" hidden aria-label="Clear search">×</button>
+        </div>
 
-      <div class="packs-layout">
-        <aside class="packs-catalog" aria-label="Pack search">
-          <div class="toolbar toolbar-search packs-toolbar">
-            <span class="search-icon" aria-hidden="true">⌕</span>
-            <input type="search" id="pack-search" placeholder="Search packs by name or code…" autocomplete="off" spellcheck="false" />
-            <button class="search-clear" type="button" id="pack-search-clear" hidden aria-label="Clear search">×</button>
-          </div>
-          <p class="packs-catalog-meta muted" id="pack-catalog-meta">Loading packs…</p>
-          <ul class="packs-catalog-list" id="pack-catalog-list" aria-live="polite"></ul>
-        </aside>
+        <div class="toolbar-sort" role="group" aria-label="Sort results">
+          <button class="chip" type="button" data-sort="top" aria-pressed="true">Top picks</button>
+          <button class="chip" type="button" data-sort="rarity" aria-pressed="false">Rarest</button>
+          <button class="chip" type="button" data-sort="cost_high" aria-pressed="false">High cost</button>
+          <button class="chip" type="button" data-sort="cost_low" aria-pressed="false">Low cost</button>
+        </div>
+      </section>
 
-        <section class="packs-detail" id="pack-detail" aria-label="Pack details">
-          <div class="packs-detail-placeholder muted" id="pack-detail-placeholder">
-            Select a pack to view card pools and pull odds.
-          </div>
-          <div id="pack-detail-body" hidden></div>
-        </section>
-      </div>
+      <section class="packs-status collection-status" id="packs-status"></section>
+
+      <section class="card-grid" id="pack-card-grid" aria-live="polite"></section>
+
+      <nav class="pager" id="pack-pager" hidden aria-label="Pagination">
+        <button class="btn btn-ghost" type="button" id="pack-pager-prev">← Prev</button>
+        <span class="pager-info" id="pack-pager-info">Page 1</span>
+        <button class="btn btn-ghost" type="button" id="pack-pager-next">Next →</button>
+      </nav>
     </main>
+  </div>
+
+  <div class="modal" id="pack-card-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="pack-modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" role="document">
+      <button class="modal-close" type="button" data-close aria-label="Close">×</button>
+      <div class="modal-grid">
+        <aside class="modal-aside" aria-label="Card preview">
+          <div class="modal-image">
+            <img id="pack-modal-img" alt="" />
+          </div>
+          <footer class="modal-footer packs-modal-footer">
+            <section class="packs-modal-pack" aria-label="Booster pack">
+              <h3 class="packs-modal-pack-heading">Booster pack</h3>
+              <p class="packs-modal-pack-name" id="pack-modal-pack-name">—</p>
+              <p class="packs-modal-pack-meta muted" id="pack-modal-pack-meta"></p>
+            </section>
+            <section class="packs-modal-odds" aria-label="Pull odds">
+              <h3 class="packs-modal-odds-heading">Pull odds</h3>
+              <dl class="packs-modal-odds-list" id="pack-modal-odds"></dl>
+            </section>
+          </footer>
+        </aside>
+        <div class="modal-body">
+          <div class="modal-body-scroll">
+            <p class="modal-set" id="pack-modal-set"></p>
+            <h2 class="modal-title" id="pack-modal-title"></h2>
+            <p class="modal-rarity" id="pack-modal-rarity"></p>
+
+            <dl class="modal-stats">
+              <div><dt>HP</dt><dd id="pack-modal-hp">—</dd></div>
+              <div><dt>Max damage</dt><dd id="pack-modal-damage">—</dd></div>
+              <div><dt>Types</dt><dd id="pack-modal-types">—</dd></div>
+              <div><dt>Shop sell</dt><dd id="pack-modal-sell">—</dd></div>
+            </dl>
+
+            <section class="modal-attacks" id="pack-modal-attacks-section" hidden>
+              <h3>Attacks</h3>
+              <ul id="pack-modal-attacks"></ul>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <meta name="pokepon-api-base" content="https://api.pokepon.org" />
@@ -193,7 +247,7 @@
     })();
   </script>
   <script src="/assets/site-links.js?v=1" defer></script>
-  <script src="/assets/app-shell.js?v=4" defer></script>
-  <script src="/assets/packs.js?v=2" defer></script>
+  <script src="/assets/app-shell.js?v=5" defer></script>
+  <script src="/assets/packs.js?v=3" defer></script>
 </body>
 </html>
