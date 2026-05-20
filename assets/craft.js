@@ -432,9 +432,11 @@
       if (item) {
         el = buildFilledSlotCard(item, {
           label: String(i + 1),
-          onClear: function () {
-            clearItemAt(i);
-          },
+          onClear: (function (slotIdx) {
+            return function () {
+              clearItemAt(slotIdx);
+            };
+          })(i),
         });
       } else {
         el = buildEmptySlot(String(i + 1), function () {
