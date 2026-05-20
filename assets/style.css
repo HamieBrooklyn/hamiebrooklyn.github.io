@@ -3038,6 +3038,21 @@ body.deck-editor-active .app-main {
   word-break: break-all;
 }
 
+.craft-output-discord {
+  margin-top: 0.45rem;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.craft-output-verify {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+}
+
+.craft-output-verify.is-warn {
+  color: #fda4af;
+}
+
 .craft-picker-panel {
   border-top: 1px solid var(--border);
   padding-top: 1.25rem;

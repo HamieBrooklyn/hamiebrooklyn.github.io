@@ -738,6 +738,10 @@
       '<p class="craft-output-meta muted">Pack ID: <code class="craft-pack-id">' +
       escapeHtml(pack.public_id || "") +
       "</code></p>" +
+      '<p class="craft-output-discord muted">In Discord, run <strong>/packcolv</strong> to flip through ' +
+      "unopened packs (including this one). " +
+      "<strong>/packv</strong> alone is the shop — it does not list owned packs.</p>" +
+      '<p class="craft-output-verify muted" id="craft-pack-verify" hidden></p>' +
       "</div></div>" +
       '<div class="craft-output-actions">' +
       '<button type="button" class="btn btn-primary" id="btn-copy-pack-id">Copy ID</button>' +
@@ -749,6 +753,38 @@
         copyPackId(pack.public_id, copyBtn);
       });
     }
+    if (pack.public_id) {
+      verifyPackSaved(pack.public_id);
+    }
+  }
+
+  function verifyPackSaved(packId) {
+    apiFetch("/api/me/packs")
+      .then(function (r) {
+        if (!r.ok) return null;
+        return r.json();
+      })
+      .then(function (body) {
+        var el = document.getElementById("craft-pack-verify");
+        if (!el || !body) return;
+        var items = Array.isArray(body.items) ? body.items : [];
+        var found = items.some(function (p) {
+          return p && p.public_id === packId;
+        });
+        el.hidden = false;
+        if (found) {
+          el.textContent =
+            "Pack is in your inventory — open it in Discord with /packcolv.";
+        } else {
+          el.className = "craft-output-verify is-warn";
+          el.textContent =
+            "Pack not found in inventory yet. Use the same Discord account as this site, " +
+            "then run /packcolv again. If it still missing, restart the bot API and re-craft.";
+        }
+      })
+      .catch(function () {
+        /* packs API optional until bot deploy */
+      });
   }
 
   function showSignedOut() {
