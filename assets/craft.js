@@ -1,9 +1,9 @@
-/* Crafting — 10 item cards + 1 trainer → random pack tier */
+/* Crafting — 5 item/energy cards + 1 trainer → random pack tier */
 (function () {
   "use strict";
 
   var API_BASE = (window.POKEPON_API_BASE || "").replace(/\/+$/, "");
-  var ITEM_COUNT = 10;
+  var ITEM_COUNT = 5;
   var SESSION_KEY = "pokepon-session";
 
   function api(path) {
@@ -183,7 +183,7 @@
         state.query
           ? "No cards match your search."
           : role === "item"
-            ? "No item cards in your collection yet — pull trainers from packs."
+            ? "No item or Energy cards in your collection yet — pull from packs."
             : "No craftable trainer cards yet."
       );
       if (els.pager) els.pager.hidden = true;
