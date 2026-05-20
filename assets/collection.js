@@ -186,6 +186,7 @@
     sort: "newest",
     query: "",
     filterFavorited: false,
+    craftRole: "",
     total: 0,
     items: [],
     sections: [],
@@ -341,6 +342,7 @@
     qs.set("sort", state.sort);
     if (state.query) qs.set("q", state.query);
     if (state.filterFavorited) qs.set("favorited", "1");
+    if (state.craftRole) qs.set("craft_role", state.craftRole);
     return "/api/me/collection?" + qs.toString();
   }
 
@@ -599,6 +601,22 @@
       });
   }
 
+  function craftUsesDotsHtml(uses) {
+    if (!uses || uses.max == null) return "";
+    var max = Number(uses.max) || 3;
+    var rem = Number(uses.remaining);
+    if (isNaN(rem)) rem = max;
+    var html = "";
+    var i;
+    for (i = 0; i < max; i++) {
+      html +=
+        '<span class="craft-use-dot' +
+        (i < rem ? " is-active" : "") +
+        '" aria-hidden="true"></span>';
+    }
+    return html;
+  }
+
   function buildTile(item, idx) {
     var card = item.card || {};
     var rarity = card.rarity || {};
@@ -644,6 +662,13 @@
     statsRow.innerHTML = stats.join("");
 
     btn.appendChild(img);
+    var usesDots = craftUsesDotsHtml(item.craft_uses);
+    if (usesDots) {
+      var dotsEl = document.createElement("span");
+      dotsEl.className = "card-tile-craft-uses";
+      dotsEl.innerHTML = usesDots;
+      btn.appendChild(dotsEl);
+    }
     btn.appendChild(meta);
     btn.appendChild(statsRow);
     btn.addEventListener("click", function () {
@@ -1287,6 +1312,24 @@
       loadCollection(false);
     });
   }
+
+  var craftRoleChips = Array.prototype.slice.call(
+    document.querySelectorAll(".chip[data-craft-role]")
+  );
+  craftRoleChips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      var role = chip.dataset.craftRole || "";
+      if (role === state.craftRole) return;
+      state.craftRole = role;
+      craftRoleChips.forEach(function (c) {
+        var on = c === chip;
+        c.classList.toggle("is-active", on);
+        c.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      state.page = 1;
+      loadCollection(false);
+    });
+  });
 
   els.chips.forEach(function (chip) {
     chip.addEventListener("click", function () {

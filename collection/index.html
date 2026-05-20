@@ -8,7 +8,7 @@
   <title>Collection — PokePon</title>
   <meta name="description" content="Browse your PokePon Discord-bot card collection: search, sort by rarity / HP / damage, and view focused card details." />
   <link rel="canonical" href="https://pokepon.org/collection/" />
-  <link rel="stylesheet" href="/assets/style.css?v=18" />
+  <link rel="stylesheet" href="/assets/style.css?v=19" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -33,6 +33,12 @@
             <a class="sidebar-link is-active" href="/collection/" aria-current="page">
               <span class="sidebar-link-icon" aria-hidden="true">▣</span>
               <span class="sidebar-link-text">Collection</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidebar-link" href="/craft/">
+              <span class="sidebar-link-icon" aria-hidden="true">⚗</span>
+              <span class="sidebar-link-text">Crafting</span>
             </a>
           </li>
           <li>
@@ -154,6 +160,10 @@
           <button class="chip" type="button" data-sort="hp" aria-pressed="false">Most HP</button>
           <button class="chip" type="button" data-sort="damage" aria-pressed="false">Most damage</button>
           <button class="chip chip-filter" type="button" id="filter-favorited" aria-pressed="false">Favorites</button>
+          <button class="chip chip-filter" type="button" data-craft-role="" aria-pressed="true">All</button>
+          <button class="chip chip-filter" type="button" data-craft-role="pokemon" aria-pressed="false">Pokémon</button>
+          <button class="chip chip-filter" type="button" data-craft-role="item" aria-pressed="false">Items</button>
+          <button class="chip chip-filter" type="button" data-craft-role="craft_trainer" aria-pressed="false">Trainers</button>
         </div>
       </section>
 
@@ -365,6 +375,6 @@
   <script src="/assets/site-links.js?v=1" defer></script>
   <script src="/assets/app-shell.js?v=3" defer></script>
   <script src="/assets/evo-focus.js?v=5" defer></script>
-  <script src="/assets/collection.js?v=18" defer></script>
+  <script src="/assets/collection.js?v=19" defer></script>
 </body>
 </html>

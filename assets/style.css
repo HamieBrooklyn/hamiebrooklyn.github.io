@@ -2773,3 +2773,117 @@ body.deck-editor-active .app-main {
     width: 52px;
   }
 }
+
+/* Crafting */
+.craft-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.craft-step h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+}
+
+.craft-step-count {
+  font-size: 0.88rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.craft-material-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.45rem;
+  margin: 0.65rem 0 0;
+}
+
+.craft-material-slot,
+.craft-trainer-slot {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 0.5rem 0.55rem;
+  background: var(--bg-elev);
+  font-size: 0.82rem;
+  min-height: 3.2rem;
+}
+
+.craft-material-slot.is-filled,
+.craft-trainer-slot.is-filled {
+  border-style: solid;
+  border-color: rgba(168, 85, 247, 0.45);
+}
+
+.craft-slot-clear {
+  float: right;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.craft-trainer-slot-wrap {
+  margin: 0.5rem 0 0.75rem;
+  max-width: 280px;
+}
+
+.craft-step-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.craft-msg.is-error {
+  color: #fda4af;
+}
+
+.craft-output .craft-pack-art {
+  max-width: 160px;
+  border-radius: 10px;
+  margin: 0.5rem 0;
+}
+
+.craft-output-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.craft-picker-tile {
+  position: relative;
+}
+
+.craft-use-dots,
+.card-tile-craft-uses {
+  display: flex;
+  gap: 0.2rem;
+  justify-content: center;
+  margin-top: 0.25rem;
+}
+
+.craft-use-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: rgba(120, 120, 130, 0.55);
+  flex-shrink: 0;
+}
+
+.craft-use-dot.is-active {
+  background: #a855f7;
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.65);
+}
+
+.card-tile-craft-uses {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2.4rem;
+  pointer-events: none;
+}
