@@ -355,11 +355,35 @@
   }
 
   function subtypeList(card) {
-    var subs = card && card.tcg_subtypes;
-    if (!Array.isArray(subs)) return [];
-    return subs.map(function (s) {
-      return String(s).trim();
-    });
+    var raw = card && card.tcg_subtypes;
+    if (raw == null) return [];
+    if (Array.isArray(raw)) {
+      return raw
+        .map(function (s) {
+          return String(s).trim();
+        })
+        .filter(Boolean);
+    }
+    if (typeof raw === "string") {
+      var s = raw.trim();
+      if (!s) return [];
+      if (s.charAt(0) === "[") {
+        try {
+          var parsed = JSON.parse(s);
+          if (Array.isArray(parsed)) {
+            return parsed
+              .map(function (x) {
+                return String(x).trim();
+              })
+              .filter(Boolean);
+          }
+        } catch (_) {
+          return [s];
+        }
+      }
+      return [s];
+    }
+    return [];
   }
 
   function hasSubtype(subs, label) {
@@ -385,7 +409,7 @@
       return "craft_trainer";
     }
     if (nameLooksLikeItem(card.name)) return "item";
-    if (role === "item" || role === "craft_trainer") return role;
+    if (role === "item") return "item";
     return "other";
   }
 
