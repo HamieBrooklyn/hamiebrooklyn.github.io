@@ -346,6 +346,23 @@
     return "/api/me/collection?" + qs.toString();
   }
 
+  /** Align grid with API craft_role (Stadium etc. must not appear under Items). */
+  function filterRowsForCraftChip(rows) {
+    var role = state.craftRole;
+    if (!role) return rows;
+    if (role === "item") {
+      return rows.filter(function (it) {
+        return it.craft_role === "item";
+      });
+    }
+    if (role === "craft_trainer") {
+      return rows.filter(function (it) {
+        return it.craft_role === "craft_trainer";
+      });
+    }
+    return rows;
+  }
+
   function buildEvolutionSectionsPath() {
     var qs = new URLSearchParams();
     qs.set("page_size", String(state.pageSize));
@@ -421,9 +438,10 @@
       })
       .then(function (body) {
         state.inflight = null;
-        state.items = Array.isArray(body.items) ? body.items : [];
+        var rows = Array.isArray(body.items) ? body.items : [];
+        state.items = filterRowsForCraftChip(rows);
         state.sections = [];
-        state.total = Number(body.total) || 0;
+        state.total = state.craftRole ? state.items.length : Number(body.total) || 0;
         state.page = Number(body.page) || 1;
         state.pageSize = Number(body.page_size) || state.pageSize;
         renderCollection();
