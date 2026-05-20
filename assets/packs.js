@@ -154,34 +154,178 @@
     return "/api/packs/search?" + qs.toString();
   }
 
+  function matchesQuery(row) {
+    var q = (state.query || "").trim().toLowerCase();
+    if (!q) return true;
+    var pack = row.pack || {};
+    var card = row.card || {};
+    var hay = [
+      pack.display_name,
+      pack.code,
+      card.name,
+      card.set_code,
+      card.set_name,
+    ]
+      .join(" ")
+      .toLowerCase();
+    return hay.indexOf(q) !== -1;
+  }
+
+  function sortRows(rows) {
+    var key = state.sort || "top";
+    function top(r) {
+      return Number((r.card || {}).combined_per_pack_chance_percent) || 0;
+    }
+    function rarity(r) {
+      return Number(((r.card || {}).rarity || {}).sort_order) || 0;
+    }
+    function sell(r) {
+      return Number((r.card || {}).shop_sell_pokedollars) || 0;
+    }
+    function packCost(r) {
+      return Number((r.pack || {}).crystal_price) || 0;
+    }
+    if (key === "rarity") {
+      return rows.slice().sort(function (a, b) {
+        return rarity(b) - rarity(a) || String((a.card || {}).name || "").localeCompare((b.card || {}).name || "");
+      });
+    }
+    if (key === "cost_high") {
+      return rows.slice().sort(function (a, b) {
+        return sell(b) - sell(a) || packCost(b) - packCost(a);
+      });
+    }
+    if (key === "cost_low") {
+      return rows.slice().sort(function (a, b) {
+        return sell(a) - sell(b) || packCost(a) - packCost(b);
+      });
+    }
+    return rows.slice().sort(function (a, b) {
+      return top(b) - top(a);
+    });
+  }
+
+  function paginateRows(rows) {
+    var total = rows.length;
+    var pages = Math.max(1, Math.ceil(total / state.pageSize));
+    var page = Math.min(Math.max(1, state.page), pages);
+    var start = (page - 1) * state.pageSize;
+    return {
+      total: total,
+      page: page,
+      items: rows.slice(start, start + state.pageSize),
+    };
+  }
+
+  function applyClientResult(rows, viaFallback) {
+    var filtered = rows.filter(matchesQuery);
+    if (state.packFilter) {
+      var want = state.packFilter.toLowerCase();
+      filtered = filtered.filter(function (r) {
+        return ((r.pack || {}).code || "").toLowerCase() === want;
+      });
+    }
+    var sorted = sortRows(filtered);
+    var page = paginateRows(sorted);
+    state.items = page.items;
+    state.total = page.total;
+    state.page = page.page;
+    if (viaFallback) {
+      state.viaFallback = true;
+    }
+    renderResults();
+  }
+
+  function loadSearchFallback(signal) {
+    setStatus("empty", "Loading pack pools (compat mode)…");
+    return apiFetch("/api/packs/catalog?page=1&page_size=80", { signal: signal })
+      .then(function (r) {
+        if (!r.ok) throw new Error("catalog_" + r.status);
+        return r.json();
+      })
+      .then(function (cat) {
+        var packs = cat.items || [];
+        if (state.packFilter) {
+          var want = state.packFilter.toLowerCase();
+          packs = packs.filter(function (p) {
+            return (p.code || "").toLowerCase() === want;
+          });
+        }
+        if (!packs.length) return [];
+        return Promise.all(
+          packs.map(function (p) {
+            return apiFetch(
+              "/api/packs/catalog/" +
+                encodeURIComponent(p.code) +
+                "?card_page=1&card_page_size=200",
+              { signal: signal }
+            )
+              .then(function (r) {
+                if (!r.ok) throw new Error("detail_" + r.status);
+                return r.json();
+              })
+              .then(function (detail) {
+                var series = detail.series || {};
+                var packMeta = {
+                  code: series.code || p.code,
+                  display_name: series.display_name || p.display_name,
+                  crystal_price: series.crystal_price != null ? series.crystal_price : p.crystal_price,
+                  pack_art_url: series.pack_art_url || p.pack_art_url,
+                };
+                return (detail.cards || []).map(function (card) {
+                  return { pack: packMeta, card: card };
+                });
+              });
+          })
+        ).then(function (chunks) {
+          var out = [];
+          chunks.forEach(function (chunk) {
+            out = out.concat(chunk);
+          });
+          return out;
+        });
+      })
+      .then(function (rows) {
+        applyClientResult(rows, true);
+      });
+  }
+
   function loadSearch() {
     if (state.inflight) state.inflight.abort();
     var ctrl = new AbortController();
     state.inflight = ctrl;
+    state.viaFallback = false;
     setStatus("empty", "Loading pack pools…");
     if (els.grid) els.grid.innerHTML = "";
 
     apiFetch(searchUrl(), { signal: ctrl.signal })
       .then(function (r) {
+        if (r.status === 404 || r.status === 501) {
+          return loadSearchFallback(ctrl.signal);
+        }
         if (!r.ok) throw new Error("search_" + r.status);
-        return r.json();
-      })
-      .then(function (body) {
-        state.items = body.items || [];
-        state.total = body.total != null ? body.total : state.items.length;
-        state.page = body.page || state.page;
-        renderResults();
+        return r.json().then(function (body) {
+          state.items = body.items || [];
+          state.total = body.total != null ? body.total : state.items.length;
+          state.page = body.page || state.page;
+          renderResults();
+        });
       })
       .catch(function (err) {
         if (err && err.name === "AbortError") return;
-        state.items = [];
-        state.total = 0;
-        if (els.grid) els.grid.innerHTML = "";
-        setStatus(
-          "error",
-          "Could not load pack search. Deploy the latest bot API (<code>/api/packs/search</code>) and try again."
-        );
-        if (els.pager) els.pager.hidden = true;
+        loadSearchFallback(ctrl.signal).catch(function (err2) {
+          if (err2 && err2.name === "AbortError") return;
+          state.items = [];
+          state.total = 0;
+          if (els.grid) els.grid.innerHTML = "";
+          setStatus(
+            "error",
+            "Pack data is not available on the API yet. Restart or redeploy the <strong>Poke-Cards</strong> bot " +
+              "(the build must include <code>poke_pon_bot/web/packs_api.py</code> and register it in " +
+              "<code>server.py</code>), then hard-refresh this page."
+          );
+          if (els.pager) els.pager.hidden = true;
+        });
       });
   }
 
@@ -212,7 +356,8 @@
         : " across all packs") +
       " · sorted by <strong>" +
       sortLabel(state.sort) +
-      "</strong>";
+      "</strong>" +
+      (state.viaFallback ? ' <span class="muted">(compat mode)</span>' : "");
 
     setStatus("empty", summary);
 
