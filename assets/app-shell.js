@@ -4,6 +4,7 @@
 
   var MAIN_NAV = [
     { key: "collection", href: "/collection/", icon: "▣", label: "Collection" },
+    { key: "pokedex", href: "/pokedex/", icon: "◎", label: "Pokédex" },
     { key: "craft", href: "/craft/", icon: "⚗", label: "Crafting" },
     { key: "packs", href: "/packs/", icon: "▥", label: "Packs" },
     { key: "deck", href: "/deck/", icon: "⚔", label: "Deck Editor" },
@@ -25,6 +26,7 @@
   function activeNavKey() {
     var path = normalizePath();
     if (path === "/collection" || path.indexOf("/collection/") === 0) return "collection";
+    if (path === "/pokedex" || path.indexOf("/pokedex/") === 0) return "pokedex";
     if (path === "/craft" || path.indexOf("/craft/") === 0) return "craft";
     if (path === "/packs" || path.indexOf("/packs/") === 0) return "packs";
     if (path === "/deck" || path.indexOf("/deck/") === 0) return "deck";
