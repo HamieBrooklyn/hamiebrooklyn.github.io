@@ -204,7 +204,14 @@
     setStatus("info", "Loading cards…");
     return apiFetch("/api/catalog?" + catalogQueryParams())
       .then(function (r) {
-        if (!r.ok) throw new Error("catalog " + r.status);
+        if (!r.ok) {
+          return r.text().then(function (body) {
+            var err = new Error("catalog " + r.status);
+            err.status = r.status;
+            err.body = body;
+            throw err;
+          });
+        }
         return r.json();
       })
       .then(function (data) {
@@ -218,10 +225,17 @@
       })
       .catch(function (err) {
         console.error(err);
-        setStatus(
-          "error",
-          "Could not load the Pokédex. If the API was just updated, deploy and restart the bot, then hard-refresh."
-        );
+        var msg = "Could not load the Pokédex.";
+        if (err && err.status === 404) {
+          msg += " The catalog API is not deployed yet — restart the bot after updating.";
+        } else if (err && err.status >= 500) {
+          msg += " Server error — deploy the latest bot code and restart, then hard-refresh.";
+        } else if (!API_BASE) {
+          msg = "API base URL is not configured.";
+        } else {
+          msg += " Check your connection and try again.";
+        }
+        setStatus("error", msg);
         if (els.grid) els.grid.innerHTML = "";
       })
       .finally(function () {
