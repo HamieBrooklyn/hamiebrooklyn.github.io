@@ -199,7 +199,7 @@
         showSignedOut();
         setDeckStatus(
           "error",
-          'Could not reach the PokePon API at <code>' +
+          'Could not reach the Poké Pon API at <code>' +
             escapeHtml(API_BASE || window.location.origin) +
             "</code>. " +
             "<br><span class=\"muted\">" + escapeHtml(err.message || String(err)) + "</span>"

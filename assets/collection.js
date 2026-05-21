@@ -308,7 +308,7 @@
         showSignedOut();
         setStatus(
           STATUS_KIND.ERROR,
-          'Could not reach the PokePon API at <code>' +
+          'Could not reach the Poké Pon API at <code>' +
             escapeHtml(API_BASE || window.location.origin) +
             "</code>. " +
             "Double-check that the bot's web server is online and the page's " +

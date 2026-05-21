@@ -293,7 +293,7 @@
       if (els.listError) {
         els.listError.hidden = false;
         els.listError.textContent =
-          "Could not reach the PokePon API. Check the pokepon-api-base meta tag and that the bot's web server is online.";
+          "Could not reach the Poké Pon API. Check the pokepon-api-base meta tag and that the bot's web server is online.";
       }
     }
 

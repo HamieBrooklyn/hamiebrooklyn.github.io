@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <link rel="apple-touch-icon" href="assets/favicon.png" />
-  <title>PokePon — Discord bot</title>
-  <meta name="description" content="PokePon: Pokémon TCG gacha, collection, trades, duels, and auctions on Discord." />
+  <title>Poké Pon — Discord bot</title>
+  <meta name="description" content="Poké Pon: Pokémon TCG gacha, collection, trades, duels, and auctions on Discord." />
   <link rel="canonical" href="https://pokepon.org/" />
   <link rel="stylesheet" href="assets/style.css?v=20" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,7 +17,7 @@
   <div class="bg-grid"></div>
   <header class="site-header site-header-home">
     <div class="site-header-row">
-      <a class="logo" href="./">PokePon</a>
+      <a class="logo brand-lockup" href="./"><img src="/assets/logo.jpg" alt="" class="brand-logo" width="40" height="40" decoding="async" /><span class="brand-name">Poké Pon</span></a>
       <div class="site-header-cta">
         <a class="btn btn-ghost btn-small" href="https://discord.gg/MaSEAnxTBn" data-pokepon-link="server-invite" target="_blank" rel="noopener noreferrer">Join server</a>
         <a class="btn btn-ghost btn-small" href="https://discord.com/oauth2/authorize?client_id=1496227239803748362&amp;permissions=268954721&amp;integration_type=0&amp;scope=bot+applications.commands" data-pokepon-link="bot-invite" target="_blank" rel="noopener noreferrer">Add bot</a>
@@ -26,15 +26,36 @@
     </div>
     <nav class="home-nav" aria-label="Site sections">
       <div class="home-nav-group">
-        <span class="home-nav-label">Web app</span>
+        <span class="home-nav-label">Your cards</span>
         <div class="home-nav-links">
           <a href="/collection/">Collection</a>
-          <a href="/craft/">Crafting</a>
+        </div>
+      </div>
+      <div class="home-nav-group">
+        <span class="home-nav-label">Catalog</span>
+        <div class="home-nav-links">
+          <a href="/pokedex/">Pokédex</a>
           <a href="/packs/">Packs</a>
-          <a href="/deck/">Deck</a>
+        </div>
+      </div>
+      <div class="home-nav-group">
+        <span class="home-nav-label">Build &amp; play</span>
+        <div class="home-nav-links">
+          <a href="/craft/">Crafting</a>
+          <a href="/deck/">Deck editor</a>
+        </div>
+      </div>
+      <div class="home-nav-group">
+        <span class="home-nav-label">Multiplayer</span>
+        <div class="home-nav-links">
           <a href="/trades/">Trades</a>
           <a href="/auctions/">Auctions</a>
           <a href="/leaderboard/">Leaderboards</a>
+        </div>
+      </div>
+      <div class="home-nav-group">
+        <span class="home-nav-label">Store</span>
+        <div class="home-nav-links">
           <a href="/shop/">Shop</a>
         </div>
       </div>
@@ -55,7 +76,7 @@
       <p class="hero-kicker">Discord · Pokémon TCG</p>
       <h1>Open packs, build your collection, trade, duel, and auction.</h1>
       <p class="hero-lead">
-        PokePon is a Discord bot for curated TCG drops, inventory, player trades, PvP-style duels, and timed card auctions—built on real printings from the Pokémon TCG API.
+        Poké Pon is a Discord bot for curated TCG drops, inventory, player trades, PvP-style duels, and timed card auctions—built on real printings from the Pokémon TCG API.
       </p>
 
       <aside class="referral-promo" aria-label="Refer a friend">
@@ -80,6 +101,16 @@
           <span class="home-feature-icon" aria-hidden="true">▣</span>
           <h3>Collection</h3>
           <p>Search your binder, sell to the shop, grade cards.</p>
+        </a>
+        <a class="home-feature-card" href="/pokedex/">
+          <span class="home-feature-icon" aria-hidden="true">◎</span>
+          <h3>Pokédex</h3>
+          <p>Browse every imported printing and check what you own.</p>
+        </a>
+        <a class="home-feature-card" href="/packs/">
+          <span class="home-feature-icon" aria-hidden="true">▥</span>
+          <h3>Packs</h3>
+          <p>Search boosters and view pool odds.</p>
         </a>
         <a class="home-feature-card" href="/deck/">
           <span class="home-feature-icon" aria-hidden="true">⚔</span>
@@ -179,7 +210,7 @@
   </main>
 
   <footer class="site-footer">
-    <span>© <span id="y"></span> PokePon · Not affiliated with Nintendo, The Pokémon Company, or Creatures Inc.</span>
+    <span>© <span id="y"></span> Poké Pon · Not affiliated with Nintendo, The Pokémon Company, or Creatures Inc.</span>
     <span class="footer-links">
       <a href="#player-guide">Guide</a>
       <a href="/terms/">Terms</a>
