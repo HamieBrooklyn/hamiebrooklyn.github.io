@@ -807,6 +807,41 @@
     }
   }
 
+  function initCraftSubtabs() {
+    var subtabs = document.getElementById("craft-subtabs");
+    if (!subtabs) return;
+    subtabs.hidden = false;
+    var panels = document.querySelectorAll("[data-craft-panel]");
+    var lead = document.getElementById("craft-page-lead");
+
+    function showPanel(name) {
+      panels.forEach(function (el) {
+        el.hidden = el.getAttribute("data-craft-panel") !== name;
+      });
+      subtabs.querySelectorAll(".craft-subtab").forEach(function (btn) {
+        var on = btn.getAttribute("data-craft-panel") === name;
+        btn.classList.toggle("is-active", on);
+        btn.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      if (lead) {
+        lead.innerHTML =
+          name === "assembly"
+            ? "Combine <strong>2 or 4 puzzle pieces</strong> into one full card. Pieces are consumed; the assembled card appears in your collection (newest first)."
+            : "Add <strong>5 item or Energy</strong> cards, then a <strong>trainer</strong> card, to craft a random booster pack. Trainer rarity sets the tier. Trainers show <strong>3 purple uses</strong>.";
+      }
+      if (name === "assembly" && window.PokePonAssembly && window.PokePonAssembly.onPanelShown) {
+        window.PokePonAssembly.onPanelShown();
+      }
+    }
+
+    subtabs.addEventListener("click", function (e) {
+      var btn = e.target.closest(".craft-subtab");
+      if (!btn) return;
+      showPanel(btn.getAttribute("data-craft-panel") || "packs");
+    });
+    showPanel("packs");
+  }
+
   function bootAuth() {
     apiFetch("/api/me")
       .then(function (r) {
@@ -821,6 +856,10 @@
           renderTrainerSlot();
           updateCraftUi();
           setPickerRole("item");
+          initCraftSubtabs();
+          if (window.PokePonAssembly && window.PokePonAssembly.setAuthenticated) {
+            window.PokePonAssembly.setAuthenticated(true);
+          }
         } else {
           showSignedOut();
           setStatus("auth", "Sign in with Discord to use crafting.");

@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/png" href="/assets/favicon.png" />
   <link rel="apple-touch-icon" href="/assets/favicon.png" />
-  <title>Crafting — Poké Pon</title>
-  <meta name="description" content="Craft random booster packs from 5 item or Energy cards and a trainer card in Poké Pon." />
+  <title>Crafting — PokePon</title>
+  <meta name="description" content="Craft random booster packs from 5 item or Energy cards and a trainer card in PokePon." />
   <link rel="canonical" href="https://pokepon.org/craft/" />
-  <link rel="stylesheet" href="/assets/style.css?v=28" />
+  <link rel="stylesheet" href="/assets/style.css?v=30" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -19,7 +19,7 @@
   <div class="app-shell" id="app">
     <aside class="sidebar" id="sidebar" aria-label="Primary">
       <div class="sidebar-top">
-        <a class="logo sidebar-logo" href="/">Poké Pon</a>
+        <a class="logo sidebar-logo" href="/">PokePon</a>
         <button class="sidebar-toggle" type="button" id="sidebar-toggle" aria-controls="sidebar" aria-expanded="false">
           <span class="sidebar-toggle-bar"></span>
           <span class="sidebar-toggle-bar"></span>
@@ -134,15 +134,19 @@
       <header class="page-head">
         <p class="hero-kicker">Section</p>
         <h1>Crafting</h1>
-        <p class="page-lead">
-          Add <strong>5 item or Energy</strong> cards, then a <strong>trainer</strong> card, to craft a random booster pack.
-          Trainer rarity sets the tier. Trainers show <strong>3 purple uses</strong>.
+        <p class="page-lead" id="craft-page-lead">
+          Craft booster packs from items and trainers, or assemble multi-piece cards at the Assembly Station.
         </p>
       </header>
 
+      <nav class="craft-subtabs" id="craft-subtabs" aria-label="Crafting modes" hidden>
+        <button type="button" class="craft-subtab is-active" data-craft-panel="packs" id="craft-tab-packs">Packs</button>
+        <button type="button" class="craft-subtab" data-craft-panel="assembly" id="craft-tab-assembly">Assembly Station</button>
+      </nav>
+
       <section class="craft-status" id="craft-status"></section>
 
-      <div id="craft-workspace" class="craft-workspace" hidden>
+      <div id="craft-workspace" class="craft-workspace" data-craft-panel="packs" hidden>
         <div class="craft-pipeline" role="list" aria-label="Crafting steps">
           <section class="craft-node is-active" id="craft-node-materials" data-picker-role="item" role="listitem">
             <div class="craft-node-rail" aria-hidden="true">
@@ -208,6 +212,41 @@
           <section class="card-grid craft-picker-grid" id="card-grid" aria-live="polite"></section>
         </section>
       </div>
+
+      <div id="assembly-workspace" class="craft-workspace assembly-workspace" data-craft-panel="assembly" hidden>
+        <section class="assembly-station" aria-label="Card assembly">
+          <div class="assembly-board-wrap">
+            <div class="assembly-board" id="assembly-board" aria-live="polite">
+              <p class="assembly-board-placeholder muted">Select a piece below to begin.</p>
+            </div>
+            <p class="assembly-board-meta muted" id="assembly-board-meta" hidden></p>
+          </div>
+          <div class="assembly-actions">
+            <p class="assembly-cost muted" id="assembly-cost" hidden></p>
+            <button type="button" class="btn btn-primary" id="btn-assemble" disabled>Assemble card</button>
+            <button type="button" class="btn btn-ghost" id="btn-assembly-reset">Clear board</button>
+            <p class="craft-msg" id="assembly-msg" hidden></p>
+          </div>
+        </section>
+
+        <section class="craft-picker-panel" aria-label="Assembly piece picker">
+          <header class="craft-picker-head">
+            <h2 id="assembly-picker-title">Pick assembly pieces</h2>
+            <p class="page-lead" id="assembly-picker-lead">Cards in your collection that are part of a multi-card puzzle.</p>
+          </header>
+
+          <section class="toolbar" aria-label="Search">
+            <div class="toolbar-search">
+              <span class="search-icon" aria-hidden="true">⌕</span>
+              <input type="search" id="assembly-search-input" placeholder="Search pieces by name…" autocomplete="off" spellcheck="false" />
+              <button class="search-clear" type="button" id="assembly-search-clear" hidden aria-label="Clear search">×</button>
+            </div>
+          </section>
+
+          <section class="craft-picker-status" id="assembly-picker-status"></section>
+          <section class="card-grid craft-picker-grid" id="assembly-card-grid" aria-live="polite"></section>
+        </section>
+      </div>
     </main>
   </div>
 
@@ -235,7 +274,8 @@
     })();
   </script>
   <script src="/assets/site-links.js?v=1" defer></script>
-  <script src="/assets/app-shell.js?v=7" defer></script>
-  <script src="/assets/craft.js?v=9" defer></script>
+  <script src="/assets/app-shell.js?v=3" defer></script>
+  <script src="/assets/craft.js?v=10" defer></script>
+  <script src="/assets/assembly.js?v=1" defer></script>
 </body>
 </html>
