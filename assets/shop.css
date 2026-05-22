@@ -119,6 +119,40 @@
   background: rgba(192, 132, 252, 0.18);
 }
 
+.shop-section-icon-perk {
+  background: rgba(74, 222, 128, 0.15);
+}
+
+.shop-grid-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 1.5rem 1rem;
+  text-align: center;
+}
+
+.shop-pack-perk::before {
+  background: radial-gradient(ellipse at 80% 0%, rgba(74, 222, 128, 0.14), transparent 55%);
+}
+
+.shop-pack.is-owned {
+  opacity: 0.92;
+  border-color: rgba(74, 222, 128, 0.35);
+}
+
+.shop-pack-badge-once {
+  right: auto;
+  left: 0.65rem;
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--muted);
+  border-color: var(--border);
+}
+
+.shop-pack-badge-owned {
+  background: rgba(74, 222, 128, 0.2);
+  color: #86efac;
+  border-color: rgba(74, 222, 128, 0.4);
+}
+
 .shop-section-lead {
   margin: 0 0 1rem;
   color: var(--muted);

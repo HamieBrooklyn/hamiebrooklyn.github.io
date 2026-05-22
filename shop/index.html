@@ -9,7 +9,7 @@
   <meta name="description" content="Buy Poké Pon Pokedollars and Crystals securely with Stripe. Instant delivery to your Discord-linked account." />
   <link rel="canonical" href="https://pokepon.org/shop/" />
   <link rel="stylesheet" href="/assets/style.css?v=32" />
-  <link rel="stylesheet" href="/assets/shop.css?v=5" />
+  <link rel="stylesheet" href="/assets/shop.css?v=6" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -166,6 +166,16 @@
 
       <p class="shop-status" id="shop-status" aria-live="polite"></p>
 
+      <section class="shop-section" id="shop-perks" aria-labelledby="shop-perks-heading">
+        <h2 class="shop-section-title" id="shop-perks-heading">
+          <span class="shop-section-icon shop-section-icon-perk" aria-hidden="true">⚡</span> Perks &amp; packs
+        </h2>
+        <p class="shop-section-lead">
+          Real-money purchases that work like the old Discord SKUs — half drop cooldown (one-time) and random booster packs.
+        </p>
+        <div class="shop-grid" id="shop-grid-perks" aria-live="polite"></div>
+      </section>
+
       <section class="shop-section" aria-labelledby="shop-pd-heading">
         <h2 class="shop-section-title" id="shop-pd-heading">
           <span class="shop-section-icon" aria-hidden="true">₽</span> Pokedollars
@@ -226,6 +236,6 @@
     })();
   </script>
   <script src="/assets/app-shell.js?v=9" defer></script>
-  <script src="/assets/shop.js?v=4" defer></script>
+  <script src="/assets/shop.js?v=5" defer></script>
 </body>
 </html>

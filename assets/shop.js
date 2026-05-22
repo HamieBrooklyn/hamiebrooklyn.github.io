@@ -100,6 +100,7 @@
     balancePd: document.getElementById("balance-pd"),
     balanceCr: document.getElementById("balance-cr"),
     status: document.getElementById("shop-status"),
+    gridPerks: document.getElementById("shop-grid-perks"),
     gridPd: document.getElementById("shop-grid-pd"),
     gridCr: document.getElementById("shop-grid-cr"),
     bannerSuccess: document.getElementById("shop-banner-success"),
@@ -149,18 +150,29 @@
     return "";
   }
 
-  function renderPack(item, currency) {
+  function renderShopItem(item, sectionKind) {
     var extraClass =
-      (currency === "crystals" ? " shop-pack-crystals" : "") +
-      (item.badge ? " is-" + item.badge : "");
+      (sectionKind === "crystals" ? " shop-pack-crystals" : "") +
+      (sectionKind === "perks" ? " shop-pack-perk" : "") +
+      (item.badge ? " is-" + item.badge : "") +
+      (item.owned ? " is-owned" : "");
     var badge = item.badge
       ? '<span class="shop-pack-badge">' + escapeHtml(badgeLabel(item.badge)) + "</span>"
       : "";
-    var disabled = !item.available;
+    if (item.one_time) {
+      badge +=
+        '<span class="shop-pack-badge shop-pack-badge-once">One-time</span>';
+    }
+    if (item.owned) {
+      badge += '<span class="shop-pack-badge shop-pack-badge-owned">Owned</span>';
+    }
+    var disabled = !item.available || item.owned;
     var btnLabel = state.authenticated
-      ? disabled
-        ? "Coming soon"
-        : "Buy now"
+      ? item.owned
+        ? "Already owned"
+        : disabled
+          ? "Coming soon"
+          : "Buy now"
       : "Sign in to buy";
     var priceHtml = "";
     if (item.price && item.price.display) {
@@ -201,17 +213,27 @@
         true
       );
     }
+    if (els.gridPerks) {
+      var perks = data.perks || [];
+      els.gridPerks.innerHTML = perks.length
+        ? perks
+            .map(function (item) {
+              return renderShopItem(item, "perks");
+            })
+            .join("")
+        : '<p class="shop-grid-empty muted">Perk products are not configured yet (add STRIPE_PRICE_HALF_DROP_COOLDOWN and STRIPE_PRICE_RANDOM_PACK on the bot).</p>';
+    }
     if (els.gridPd) {
       els.gridPd.innerHTML = (data.pokedollars || [])
         .map(function (item) {
-          return renderPack(item, "pokedollars");
+          return renderShopItem(item, "pokedollars");
         })
         .join("");
     }
     if (els.gridCr) {
       els.gridCr.innerHTML = (data.crystals || [])
         .map(function (item) {
-          return renderPack(item, "crystals");
+          return renderShopItem(item, "crystals");
         })
         .join("");
     }
@@ -308,8 +330,13 @@
         var msg =
           data.error === "unauthenticated"
             ? "Please sign in first."
-            : "Checkout could not start. Try again.";
+            : data.error === "already_purchased"
+              ? data.message || "You already own this one-time perk."
+              : "Checkout could not start. Try again.";
         setStatus(msg, true);
+        if (data.error === "already_purchased") {
+          await loadCatalog();
+        }
         return;
       }
       if (data.checkout_url) {
