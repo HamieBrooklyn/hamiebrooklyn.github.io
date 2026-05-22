@@ -808,6 +808,7 @@
   }
 
   var activeCraftPanel = "packs";
+  var craftTabShowPanel = null;
 
   function initCraftSubtabs() {
     var subtabs = document.getElementById("craft-subtabs");
@@ -861,6 +862,7 @@
       if (!btn) return;
       showPanel(btn.getAttribute("data-craft-panel") || "packs");
     });
+    craftTabShowPanel = showPanel;
     showPanel(activeCraftPanel);
   }
 
@@ -881,6 +883,7 @@
           if (window.PokePonAssembly && window.PokePonAssembly.setAuthenticated) {
             window.PokePonAssembly.setAuthenticated(true);
           }
+          if (craftTabShowPanel) craftTabShowPanel(activeCraftPanel);
         } else {
           showSignedOut();
           setStatus("auth", "Sign in with Discord to use pack crafting.");

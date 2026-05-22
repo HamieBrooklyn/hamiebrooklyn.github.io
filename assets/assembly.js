@@ -564,8 +564,6 @@
         .then(function (body) {
           state.authenticated = !!(body && body.authenticated);
           if (!state.authenticated) return;
-          var ws = document.getElementById("assembly-workspace");
-          if (ws) ws.hidden = false;
           loadPieces();
           renderBoard();
           updateActions();

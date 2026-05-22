@@ -3087,6 +3087,12 @@ body.deck-editor-active .app-main {
   gap: 1.5rem;
 }
 
+/* Author `display:flex` above overrides the default `[hidden]` rule — force panels off. */
+.craft-workspace[hidden],
+.craft-status[hidden] {
+  display: none !important;
+}
+
 .craft-pipeline {
   display: flex;
   flex-direction: column;
