@@ -140,8 +140,6 @@
 }
 
 .shop-pack-badge-once {
-  right: auto;
-  left: 0.65rem;
   background: rgba(148, 163, 184, 0.2);
   color: var(--muted);
   border-color: var(--border);
@@ -203,10 +201,23 @@
   border-color: rgba(192, 132, 252, 0.5);
 }
 
+.shop-pack-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+  min-height: 0;
+}
+
+.shop-pack-perk .shop-pack-badges {
+  justify-content: flex-start;
+}
+
 .shop-pack-badge {
-  position: absolute;
-  top: 0.65rem;
-  right: 0.65rem;
+  position: relative;
+  flex-shrink: 0;
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -216,7 +227,6 @@
   background: rgba(251, 191, 36, 0.2);
   color: #fde68a;
   border: 1px solid rgba(251, 191, 36, 0.35);
-  z-index: 1;
 }
 
 .shop-pack.is-best_value .shop-pack-badge {

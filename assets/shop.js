@@ -166,6 +166,9 @@
     if (item.owned) {
       badge += '<span class="shop-pack-badge shop-pack-badge-owned">Owned</span>';
     }
+    var badgeRow = badge
+      ? '<div class="shop-pack-badges">' + badge + "</div>"
+      : "";
     var disabled = !item.available || item.owned;
     var btnLabel = state.authenticated
       ? item.owned
@@ -184,7 +187,7 @@
       '<article class="shop-pack' +
       extraClass +
       '">' +
-      badge +
+      badgeRow +
       priceHtml +
       '<p class="shop-pack-grant">' +
       escapeHtml(item.grant_label) +
