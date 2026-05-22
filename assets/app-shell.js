@@ -270,12 +270,8 @@
     return fetch(apiBase() + path, options);
   }
 
-  function formatSidebarPd(n) {
-    return "₽" + Number(n).toLocaleString();
-  }
-
-  function formatSidebarCr(n) {
-    return "💎 " + Number(n).toLocaleString();
+  function formatSidebarAmount(n) {
+    return Number(n).toLocaleString();
   }
 
   function sidebarSignedInVisible() {
@@ -339,8 +335,8 @@
           setSidebarBalancesVisible(false);
           return;
         }
-        if (pd) pd.textContent = formatSidebarPd(b.pokedollars);
-        if (cr) cr.textContent = formatSidebarCr(b.crystals);
+        if (pd) pd.textContent = formatSidebarAmount(b.pokedollars);
+        if (cr) cr.textContent = formatSidebarAmount(b.crystals);
         setSidebarBalancesVisible(true);
       })
       .catch(function () {
