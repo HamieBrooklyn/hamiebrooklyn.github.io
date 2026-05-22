@@ -373,8 +373,11 @@
     });
   }
 
+  var loadSeq = 0;
+
   function loadPieces() {
     if (!state.authenticated) return;
+    var seq = ++loadSeq;
     if (state.inflight) state.inflight.abort();
     var ctrl = new AbortController();
     state.inflight = ctrl;
@@ -386,19 +389,35 @@
     setPickerStatus("info", "Loading pieces…");
     apiFetch(path, { signal: ctrl.signal })
       .then(function (r) {
-        return r.json();
+        return r.json().then(function (body) {
+          return { ok: r.ok, status: r.status, body: body };
+        });
       })
-      .then(function (body) {
-        if (ctrl.signal.aborted) return;
+      .then(function (res) {
+        if (ctrl.signal.aborted || seq !== loadSeq) return;
         state.inflight = null;
-        var items = body && Array.isArray(body.items) ? body.items : [];
+        if (!res.ok) {
+          var errMsg =
+            (res.body && res.body.error) ||
+            (res.status === 404
+              ? "Assembly API not available — restart or update the bot."
+              : "Could not load assembly pieces.");
+          setPickerStatus("error", errMsg);
+          if (els.grid) {
+            els.grid.innerHTML =
+              '<p class="grid-empty muted">' + escapeHtml(errMsg) + "</p>";
+          }
+          return;
+        }
+        var items =
+          res.body && Array.isArray(res.body.items) ? res.body.items : [];
         state.items = sortPiecesAz(items);
         if (!items.length) {
           setPickerStatus(
             "warn",
             state.anchorPublicId
               ? "No compatible pieces left for this assembly."
-              : "No assembly pieces found."
+              : "No assembly pieces in your collection yet. V-UNION quarters and other puzzle cards appear here when you own them."
           );
         } else {
           setPickerStatus("", "");
@@ -440,11 +459,17 @@
               .catch(function () {});
           }
         }
-        renderGrid(items);
+        renderGrid(state.items);
       })
       .catch(function (err) {
         if (err && err.name === "AbortError") return;
+        if (seq !== loadSeq) return;
+        state.inflight = null;
         setPickerStatus("error", "Could not load assembly pieces.");
+        if (els.grid) {
+          els.grid.innerHTML =
+            '<p class="grid-empty muted">Network error — try again.</p>';
+        }
       });
   }
 
@@ -557,6 +582,12 @@
 
   window.PokePonAssembly = {
     onPanelShown: function () {
+      if (state.authenticated) {
+        loadPieces();
+        renderBoard();
+        updateActions();
+        return;
+      }
       apiFetch("/api/me")
         .then(function (r) {
           return r.json();
@@ -571,7 +602,9 @@
     },
     setAuthenticated: function (on) {
       state.authenticated = !!on;
+      if (on) loadPieces();
     },
+    loadPieces: loadPieces,
   };
 
   bootAssemblyAuth();

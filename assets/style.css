@@ -3081,6 +3081,15 @@ body.deck-editor-active .app-main {
   display: block;
 }
 
+.craft-picker-grid .grid-empty,
+#assembly-card-grid .grid-empty {
+  grid-column: 1 / -1;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--muted, #9ca3af);
+  font-size: 0.95rem;
+}
+
 .craft-workspace {
   display: flex;
   flex-direction: column;
