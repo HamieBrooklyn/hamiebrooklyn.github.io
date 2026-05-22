@@ -417,7 +417,7 @@
             "warn",
             state.anchorPublicId
               ? "No compatible pieces left for this assembly."
-              : "No assembly pieces in your collection yet. V-UNION quarters and other puzzle cards appear here when you own them."
+              : "No assembly pieces found. Own V-UNION quarters (e.g. Greninja V-UNION) or other puzzle cards — the bot must be updated and restarted if you just deployed assembly."
           );
         } else {
           setPickerStatus("", "");
