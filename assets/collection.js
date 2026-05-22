@@ -308,7 +308,7 @@
         showSignedOut();
         setStatus(
           STATUS_KIND.ERROR,
-          'Could not reach the Poké Pon API at <code>' +
+          'Could not reach the PokePon API at <code>' +
             escapeHtml(API_BASE || window.location.origin) +
             "</code>. " +
             "Double-check that the bot's web server is online and the page's " +
@@ -763,7 +763,6 @@
     img.decoding = "async";
     img.alt = card.name || "Card";
     img.className = "card-tile-img";
-    setTileCardImage(img, item);
 
     var meta = document.createElement("div");
     meta.className = "card-tile-meta";
@@ -789,7 +788,10 @@
     }
     statsRow.innerHTML = stats.join("");
 
-    btn.appendChild(img);
+    if (!applyAssemblyCompositeTile(btn, item)) {
+      setTileCardImage(img, item);
+      btn.appendChild(img);
+    }
     btn.appendChild(meta);
     var meter = buildCraftUsesMeter(craftUsesForItem(item));
     if (meter) btn.appendChild(meter);
@@ -897,6 +899,34 @@
       els.modalImg.classList.remove("modal-img--slab");
       els.modalImg.src = card.image_large_url || card.image_small_url || "";
     }
+  }
+
+  function applyAssemblyCompositeTile(btn, item) {
+    var asm = item && item.assembly;
+    if (!asm || asm.role !== "result" || !Array.isArray(asm.slots) || !asm.slots.length) {
+      return false;
+    }
+    var layout = asm.layout || "quad";
+    var grid = document.createElement("div");
+    grid.className =
+      "card-tile-assembly layout-" + layout + " orientation-" + (asm.orientation || "portrait");
+    asm.slots.forEach(function (slot) {
+      var cell = document.createElement("span");
+      cell.className = "card-tile-assembly-cell";
+      cell.style.gridColumn = String((slot.grid_col || 0) + 1);
+      cell.style.gridRow = String((slot.grid_row || 0) + 1);
+      var cellImg = document.createElement("img");
+      cellImg.alt = "";
+      cellImg.loading = "lazy";
+      cellImg.src = slot.image_small_url || slot.image_large_url || "";
+      cellImg.style.transform = "rotate(" + (slot.rotation_deg || 0) + "deg)";
+      cell.appendChild(cellImg);
+      grid.appendChild(cell);
+    });
+    var existing = btn.querySelector(".card-tile-img");
+    if (existing) existing.remove();
+    btn.insertBefore(grid, btn.firstChild);
+    return true;
   }
 
   function setTileCardImage(img, item) {
