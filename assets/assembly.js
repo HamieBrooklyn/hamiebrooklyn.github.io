@@ -179,6 +179,11 @@
     return items;
   }
 
+  function sameAssemblyGroup(a, b) {
+    if (!a || !b) return false;
+    return String(a.group_id) === String(b.group_id);
+  }
+
   function filterItemsForAnchor(items) {
     if (!state.anchorPublicId) return items;
     var anchor = null;
@@ -189,13 +194,41 @@
       }
     }
     if (!anchor || !anchor.assembly) return items;
-    var gid = anchor.assembly.group_id;
-    var slot = anchor.assembly.slot_index;
+    var gid = anchor.assembly;
+    var anchorSlot = anchor.assembly.slot_index;
     return items.filter(function (it) {
+      if (!it.assembly) return false;
       if (it.public_id === state.anchorPublicId) return false;
-      if (it.assembly.group_id !== gid) return false;
-      return it.assembly.slot_index !== slot;
+      if (!sameAssemblyGroup(it.assembly, gid)) return false;
+      return it.assembly.slot_index !== anchorSlot;
     });
+  }
+
+  /** Remove copies already placed on the assembly board (not only the anchor). */
+  function filterPlacedOnBoard(items) {
+    var placedIds = {};
+    var filledSlots = {};
+    Object.keys(state.slots).forEach(function (key) {
+      var it = state.slots[key];
+      if (!it) return;
+      if (it.public_id) placedIds[it.public_id] = true;
+      filledSlots[key] = true;
+    });
+    return items.filter(function (it) {
+      if (it.public_id && placedIds[it.public_id]) return false;
+      if (
+        it.assembly &&
+        it.assembly.slot_index != null &&
+        filledSlots[String(it.assembly.slot_index)]
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function applyPickerFilters(items) {
+    return sortPiecesAz(filterPlacedOnBoard(filterItemsForAnchor(items)));
   }
 
   function sortPiecesAz(items) {
@@ -403,8 +436,11 @@
     }
 
     ensureGroupSlotsFromItem(item);
-    state.slots[slot] = item;
+    state.slots[String(slot)] = item;
     renderBoard();
+    if (state.items.length) {
+      renderGrid(applyPickerFilters(state.items));
+    }
     loadPieces();
     fetchQuote();
   }
@@ -421,7 +457,13 @@
     btn.dataset.publicId = item.public_id;
     btn.dataset.slot = String(asm.slot_index);
 
-    var alreadyPlaced = state.slots[asm.slot_index];
+    var slotKey = String(asm.slot_index);
+    var alreadyPlaced =
+      state.slots[slotKey] ||
+      Object.keys(state.slots).some(function (k) {
+        var onBoard = state.slots[k];
+        return onBoard && onBoard.public_id === item.public_id;
+      });
     if (blocked || alreadyPlaced) {
       btn.classList.add("is-disabled");
       btn.disabled = true;
@@ -487,8 +529,8 @@
   function finishLoad(items, seq, sourceLabel) {
     if (seq !== loadSeq) return;
     state.inflight = null;
-    items = filterItemsForAnchor(items);
-    state.items = sortPiecesAz(items);
+    state.items = applyPickerFilters(items);
+    items = state.items;
 
     if (!items.length) {
       setPickerStatus(
