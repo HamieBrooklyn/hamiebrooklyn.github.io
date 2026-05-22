@@ -71,7 +71,7 @@
     if (!els.pickerStatus) return;
     if (!text) {
       els.pickerStatus.hidden = true;
-      els.pickerStatus.textContent = "";
+      els.pickerStatus.innerHTML = "";
       return;
     }
     els.pickerStatus.hidden = false;
@@ -102,6 +102,116 @@
 
   function slotCountFilled() {
     return Object.keys(state.slots).length;
+  }
+
+  function collectorSortKey(num) {
+    var s = String(num == null ? "" : num).trim();
+    var n = parseInt(s, 10);
+    return isNaN(n) ? s : n;
+  }
+
+  function cardSubline(card) {
+    card = card || {};
+    var set = card.set_name || card.set_code || "";
+    var num = card.collector_number != null ? card.collector_number : "?";
+    return (set ? set + " · " : "") + "#" + num;
+  }
+
+  function isVunionName(name) {
+    return String(name || "").toLowerCase().indexOf("v-union") >= 0;
+  }
+
+  function isAssemblyEligibleRow(row) {
+    if (!row) return false;
+    if (row.assembly && row.assembly.role === "piece") return true;
+    if (row.assembly && row.assembly.slot_index != null) return true;
+    return isVunionName(row.card && row.card.name);
+  }
+
+  function buildPiecesFromCollectionRows(rows) {
+    var groups = {};
+    rows.forEach(function (row) {
+      if (!isAssemblyEligibleRow(row)) return;
+      var card = row.card || {};
+      var key = String(card.set_code || "") + "\0" + String(card.name || "").trim();
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(row);
+    });
+
+    var items = [];
+    Object.keys(groups).forEach(function (key) {
+      var grp = groups[key].slice().sort(function (a, b) {
+        return (
+          collectorSortKey(a.card && a.card.collector_number) -
+          collectorSortKey(b.card && b.card.collector_number)
+        );
+      });
+      var pieceCount = grp.length >= 4 ? 4 : grp.length;
+      var layout = pieceCount === 2 ? "horizontal_halves" : "quad";
+      grp.forEach(function (row, idx) {
+        var card = row.card || {};
+        var asm = row.assembly || {};
+        items.push({
+          public_id: row.public_id,
+          obtained_at: row.obtained_at,
+          sell_blocked: row.sell && row.sell.blocked_reason,
+          assembly: {
+            group_id: asm.group_id != null ? asm.group_id : key,
+            group_code: asm.group_code || key,
+            display_name: asm.display_name || card.name || "Assembly",
+            slot_index: asm.slot_index != null ? asm.slot_index : idx,
+            piece_count: asm.piece_count != null ? asm.piece_count : pieceCount,
+            layout: asm.layout || layout,
+            orientation: asm.orientation || "portrait",
+          },
+          card: {
+            name: card.name,
+            set_code: card.set_code,
+            set_name: card.set_name,
+            collector_number: card.collector_number,
+            image_small_url: card.image_small_url,
+            image_large_url: card.image_large_url,
+            rarity: card.rarity || {},
+          },
+        });
+      });
+    });
+    return items;
+  }
+
+  function filterItemsForAnchor(items) {
+    if (!state.anchorPublicId) return items;
+    var anchor = null;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].public_id === state.anchorPublicId) {
+        anchor = items[i];
+        break;
+      }
+    }
+    if (!anchor || !anchor.assembly) return items;
+    var gid = anchor.assembly.group_id;
+    var slot = anchor.assembly.slot_index;
+    return items.filter(function (it) {
+      if (it.public_id === state.anchorPublicId) return false;
+      if (it.assembly.group_id !== gid) return false;
+      return it.assembly.slot_index !== slot;
+    });
+  }
+
+  function sortPiecesAz(items) {
+    return items.slice().sort(function (a, b) {
+      var na = ((a.card && a.card.name) || "").trim();
+      var nb = ((b.card && b.card.name) || "").trim();
+      var cmp = na.localeCompare(nb, undefined, { sensitivity: "base" });
+      if (cmp !== 0) return cmp;
+      var sa = (a.card && a.card.set_code) || "";
+      var sb = (b.card && b.card.set_code) || "";
+      cmp = sa.localeCompare(sb, undefined, { sensitivity: "base" });
+      if (cmp !== 0) return cmp;
+      var ia = a.assembly && a.assembly.slot_index != null ? a.assembly.slot_index : 0;
+      var ib = b.assembly && b.assembly.slot_index != null ? b.assembly.slot_index : 0;
+      return ia - ib;
+    });
   }
 
   function renderBoard() {
@@ -153,7 +263,7 @@
       html +=
         '<div class="assembly-result-ghost" aria-hidden="true"><img src="' +
         escapeHtml(g.result.image_large_url) +
-        '" alt=""></div>";
+        '" alt=""></div>';
     }
 
     els.board.innerHTML = html;
@@ -210,18 +320,15 @@
       .then(function (res) {
         if (!res.ok || !res.body.ok) {
           state.quoteCost = null;
-          setAssemblyMsg(
-            "error",
-            (res.body && res.body.message) || "Could not quote assembly cost."
-          );
+          if (res.body && res.body.message) {
+            setAssemblyMsg("error", res.body.message);
+          }
           updateActions();
           return;
         }
         state.quoteCost = res.body.cost;
-        if (res.body.group) {
-          state.group = res.body.group;
-          renderBoard();
-        }
+        if (res.body.group) state.group = res.body.group;
+        renderBoard();
         setAssemblyMsg("", "");
         updateActions();
       })
@@ -241,38 +348,26 @@
     setAssemblyMsg("", "");
     if (els.pickerLead) {
       els.pickerLead.textContent =
-        "Cards in your collection that are part of a multi-card puzzle.";
+        "Cards in your collection that are part of a multi-card puzzle (V-UNION and configured sets).";
     }
     loadPieces();
   }
 
-  function placePiece(item) {
-    var asm = item.assembly || {};
-    var slot = asm.slot_index;
-    if (slot == null) return;
-
-    if (!state.anchorPublicId) {
-      state.anchorPublicId = item.public_id;
+  function ensureGroupSlotsFromItem(item) {
+    if (!state.group) {
+      var asm = item.assembly || {};
       state.group = {
-        id: asm.group_id,
-        code: asm.group_code,
-        display_name: asm.display_name,
-        piece_count: asm.piece_count,
-        layout: asm.layout,
-        orientation: asm.orientation,
+        display_name: asm.display_name || (item.card && item.card.name) || "Assembly",
+        piece_count: asm.piece_count || 4,
+        layout: asm.layout || "quad",
+        orientation: asm.orientation || "portrait",
         slots: [],
+        result: null,
       };
-      if (els.pickerLead) {
-        els.pickerLead.textContent =
-          "Now pick the other piece(s) for " +
-          (asm.display_name || "this card") +
-          ".";
-      }
     }
-
     if (!state.group.slots || !state.group.slots.length) {
-      var pc = asm.piece_count || 4;
-      var layout = asm.layout || "quad";
+      var pc = state.group.piece_count || 4;
+      var layout = state.group.layout || "quad";
       state.group.slots = [];
       for (var i = 0; i < pc; i++) {
         var col = i % 2;
@@ -289,88 +384,182 @@
         });
       }
     }
+  }
 
+  function placePiece(item) {
+    var asm = item.assembly || {};
+    var slot = asm.slot_index;
+    if (slot == null) return;
+
+    if (!state.anchorPublicId) {
+      state.anchorPublicId = item.public_id;
+      state.group = null;
+      if (els.pickerLead) {
+        els.pickerLead.textContent =
+          "Now pick the other piece(s) for " +
+          (asm.display_name || (item.card && item.card.name) || "this card") +
+          ".";
+      }
+    }
+
+    ensureGroupSlotsFromItem(item);
     state.slots[slot] = item;
     renderBoard();
     loadPieces();
     fetchQuote();
   }
 
-  function sortPiecesAz(items) {
-    return items.slice().sort(function (a, b) {
-      var na = ((a.card && a.card.name) || "").trim();
-      var nb = ((b.card && b.card.name) || "").trim();
-      var cmp = na.localeCompare(nb, undefined, { sensitivity: "base" });
-      if (cmp !== 0) return cmp;
-      var sa = (a.card && a.card.set_code) || "";
-      var sb = (b.card && b.card.set_code) || "";
-      cmp = sa.localeCompare(sb, undefined, { sensitivity: "base" });
-      if (cmp !== 0) return cmp;
-      var ia = a.assembly && a.assembly.slot_index != null ? a.assembly.slot_index : 0;
-      var ib = b.assembly && b.assembly.slot_index != null ? b.assembly.slot_index : 0;
-      return ia - ib;
-    });
+  function buildAssemblyTile(item, items) {
+    var card = item.card || {};
+    var asm = item.assembly || {};
+    var blocked = item.sell_blocked;
+    var slotLabel = "Piece " + (Number(asm.slot_index) + 1);
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "card-tile assembly-tile picker-tile craft-picker-tile";
+    btn.dataset.publicId = item.public_id;
+    btn.dataset.slot = String(asm.slot_index);
+
+    var alreadyPlaced = state.slots[asm.slot_index];
+    if (blocked || alreadyPlaced) {
+      btn.classList.add("is-disabled");
+      btn.disabled = true;
+    }
+
+    var img = document.createElement("img");
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.alt = card.name || "Card";
+    img.className = "card-tile-img";
+    img.src = card.image_small_url || card.image_large_url || "";
+
+    var meta = document.createElement("div");
+    meta.className = "card-tile-meta";
+    meta.innerHTML =
+      '<span class="card-tile-name">' +
+      escapeHtml(card.name || "") +
+      '</span><span class="card-tile-sub">' +
+      escapeHtml(slotLabel) +
+      " · " +
+      escapeHtml(cardSubline(card)) +
+      "</span>";
+
+    btn.appendChild(img);
+    btn.appendChild(meta);
+
+    if (!btn.disabled) {
+      btn.addEventListener("click", function () {
+        var pid = btn.dataset.publicId;
+        var picked = items.find(function (it) {
+          return it.public_id === pid;
+        });
+        if (!picked) return;
+        if (state.slots[btn.dataset.slot]) return;
+        btn.classList.add("is-flying");
+        setTimeout(function () {
+          placePiece(picked);
+        }, 280);
+      });
+    }
+
+    return btn;
   }
 
   function renderGrid(items) {
     if (!els.grid) return;
     items = sortPiecesAz(items);
+    els.grid.innerHTML = "";
+
     if (!items.length) {
       els.grid.innerHTML =
-        '<p class="grid-empty muted">No assembly pieces in your collection. Pieces drop from packs like other cards.</p>';
+        '<p class="grid-empty muted">No assembly pieces in your collection. V-UNION cards (name contains “V-UNION”) and puzzle pieces from drops appear here.</p>';
       return;
     }
 
-    els.grid.innerHTML = items
-      .map(function (item) {
-        var card = item.card || {};
-        var asm = item.assembly || {};
-        var blocked = item.sell_blocked;
-        var img = card.image_small_url || "";
-        var slotLabel = "Piece " + (Number(asm.slot_index) + 1);
-        var disabled =
-          blocked ||
-          (state.anchorPublicId &&
-            Object.keys(state.slots).some(function (k) {
-              return state.slots[k].public_id === item.public_id;
-            }));
-        return (
-          '<button type="button" class="card-tile assembly-tile' +
-          (disabled ? " is-disabled" : "") +
-          '" data-public-id="' +
-          escapeHtml(item.public_id) +
-          '" data-slot="' +
-          escapeHtml(String(asm.slot_index)) +
-          '">' +
-          '<img src="' +
-          escapeHtml(img) +
-          '" alt="" loading="lazy">' +
-          '<span class="card-tile-caption">' +
-          '<span class="card-tile-name">' +
-          escapeHtml(card.name || "") +
-          "</span>" +
-          '<span class="card-tile-sub">' +
-          escapeHtml(slotLabel) +
-          "</span></span></button>"
-        );
-      })
-      .join("");
-
-    els.grid.querySelectorAll(".assembly-tile:not(.is-disabled)").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var pid = btn.getAttribute("data-public-id");
-        var item = items.find(function (it) {
-          return it.public_id === pid;
-        });
-        if (!item) return;
-        var slot = btn.getAttribute("data-slot");
-        if (state.slots[slot]) return;
-        btn.classList.add("is-flying");
-        setTimeout(function () {
-          placePiece(item);
-        }, 280);
-      });
+    var frag = document.createDocumentFragment();
+    items.forEach(function (item) {
+      frag.appendChild(buildAssemblyTile(item, items));
     });
+    els.grid.appendChild(frag);
+  }
+
+  function finishLoad(items, seq, sourceLabel) {
+    if (seq !== loadSeq) return;
+    state.inflight = null;
+    items = filterItemsForAnchor(items);
+    state.items = sortPiecesAz(items);
+
+    if (!items.length) {
+      setPickerStatus(
+        "warn",
+        state.anchorPublicId
+          ? "No compatible pieces left for this assembly."
+          : "No assembly pieces found. Try searching “Greninja” or “V-UNION”."
+      );
+    } else {
+      var hint = sourceLabel ? " (" + sourceLabel + ")" : "";
+      setPickerStatus("info", items.length + " piece(s)" + hint);
+    }
+
+    if (state.anchorPublicId && items.length && items[0].assembly) {
+      ensureGroupSlotsFromItem(items[0]);
+      renderBoard();
+    }
+
+    renderGrid(state.items);
+  }
+
+  function fetchCollectionAssemblyPieces(seq) {
+    var qs = new URLSearchParams();
+    qs.set("assembly_pieces", "1");
+    qs.set("page", "1");
+    qs.set("page_size", "120");
+    qs.set("sort", "name");
+    if (state.query) qs.set("q", state.query);
+    if (state.anchorPublicId) qs.set("anchor", state.anchorPublicId);
+
+    return apiFetch("/api/me/collection?" + qs.toString())
+      .then(function (r) {
+        return r.json().then(function (body) {
+          return { ok: r.ok, body: body };
+        });
+      })
+      .then(function (res) {
+        if (!res.ok) return [];
+        var items = res.body && Array.isArray(res.body.items) ? res.body.items : [];
+        if (items.length && items[0].assembly) return items;
+        return [];
+      })
+      .catch(function () {
+        return [];
+      });
+  }
+
+  function fetchCollectionVunionFallback(seq) {
+    var qs = new URLSearchParams();
+    qs.set("page", "1");
+    qs.set("page_size", "120");
+    qs.set("sort", "name");
+    qs.set("q", state.query || "v-union");
+    if (state.anchorPublicId) {
+      /* anchor filter is client-side after full load */
+    }
+
+    return apiFetch("/api/me/collection?" + qs.toString())
+      .then(function (r) {
+        return r.json().then(function (body) {
+          return { ok: r.ok, body: body };
+        });
+      })
+      .then(function (res) {
+        if (!res.ok) return [];
+        var rows = res.body && Array.isArray(res.body.items) ? res.body.items : [];
+        return buildPiecesFromCollectionRows(rows);
+      })
+      .catch(function () {
+        return [];
+      });
   }
 
   var loadSeq = 0;
@@ -381,95 +570,57 @@
     if (state.inflight) state.inflight.abort();
     var ctrl = new AbortController();
     state.inflight = ctrl;
+
+    setPickerStatus("info", "Loading pieces…");
+
     var qs = new URLSearchParams();
     if (state.query) qs.set("q", state.query);
     if (state.anchorPublicId) qs.set("anchor", state.anchorPublicId);
-    var path = "/api/me/assembly/pieces?" + qs.toString();
 
-    setPickerStatus("info", "Loading pieces…");
-    apiFetch(path, { signal: ctrl.signal })
+    apiFetch("/api/me/assembly/pieces?" + qs.toString(), { signal: ctrl.signal })
       .then(function (r) {
         return r.json().then(function (body) {
           return { ok: r.ok, status: r.status, body: body };
         });
       })
       .then(function (res) {
-        if (ctrl.signal.aborted || seq !== loadSeq) return;
-        state.inflight = null;
-        if (!res.ok) {
-          var errMsg =
-            (res.body && res.body.error) ||
-            (res.status === 404
-              ? "Assembly API not available — restart or update the bot."
-              : "Could not load assembly pieces.");
-          setPickerStatus("error", errMsg);
-          if (els.grid) {
-            els.grid.innerHTML =
-              '<p class="grid-empty muted">' + escapeHtml(errMsg) + "</p>";
-          }
+        if (ctrl.signal.aborted || seq !== loadSeq) return Promise.reject({ aborted: true });
+
+        var items = [];
+        if (res.ok && res.body && Array.isArray(res.body.items)) {
+          items = res.body.items;
+        }
+
+        if (items.length) {
+          finishLoad(items, seq, "assembly");
           return;
         }
-        var items =
-          res.body && Array.isArray(res.body.items) ? res.body.items : [];
-        state.items = sortPiecesAz(items);
-        if (!items.length) {
-          setPickerStatus(
-            "warn",
-            state.anchorPublicId
-              ? "No compatible pieces left for this assembly."
-              : "No assembly pieces found. Own V-UNION quarters (e.g. Greninja V-UNION) or other puzzle cards — the bot must be updated and restarted if you just deployed assembly."
-          );
-        } else {
-          setPickerStatus("", "");
-        }
-        if (state.anchorPublicId && items.length && items[0].assembly) {
-          var a = items[0].assembly;
-          if (!state.group || !state.group.slots || !state.group.slots.length) {
-            apiFetch("/api/me/assembly/quote", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ public_ids: [state.anchorPublicId] }),
-            })
-              .then(function (r) {
-                return r.json();
-              })
-              .then(function (qbody) {
-                if (qbody && qbody.group) {
-                  state.group = qbody.group;
-                  renderBoard();
-                } else if (!state.group.slots) {
-                  state.group.slots = [];
-                  for (var i = 0; i < a.piece_count; i++) {
-                    var col = i % 2;
-                    var row = Math.floor(i / 2);
-                    if (a.layout === "horizontal_halves") {
-                      col = i;
-                      row = 0;
-                    }
-                    state.group.slots.push({
-                      slot_index: i,
-                      grid_col: col,
-                      grid_row: row,
-                      rotation_deg: 0,
-                    });
-                  }
-                  renderBoard();
-                }
-              })
-              .catch(function () {});
+
+        return fetchCollectionAssemblyPieces(seq).then(function (fromCol) {
+          if (fromCol.length) {
+            finishLoad(fromCol, seq, "collection");
+            return;
           }
-        }
-        renderGrid(state.items);
+          return fetchCollectionVunionFallback(seq).then(function (built) {
+            finishLoad(built, seq, built.length ? "search" : "");
+          });
+        });
       })
       .catch(function (err) {
-        if (err && err.name === "AbortError") return;
+        if (err && err.aborted) return;
         if (seq !== loadSeq) return;
         state.inflight = null;
-        setPickerStatus("error", "Could not load assembly pieces.");
-        if (els.grid) {
-          els.grid.innerHTML =
-            '<p class="grid-empty muted">Network error — try again.</p>';
-        }
+        fetchCollectionVunionFallback(seq).then(function (built) {
+          if (built.length) {
+            finishLoad(built, seq, "search");
+            return;
+          }
+          setPickerStatus("error", "Could not load assembly pieces.");
+          if (els.grid) {
+            els.grid.innerHTML =
+              '<p class="grid-empty muted">Network error — try again.</p>';
+          }
+        });
       });
   }
 
@@ -499,9 +650,7 @@
           updateActions();
           return;
         }
-        if (res.body.group) {
-          state.group = res.body.group;
-        }
+        if (res.body.group) state.group = res.body.group;
         var name = (res.body.card && res.body.card.name) || "Card";
         els.board.className =
           "assembly-board layout-" +
@@ -541,16 +690,6 @@
         state.assembling = false;
         setAssemblyMsg("error", "Network error — try again.");
         updateActions();
-      });
-  }
-
-  function bootAssemblyAuth() {
-    apiFetch("/api/me")
-      .then(function (r) {
-        return r.json();
-      })
-      .then(function (body) {
-        state.authenticated = !!(body && body.authenticated);
       });
   }
 
@@ -607,5 +746,14 @@
     loadPieces: loadPieces,
   };
 
-  bootAssemblyAuth();
+  apiFetch("/api/me")
+    .then(function (r) {
+      return r.json();
+    })
+    .then(function (body) {
+      if (body && body.authenticated) {
+        state.authenticated = true;
+      }
+    })
+    .catch(function () {});
 })();
