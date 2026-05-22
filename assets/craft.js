@@ -807,29 +807,51 @@
     }
   }
 
+  var activeCraftPanel = "packs";
+
   function initCraftSubtabs() {
     var subtabs = document.getElementById("craft-subtabs");
     if (!subtabs) return;
-    subtabs.hidden = false;
-    var panels = document.querySelectorAll("[data-craft-panel]");
+    var panels = document.querySelectorAll(
+      ".craft-workspace[data-craft-panel], .craft-status[data-craft-panel]"
+    );
     var lead = document.getElementById("craft-page-lead");
 
     function showPanel(name) {
+      activeCraftPanel = name || "packs";
+      var workspaces = document.querySelectorAll(".craft-workspace[data-craft-panel]");
+      if (!state.authenticated) {
+        workspaces.forEach(function (el) {
+          el.hidden = true;
+        });
+      } else {
+        workspaces.forEach(function (el) {
+          el.hidden = el.getAttribute("data-craft-panel") !== activeCraftPanel;
+        });
+      }
       panels.forEach(function (el) {
-        el.hidden = el.getAttribute("data-craft-panel") !== name;
+        if (el.classList.contains("craft-workspace")) return;
+        var panel = el.getAttribute("data-craft-panel");
+        if (!panel) return;
+        el.hidden = panel !== activeCraftPanel;
       });
       subtabs.querySelectorAll(".craft-subtab").forEach(function (btn) {
-        var on = btn.getAttribute("data-craft-panel") === name;
+        var on = btn.getAttribute("data-craft-panel") === activeCraftPanel;
         btn.classList.toggle("is-active", on);
         btn.setAttribute("aria-selected", on ? "true" : "false");
       });
       if (lead) {
         lead.innerHTML =
-          name === "assembly"
+          activeCraftPanel === "assembly"
             ? "Combine <strong>2 or 4 puzzle pieces</strong> into one full card. Pieces are consumed; the assembled card appears in your collection (newest first)."
             : "Add <strong>5 item or Energy</strong> cards, then a <strong>trainer</strong> card, to craft a random booster pack. Trainer rarity sets the tier. Trainers show <strong>3 purple uses</strong>.";
       }
-      if (name === "assembly" && window.PokePonAssembly && window.PokePonAssembly.onPanelShown) {
+      if (
+        activeCraftPanel === "assembly" &&
+        state.authenticated &&
+        window.PokePonAssembly &&
+        window.PokePonAssembly.onPanelShown
+      ) {
         window.PokePonAssembly.onPanelShown();
       }
     }
@@ -839,7 +861,7 @@
       if (!btn) return;
       showPanel(btn.getAttribute("data-craft-panel") || "packs");
     });
-    showPanel("packs");
+    showPanel(activeCraftPanel);
   }
 
   function bootAuth() {
@@ -848,21 +870,27 @@
         return r.json();
       })
       .then(function (body) {
+        initCraftSubtabs();
         if (body && body.authenticated && body.user) {
           state.authenticated = true;
           showSignedIn(body.user);
-          if (els.workspace) els.workspace.hidden = false;
           renderItemSlots();
           renderTrainerSlot();
           updateCraftUi();
           setPickerRole("item");
-          initCraftSubtabs();
           if (window.PokePonAssembly && window.PokePonAssembly.setAuthenticated) {
             window.PokePonAssembly.setAuthenticated(true);
           }
         } else {
           showSignedOut();
-          setStatus("auth", "Sign in with Discord to use crafting.");
+          setStatus("auth", "Sign in with Discord to use pack crafting.");
+          var asmStatus = document.getElementById("assembly-auth-status");
+          if (asmStatus) {
+            asmStatus.hidden = activeCraftPanel !== "assembly";
+            asmStatus.className = "craft-status state-auth";
+            asmStatus.innerHTML =
+              "Sign in with Discord to use card assembly.";
+          }
         }
       });
   }

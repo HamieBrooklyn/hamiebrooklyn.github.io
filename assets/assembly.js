@@ -296,8 +296,25 @@
     fetchQuote();
   }
 
+  function sortPiecesAz(items) {
+    return items.slice().sort(function (a, b) {
+      var na = ((a.card && a.card.name) || "").trim();
+      var nb = ((b.card && b.card.name) || "").trim();
+      var cmp = na.localeCompare(nb, undefined, { sensitivity: "base" });
+      if (cmp !== 0) return cmp;
+      var sa = (a.card && a.card.set_code) || "";
+      var sb = (b.card && b.card.set_code) || "";
+      cmp = sa.localeCompare(sb, undefined, { sensitivity: "base" });
+      if (cmp !== 0) return cmp;
+      var ia = a.assembly && a.assembly.slot_index != null ? a.assembly.slot_index : 0;
+      var ib = b.assembly && b.assembly.slot_index != null ? b.assembly.slot_index : 0;
+      return ia - ib;
+    });
+  }
+
   function renderGrid(items) {
     if (!els.grid) return;
+    items = sortPiecesAz(items);
     if (!items.length) {
       els.grid.innerHTML =
         '<p class="grid-empty muted">No assembly pieces in your collection. Pieces drop from packs like other cards.</p>';
@@ -375,7 +392,7 @@
         if (ctrl.signal.aborted) return;
         state.inflight = null;
         var items = body && Array.isArray(body.items) ? body.items : [];
-        state.items = items;
+        state.items = sortPiecesAz(items);
         if (!items.length) {
           setPickerStatus(
             "warn",

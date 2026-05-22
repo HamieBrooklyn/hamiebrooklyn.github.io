@@ -139,12 +139,13 @@
         </p>
       </header>
 
-      <nav class="craft-subtabs" id="craft-subtabs" aria-label="Crafting modes" hidden>
-        <button type="button" class="craft-subtab is-active" data-craft-panel="packs" id="craft-tab-packs">Packs</button>
-        <button type="button" class="craft-subtab" data-craft-panel="assembly" id="craft-tab-assembly">Assembly Station</button>
+      <nav class="craft-subtabs" id="craft-subtabs" role="tablist" aria-label="Crafting modes">
+        <button type="button" class="craft-subtab is-active" role="tab" id="craft-tab-packs" data-craft-panel="packs" aria-selected="true" aria-controls="craft-workspace">Pack crafting</button>
+        <button type="button" class="craft-subtab" role="tab" id="craft-tab-assembly" data-craft-panel="assembly" aria-selected="false" aria-controls="assembly-workspace">Card assembly</button>
       </nav>
 
-      <section class="craft-status" id="craft-status"></section>
+      <section class="craft-status" id="craft-status" data-craft-panel="packs"></section>
+      <section class="craft-status" id="assembly-auth-status" data-craft-panel="assembly" hidden></section>
 
       <div id="craft-workspace" class="craft-workspace" data-craft-panel="packs" hidden>
         <div class="craft-pipeline" role="list" aria-label="Crafting steps">
@@ -275,7 +276,7 @@
   </script>
   <script src="/assets/site-links.js?v=1" defer></script>
   <script src="/assets/app-shell.js?v=3" defer></script>
-  <script src="/assets/craft.js?v=10" defer></script>
-  <script src="/assets/assembly.js?v=1" defer></script>
+  <script src="/assets/craft.js?v=11" defer></script>
+  <script src="/assets/assembly.js?v=2" defer></script>
 </body>
 </html>
