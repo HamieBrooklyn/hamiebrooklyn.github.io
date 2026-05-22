@@ -335,7 +335,16 @@
             ? "Please sign in first."
             : data.error === "already_purchased"
               ? data.message || "You already own this one-time perk."
-              : "Checkout could not start. Try again.";
+              : data.error === "sku_not_configured"
+                ? "This item is not configured on the bot (missing STRIPE_PRICE_*)."
+                : data.error === "stripe_error"
+                  ? data.message ||
+                    "Stripe rejected checkout. Use test price IDs with a test secret key from the same sandbox."
+                  : data.error === "unknown_sku"
+                    ? "Unknown shop item."
+                    : "Checkout could not start (" +
+                      (data.error || "HTTP " + res.status) +
+                      ").";
         setStatus(msg, true);
         if (data.error === "already_purchased") {
           await loadCatalog();
@@ -347,8 +356,16 @@
         return;
       }
       setStatus("Stripe did not return a checkout URL.", true);
-    } catch (_) {
-      setStatus("Network error starting checkout.", true);
+    } catch (err) {
+      var hint =
+        "Could not reach the shop API. Confirm the bot is running, you are signed in, and ";
+      hint +=
+        window.location.origin.indexOf("www.") === 8
+          ? "use https://pokepon.org (without www)."
+          : "the site is using https://api.pokepon.org.";
+      if (API_BASE) hint += " API: " + API_BASE + ".";
+      if (err && err.message) hint += " (" + err.message + ")";
+      setStatus(hint, true);
     } finally {
       state.checkoutSku = null;
       buttonEl.disabled = false;
