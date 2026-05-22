@@ -809,10 +809,14 @@
 
   var activeCraftPanel = "packs";
   var craftTabShowPanel = null;
+  var craftSubtabsReady = false;
+  var craftAuthReady = false;
 
   function initCraftSubtabs() {
+    if (craftSubtabsReady) return;
     var subtabs = document.getElementById("craft-subtabs");
     if (!subtabs) return;
+    craftSubtabsReady = true;
     var panels = document.querySelectorAll(
       ".craft-workspace[data-craft-panel], .craft-status[data-craft-panel]"
     );
@@ -821,7 +825,11 @@
     function showPanel(name) {
       activeCraftPanel = name || "packs";
       var workspaces = document.querySelectorAll(".craft-workspace[data-craft-panel]");
-      if (!state.authenticated) {
+      if (!craftAuthReady) {
+        workspaces.forEach(function (el) {
+          el.hidden = el.getAttribute("data-craft-panel") !== "packs";
+        });
+      } else if (!state.authenticated) {
         workspaces.forEach(function (el) {
           el.hidden = true;
         });
@@ -863,16 +871,20 @@
       showPanel(btn.getAttribute("data-craft-panel") || "packs");
     });
     craftTabShowPanel = showPanel;
-    showPanel(activeCraftPanel);
+  }
+
+  function finishCraftPageLoad() {
+    craftAuthReady = true;
+    if (craftTabShowPanel) craftTabShowPanel("packs");
   }
 
   function bootAuth() {
+    if (craftTabShowPanel) craftTabShowPanel("packs");
     apiFetch("/api/me")
       .then(function (r) {
         return r.json();
       })
       .then(function (body) {
-        initCraftSubtabs();
         if (body && body.authenticated && body.user) {
           state.authenticated = true;
           showSignedIn(body.user);
@@ -883,18 +895,23 @@
           if (window.PokePonAssembly && window.PokePonAssembly.setAuthenticated) {
             window.PokePonAssembly.setAuthenticated(true);
           }
-          if (craftTabShowPanel) craftTabShowPanel(activeCraftPanel);
         } else {
+          state.authenticated = false;
           showSignedOut();
           setStatus("auth", "Sign in with Discord to use pack crafting.");
           var asmStatus = document.getElementById("assembly-auth-status");
           if (asmStatus) {
-            asmStatus.hidden = activeCraftPanel !== "assembly";
             asmStatus.className = "craft-status state-auth";
             asmStatus.innerHTML =
               "Sign in with Discord to use card assembly.";
           }
         }
+        finishCraftPageLoad();
+      })
+      .catch(function () {
+        craftAuthReady = true;
+        setStatus("error", "Could not verify your session — refresh the page.");
+        if (craftTabShowPanel) craftTabShowPanel("packs");
       });
   }
 
@@ -958,5 +975,7 @@
     });
   }
 
+  initCraftSubtabs();
+  if (craftTabShowPanel) craftTabShowPanel("packs");
   bootAuth();
 })();
