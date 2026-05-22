@@ -1,8 +1,9 @@
-/* Shared app chrome — sidebar nav, mobile drawer, profile shortcut */
+/* Shared app chrome — sidebar nav, mobile drawer, profile shortcut, balances */
 (function () {
   "use strict";
 
   var BRAND_NAME = "Poké Pon";
+  var SESSION_KEY = "pokepon-session";
   var LOGO_SRC = "/assets/logo.jpg";
 
   var NAV_SECTIONS = [
@@ -253,6 +254,134 @@
     }
   }
 
+  function apiBase() {
+    return (window.POKEPON_API_BASE || "").replace(/\/+$/, "");
+  }
+
+  function apiFetch(path, options) {
+    options = options || {};
+    options.credentials = "include";
+    var headers = Object.assign({ "ngrok-skip-browser-warning": "1" }, options.headers || {});
+    try {
+      var token = localStorage.getItem(SESSION_KEY) || "";
+      if (token) headers.Authorization = "Bearer " + token;
+    } catch (_) {}
+    options.headers = headers;
+    return fetch(apiBase() + path, options);
+  }
+
+  function formatSidebarPd(n) {
+    return "₽" + Number(n).toLocaleString();
+  }
+
+  function formatSidebarCr(n) {
+    return "💎 " + Number(n).toLocaleString();
+  }
+
+  function sidebarSignedInVisible() {
+    var block = document.querySelector(".sidebar-user-signedin");
+    return !!(block && !block.hidden);
+  }
+
+  function setSidebarBalancesVisible(show) {
+    var el = document.getElementById("sidebar-balances");
+    if (el) el.hidden = !show;
+  }
+
+  function ensureSidebarBalances() {
+    document.querySelectorAll(".sidebar-user-signedin").forEach(function (block) {
+      if (block.querySelector(".sidebar-user-profile")) return;
+
+      var profile = document.createElement("div");
+      profile.className = "sidebar-user-profile";
+      while (block.firstChild) {
+        profile.appendChild(block.firstChild);
+      }
+      block.appendChild(profile);
+
+      var bal = document.createElement("div");
+      bal.id = "sidebar-balances";
+      bal.className = "sidebar-balances";
+      bal.setAttribute("aria-label", "Your balances");
+      bal.hidden = true;
+      bal.innerHTML =
+        '<span class="sidebar-balance sidebar-balance--pd" title="Pokedollars">' +
+        '<span class="sidebar-balance-icon" aria-hidden="true">₽</span>' +
+        '<span class="sidebar-balance-value" id="sidebar-balance-pd">—</span>' +
+        "</span>" +
+        '<span class="sidebar-balance sidebar-balance--cr" title="Crystals">' +
+        '<span class="sidebar-balance-icon" aria-hidden="true">💎</span>' +
+        '<span class="sidebar-balance-value" id="sidebar-balance-cr">—</span>' +
+        "</span>";
+      block.appendChild(bal);
+    });
+  }
+
+  function refreshSidebarBalances() {
+    var bal = document.getElementById("sidebar-balances");
+    var pd = document.getElementById("sidebar-balance-pd");
+    var cr = document.getElementById("sidebar-balance-cr");
+    if (!bal || !sidebarSignedInVisible() || !apiBase()) {
+      setSidebarBalancesVisible(false);
+      return Promise.resolve();
+    }
+
+    return apiFetch("/api/me/balances")
+      .then(function (r) {
+        if (!r.ok) {
+          setSidebarBalancesVisible(false);
+          return;
+        }
+        return r.json();
+      })
+      .then(function (b) {
+        if (!b || b.pokedollars == null) {
+          setSidebarBalancesVisible(false);
+          return;
+        }
+        if (pd) pd.textContent = formatSidebarPd(b.pokedollars);
+        if (cr) cr.textContent = formatSidebarCr(b.crystals);
+        setSidebarBalancesVisible(true);
+      })
+      .catch(function () {
+        setSidebarBalancesVisible(false);
+      });
+  }
+
+  function initSidebarBalances() {
+    ensureSidebarBalances();
+
+    var signedIn = document.querySelector(".sidebar-user-signedin");
+    if (signedIn) {
+      var obs = new MutationObserver(function () {
+        if (!signedIn.hidden) refreshSidebarBalances();
+        else setSidebarBalancesVisible(false);
+      });
+      obs.observe(signedIn, { attributes: true, attributeFilter: ["hidden"] });
+      if (!signedIn.hidden) refreshSidebarBalances();
+    }
+
+    var sidebarUser = document.getElementById("sidebar-user");
+    if (sidebarUser) {
+      var stateObs = new MutationObserver(function () {
+        if (sidebarUser.dataset.state === "signedin") refreshSidebarBalances();
+        else if (sidebarUser.dataset.state === "signedout") setSidebarBalancesVisible(false);
+      });
+      stateObs.observe(sidebarUser, { attributes: true, attributeFilter: ["data-state"] });
+      if (sidebarUser.dataset.state === "signedin") refreshSidebarBalances();
+    }
+
+    window.addEventListener("pokepon:balances-refresh", function () {
+      refreshSidebarBalances();
+    });
+
+    window.PokePonApp = window.PokePonApp || {};
+    window.PokePonApp.refreshSidebarBalances = refreshSidebarBalances;
+    window.PokePonApp.notifyBalancesChanged = function () {
+      window.dispatchEvent(new CustomEvent("pokepon:balances-refresh"));
+    };
+  }
+
   function initProfileShortcut() {
     if (window.location.pathname.indexOf("/settings") === 0) return;
 
@@ -283,6 +412,7 @@
     applyBrand();
     renderSidebarNav();
     initSidebar();
+    initSidebarBalances();
     initProfileShortcut();
   }
 

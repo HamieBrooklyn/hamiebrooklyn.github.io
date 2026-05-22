@@ -180,6 +180,9 @@
     if (els.myBalancePd) els.myBalancePd.textContent = fmtPd(balance.pokedollars);
     if (els.myBalanceCr) els.myBalanceCr.textContent = fmtCr(balance.crystals);
     els.myBalanceHint.hidden = false;
+    if (window.PokePonApp && window.PokePonApp.notifyBalancesChanged) {
+      window.PokePonApp.notifyBalancesChanged();
+    }
   }
 
   function scheduleCurrencySave() {

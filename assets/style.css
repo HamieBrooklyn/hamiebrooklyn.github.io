@@ -863,8 +863,61 @@ main {
 
 .sidebar-user-signedin {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
+}
+
+.sidebar-user-profile {
+  display: flex;
   align-items: center;
   gap: 0.7rem;
+  min-width: 0;
+}
+
+.sidebar-balances {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.sidebar-balances[hidden] {
+  display: none !important;
+}
+
+.sidebar-balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.sidebar-balance--pd {
+  border-color: rgba(91, 140, 255, 0.35);
+  color: #93c5fd;
+}
+
+.sidebar-balance--cr {
+  border-color: rgba(192, 132, 252, 0.35);
+  color: #d8b4fe;
+}
+
+.sidebar-balance-icon {
+  flex-shrink: 0;
+  font-size: 0.85em;
+}
+
+.sidebar-balance-value {
+  white-space: nowrap;
 }
 
 .sidebar-avatar {

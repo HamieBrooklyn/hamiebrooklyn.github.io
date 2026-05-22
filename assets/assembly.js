@@ -265,7 +265,7 @@
     var html = "";
     g.slots.forEach(function (slotDef) {
       var idx = slotDef.slot_index;
-      var filled = state.slots[idx];
+      var filled = state.slots[String(idx)];
       var rot = slotDef.rotation_deg || 0;
       var style =
         "grid-column:" +
@@ -726,6 +726,9 @@
         state.anchorPublicId = null;
         state.quoteCost = null;
         if (els.btnAssemble) els.btnAssemble.disabled = true;
+        if (window.PokePonApp && window.PokePonApp.notifyBalancesChanged) {
+          window.PokePonApp.notifyBalancesChanged();
+        }
         loadPieces();
       })
       .catch(function () {

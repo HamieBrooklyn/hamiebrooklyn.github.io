@@ -1589,6 +1589,9 @@
         var d = res.data || {};
 
         if (res.ok && d.ok) {
+          if (window.PokePonApp && window.PokePonApp.notifyBalancesChanged) {
+            window.PokePonApp.notifyBalancesChanged();
+          }
           closeModal();
           loadCollection(false);
           return;
@@ -1727,6 +1730,9 @@
               fmtPokedollars(d.cost_pokedollars) +
               ". Balance: " +
               fmtPokedollars(d.new_balance_pokedollars);
+          }
+          if (window.PokePonApp && window.PokePonApp.notifyBalancesChanged) {
+            window.PokePonApp.notifyBalancesChanged();
           }
           loadCollection(false);
           return;

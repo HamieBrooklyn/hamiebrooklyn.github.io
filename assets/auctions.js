@@ -265,6 +265,9 @@
         "<div><span>💎</span> " +
         Number(b.crystals).toLocaleString() +
         "</div>";
+      if (window.PokePonApp && window.PokePonApp.notifyBalancesChanged) {
+        window.PokePonApp.notifyBalancesChanged();
+      }
     } catch (_) {
       if (els.balances) els.balances.hidden = true;
     }

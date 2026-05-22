@@ -232,6 +232,9 @@
     els.balances.hidden = false;
     if (els.balancePd) els.balancePd.textContent = formatPd(balances.pokedollars);
     if (els.balanceCr) els.balanceCr.textContent = formatCr(balances.crystals);
+    if (window.PokePonApp && window.PokePonApp.notifyBalancesChanged) {
+      window.PokePonApp.notifyBalancesChanged();
+    }
   }
 
   async function loadMe() {
