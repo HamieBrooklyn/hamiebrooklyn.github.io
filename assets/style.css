@@ -3199,6 +3199,23 @@ body.deck-editor-active .app-main {
   display: block;
 }
 
+#card-modal .modal-image .modal-assembly-composite {
+  width: 100%;
+  max-width: 260px;
+  max-height: min(52vh, 420px);
+  margin-inline: auto;
+  aspect-ratio: 3 / 4;
+}
+
+#card-modal .modal-image .modal-assembly-composite.layout-horizontal_halves {
+  aspect-ratio: 7 / 5;
+  max-width: 320px;
+}
+
+#card-modal .modal-image .modal-img[hidden] {
+  display: none !important;
+}
+
 .craft-picker-grid .grid-empty,
 #assembly-card-grid .grid-empty {
   grid-column: 1 / -1;

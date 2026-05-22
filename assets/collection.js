@@ -880,8 +880,58 @@
       });
   }
 
+  function createAssemblyCompositeGrid(asm, preferLarge) {
+    var layout = asm.layout || "quad";
+    var grid = document.createElement("div");
+    grid.className =
+      "card-tile-assembly modal-assembly-composite layout-" +
+      layout +
+      " orientation-" +
+      (asm.orientation || "portrait");
+    asm.slots.forEach(function (slot) {
+      var cell = document.createElement("span");
+      cell.className = "card-tile-assembly-cell";
+      cell.style.gridColumn = String((slot.grid_col || 0) + 1);
+      cell.style.gridRow = String((slot.grid_row || 0) + 1);
+      var cellImg = document.createElement("img");
+      cellImg.alt = "";
+      cellImg.loading = "lazy";
+      cellImg.decoding = "async";
+      cellImg.src = preferLarge
+        ? slot.image_large_url || slot.image_small_url || ""
+        : slot.image_small_url || slot.image_large_url || "";
+      cellImg.style.transform = "rotate(" + (slot.rotation_deg || 0) + "deg)";
+      cell.appendChild(cellImg);
+      grid.appendChild(cell);
+    });
+    return grid;
+  }
+
+  function clearModalAssemblyComposite() {
+    if (!els.modalImg || !els.modalImg.parentElement) return;
+    var existing = els.modalImg.parentElement.querySelector(".modal-assembly-composite");
+    if (existing) existing.remove();
+    els.modalImg.hidden = false;
+  }
+
+  function applyAssemblyCompositeModal(item) {
+    var asm = item && item.assembly;
+    if (!asm || asm.role !== "result" || !Array.isArray(asm.slots) || !asm.slots.length) {
+      return false;
+    }
+    clearModalAssemblyComposite();
+    var grid = createAssemblyCompositeGrid(asm, true);
+    els.modalImg.hidden = true;
+    els.modalImg.removeAttribute("src");
+    els.modalImg.classList.remove("modal-img--slab");
+    els.modalImg.parentElement.insertBefore(grid, els.modalImg);
+    return true;
+  }
+
   function setModalCardImage(item) {
     revokeModalSlabUrl();
+    if (applyAssemblyCompositeModal(item)) return;
+    clearModalAssemblyComposite();
     var card = (item && item.card) || {};
     var slabPath = slabPathForItem(item);
     if (slabPath) {
@@ -906,25 +956,11 @@
     if (!asm || asm.role !== "result" || !Array.isArray(asm.slots) || !asm.slots.length) {
       return false;
     }
-    var layout = asm.layout || "quad";
-    var grid = document.createElement("div");
-    grid.className =
-      "card-tile-assembly layout-" + layout + " orientation-" + (asm.orientation || "portrait");
-    asm.slots.forEach(function (slot) {
-      var cell = document.createElement("span");
-      cell.className = "card-tile-assembly-cell";
-      cell.style.gridColumn = String((slot.grid_col || 0) + 1);
-      cell.style.gridRow = String((slot.grid_row || 0) + 1);
-      var cellImg = document.createElement("img");
-      cellImg.alt = "";
-      cellImg.loading = "lazy";
-      cellImg.src = slot.image_small_url || slot.image_large_url || "";
-      cellImg.style.transform = "rotate(" + (slot.rotation_deg || 0) + "deg)";
-      cell.appendChild(cellImg);
-      grid.appendChild(cell);
-    });
+    var grid = createAssemblyCompositeGrid(asm, false);
     var existing = btn.querySelector(".card-tile-img");
     if (existing) existing.remove();
+    var oldGrid = btn.querySelector(".card-tile-assembly");
+    if (oldGrid) oldGrid.remove();
     btn.insertBefore(grid, btn.firstChild);
     return true;
   }
@@ -1292,6 +1328,14 @@
       .then(function (detail) {
         if (!detail || detail.public_id !== pid) return;
         if (els.modal.hidden) return;
+        if (
+          !detail.assembly &&
+          state.modalItem &&
+          state.modalItem.public_id === pid &&
+          state.modalItem.assembly
+        ) {
+          detail.assembly = state.modalItem.assembly;
+        }
         state.modalItem = detail;
         renderSellUi(detail);
         renderEvolutionUi(detail);
@@ -1365,6 +1409,7 @@
     state.favoriteInFlight = false;
     state.gradeInFlight = false;
     revokeModalSlabUrl();
+    clearModalAssemblyComposite();
     if (els.modalFavoriteBtn) els.modalFavoriteBtn.hidden = true;
     if (els.modalEvolveSection) els.modalEvolveSection.hidden = true;
     if (els.modalSellSection) els.modalSellSection.hidden = true;
