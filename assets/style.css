@@ -3081,6 +3081,32 @@ body.deck-editor-active .app-main {
   margin: 0;
 }
 
+.assembly-board.is-complete {
+  border-style: solid;
+  border-color: rgba(74, 222, 128, 0.45);
+  box-shadow: 0 0 32px rgba(74, 222, 128, 0.12);
+}
+
+.assembly-board.is-complete .assembly-slot {
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.assembly-board.is-complete .assembly-slot-img {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+.assembly-complete-caption {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 0.75rem 0.25rem 0;
+}
+
+.assembly-complete-caption p {
+  margin: 0.35rem 0;
+}
+
 .assembly-complete {
   grid-column: 1 / -1;
   text-align: center;

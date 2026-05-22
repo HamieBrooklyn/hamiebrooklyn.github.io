@@ -63,6 +63,7 @@
     items: [],
     quoteCost: null,
     assembling: false,
+    boardComplete: false,
     searchDebounce: 0,
     inflight: null,
   };
@@ -123,6 +124,7 @@
 
   function isAssemblyEligibleRow(row) {
     if (!row) return false;
+    if ((row.source || "").toLowerCase() === "assembly") return false;
     if (row.assembly && row.assembly.role === "piece") return true;
     if (row.assembly && row.assembly.slot_index != null) return true;
     return isVunionName(row.card && row.card.name);
@@ -247,8 +249,81 @@
     });
   }
 
+  function imageForSlot(slotDef, filled, groupSlots) {
+    if (filled && filled.card) {
+      return filled.card.image_large_url || filled.card.image_small_url || "";
+    }
+    if (groupSlots) {
+      for (var i = 0; i < groupSlots.length; i++) {
+        if (Number(groupSlots[i].slot_index) === Number(slotDef.slot_index)) {
+          return groupSlots[i].image_large_url || groupSlots[i].image_small_url || "";
+        }
+      }
+    }
+    return "";
+  }
+
+  function renderBoardComplete(group, slotSnapshot, meta) {
+    if (!els.board || !group || !group.slots) return;
+    state.boardComplete = true;
+    state.group = group;
+
+    var layout = group.layout || "quad";
+    var orient = group.orientation || "portrait";
+    els.board.className =
+      "assembly-board layout-" +
+      layout +
+      " orientation-" +
+      orient +
+      " is-complete";
+
+    var html = "";
+    group.slots.forEach(function (slotDef) {
+      var idx = slotDef.slot_index;
+      var filled = slotSnapshot[String(idx)];
+      var rot = slotDef.rotation_deg || 0;
+      var src = imageForSlot(slotDef, filled, group.slots);
+      var style =
+        "grid-column:" +
+        (slotDef.grid_col + 1) +
+        ";grid-row:" +
+        (slotDef.grid_row + 1) +
+        ";";
+      html +=
+        '<div class="assembly-slot is-filled" data-slot="' +
+        idx +
+        '" style="' +
+        style +
+        '">' +
+        '<img class="assembly-slot-img is-placed" src="' +
+        escapeHtml(src) +
+        '" alt="" style="transform:rotate(' +
+        rot +
+        'deg)">' +
+        "</div>";
+    });
+
+    html +=
+      '<div class="assembly-complete-caption">' +
+      "<p><strong>" +
+      escapeHtml(meta.name || group.display_name || "Card") +
+      "</strong> assembled!</p>" +
+      '<p class="muted">' +
+      escapeHtml(meta.subline || "Pieces consumed") +
+      ' · <a href="/collection/">View collection</a></p>' +
+      "</div>";
+
+    els.board.innerHTML = html;
+
+    if (els.boardMeta) {
+      els.boardMeta.hidden = false;
+      els.boardMeta.textContent = meta.metaLine || group.display_name || "";
+    }
+  }
+
   function renderBoard() {
     if (!els.board) return;
+    if (state.boardComplete) return;
     var g = state.group;
     if (!g || !g.slots) {
       els.board.innerHTML =
@@ -376,6 +451,7 @@
     state.group = null;
     state.slots = {};
     state.quoteCost = null;
+    state.boardComplete = false;
     renderBoard();
     updateActions();
     setAssemblyMsg("", "");
@@ -423,6 +499,8 @@
     var asm = item.assembly || {};
     var slot = asm.slot_index;
     if (slot == null) return;
+
+    state.boardComplete = false;
 
     if (!state.anchorPublicId) {
       state.anchorPublicId = item.public_id;
@@ -544,7 +622,12 @@
       setPickerStatus("info", items.length + " piece(s)" + hint);
     }
 
-    if (state.anchorPublicId && items.length && items[0].assembly) {
+    if (
+      !state.boardComplete &&
+      state.anchorPublicId &&
+      items.length &&
+      items[0].assembly
+    ) {
       ensureGroupSlotsFromItem(items[0]);
       renderBoard();
     }
@@ -692,36 +775,26 @@
           updateActions();
           return;
         }
-        if (res.body.group) state.group = res.body.group;
-        var name = (res.body.card && res.body.card.name) || "Card";
-        els.board.className =
-          "assembly-board layout-" +
-          (state.group && state.group.layout) +
-          " orientation-" +
-          (state.group && state.group.orientation) +
-          " is-complete";
-        els.board.innerHTML =
-          '<div class="assembly-complete">' +
-          '<img class="assembly-complete-img" src="' +
-          escapeHtml(
-            (res.body.card && res.body.card.image_large_url) ||
-              (state.group && state.group.result && state.group.result.image_large_url) ||
-              ""
-          ) +
-          '" alt="">' +
-          "<p><strong>" +
-          escapeHtml(name) +
-          "</strong> assembled!</p>" +
-          '<p class="muted">Pieces consumed · <a href="/collection/">View collection</a></p>' +
-          "</div>";
-        if (els.boardMeta) {
-          els.boardMeta.textContent =
+        var group = res.body.group || state.group;
+        var slotSnapshot = Object.assign({}, state.slots);
+        if (group && group.slots && group.slots.length) {
+          state.group = group;
+        } else {
+          ensureGroupSlotsFromItem(slotSnapshot[Object.keys(slotSnapshot)[0]] || {});
+        }
+        var displayName =
+          (res.body.card && res.body.card.name) ||
+          (group && group.display_name) ||
+          "Card";
+        renderBoardComplete(state.group, slotSnapshot, {
+          name: displayName,
+          subline: "Pieces consumed",
+          metaLine:
             "Paid ₽" +
             String(res.body.cost || 0) +
             " · Balance ₽" +
-            String(res.body.new_balance != null ? res.body.new_balance : "—");
-          els.boardMeta.hidden = false;
-        }
+            String(res.body.new_balance != null ? res.body.new_balance : "—"),
+        });
         state.slots = {};
         state.anchorPublicId = null;
         state.quoteCost = null;
