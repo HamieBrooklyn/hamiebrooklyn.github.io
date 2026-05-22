@@ -3085,26 +3085,65 @@ body.deck-editor-active .app-main {
   border-style: solid;
   border-color: rgba(74, 222, 128, 0.45);
   box-shadow: 0 0 32px rgba(74, 222, 128, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0.5rem;
+  min-height: 0;
 }
 
-.assembly-board.is-complete .assembly-slot {
-  border: 1px solid rgba(168, 85, 247, 0.25);
+.assembly-puzzle {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 180px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #0a0812;
 }
 
-.assembly-board.is-complete .assembly-slot-img {
-  object-fit: cover;
+.assembly-board.is-complete.layout-quad .assembly-puzzle {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  aspect-ratio: 3 / 4;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.assembly-board.is-complete.layout-horizontal_halves .assembly-puzzle {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+  aspect-ratio: 7 / 5;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.assembly-puzzle-cell {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.assembly-puzzle-img {
+  display: block;
   width: 100%;
   height: 100%;
+  object-fit: cover;
 }
 
-.assembly-complete-caption {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 0.75rem 0.25rem 0;
+.assembly-puzzle-img.is-crop-quadrant {
+  width: 200%;
+  height: 200%;
+  max-width: none;
+  max-height: none;
 }
 
-.assembly-complete-caption p {
-  margin: 0.35rem 0;
+.assembly-board.is-complete .assembly-board-meta,
+.assembly-board-meta {
+  flex-shrink: 0;
 }
 
 .assembly-complete {

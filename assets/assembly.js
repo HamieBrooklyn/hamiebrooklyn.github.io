@@ -249,27 +249,106 @@
     });
   }
 
-  function imageForSlot(slotDef, filled, groupSlots) {
-    if (filled && filled.card) {
-      return filled.card.image_large_url || filled.card.image_small_url || "";
-    }
-    if (groupSlots) {
-      for (var i = 0; i < groupSlots.length; i++) {
-        if (Number(groupSlots[i].slot_index) === Number(slotDef.slot_index)) {
-          return groupSlots[i].image_large_url || groupSlots[i].image_small_url || "";
-        }
+  function defaultSlotLayout(count, layout) {
+    var slots = [];
+    var i;
+    for (i = 0; i < count; i++) {
+      var col = i % 2;
+      var row = Math.floor(i / 2);
+      if (layout === "horizontal_halves") {
+        col = i;
+        row = 0;
       }
+      slots.push({
+        slot_index: i,
+        grid_col: col,
+        grid_row: row,
+        rotation_deg: 0,
+      });
     }
-    return "";
+    return slots;
   }
 
-  function renderBoardComplete(group, slotSnapshot, meta) {
-    if (!els.board || !group || !group.slots) return;
+  function slotIndexFromItem(item, fallbackKey) {
+    if (item && item.assembly && item.assembly.slot_index != null) {
+      return Number(item.assembly.slot_index);
+    }
+    return Number(fallbackKey);
+  }
+
+  function buildPuzzleCells(group, slotSnapshot, consumedPieces) {
+    var layout = (group && group.layout) || "quad";
+    var count = (group && group.piece_count) || 4;
+    var slotDefs =
+      group && group.slots && group.slots.length >= count
+        ? group.slots
+        : defaultSlotLayout(count, layout);
+
+    var imagesBySlot = {};
+
+    if (Array.isArray(consumedPieces) && consumedPieces.length) {
+      consumedPieces.forEach(function (p) {
+        var url = p.image_large_url || p.image_small_url || "";
+        if (url) imagesBySlot[Number(p.slot_index)] = url;
+      });
+    }
+
+    Object.keys(slotSnapshot || {}).forEach(function (key) {
+      var item = slotSnapshot[key];
+      if (!item || !item.card) return;
+      var idx = slotIndexFromItem(item, key);
+      var url = item.card.image_large_url || item.card.image_small_url || "";
+      if (url) imagesBySlot[idx] = url;
+    });
+
+    slotDefs.forEach(function (def) {
+      var idx = Number(def.slot_index);
+      if (imagesBySlot[idx]) return;
+      var url = def.image_large_url || def.image_small_url || "";
+      if (url) imagesBySlot[idx] = url;
+    });
+
+    return slotDefs.map(function (def) {
+      var idx = Number(def.slot_index);
+      return {
+        slot_index: idx,
+        grid_col: def.grid_col != null ? Number(def.grid_col) : idx % 2,
+        grid_row:
+          def.grid_row != null
+            ? Number(def.grid_row)
+            : layout === "horizontal_halves"
+              ? 0
+              : Math.floor(idx / 2),
+        rotation_deg: def.rotation_deg || 0,
+        imageUrl: imagesBySlot[idx] || "",
+      };
+    });
+  }
+
+  function puzzleCropPositions(count, layout) {
+    if (layout === "horizontal_halves") {
+      return ["0% 50%", "100% 50%"];
+    }
+    return ["0% 0%", "100% 0%", "0% 100%", "100% 100%"].slice(0, count);
+  }
+
+  function renderBoardComplete(group, slotSnapshot, meta, consumedPieces) {
+    if (!els.board || !group) return;
     state.boardComplete = true;
     state.group = group;
 
     var layout = group.layout || "quad";
     var orient = group.orientation || "portrait";
+    var cells = buildPuzzleCells(group, slotSnapshot, consumedPieces);
+    var urls = cells.map(function (c) {
+      return c.imageUrl;
+    });
+    var sameImage =
+      urls.length > 1 && urls[0] && urls.every(function (u) {
+        return u === urls[0];
+      });
+    var cropPos = puzzleCropPositions(cells.length, layout);
+
     els.board.className =
       "assembly-board layout-" +
       layout +
@@ -277,47 +356,45 @@
       orient +
       " is-complete";
 
-    var html = "";
-    group.slots.forEach(function (slotDef) {
-      var idx = slotDef.slot_index;
-      var filled = slotSnapshot[String(idx)];
-      var rot = slotDef.rotation_deg || 0;
-      var src = imageForSlot(slotDef, filled, group.slots);
-      var style =
-        "grid-column:" +
-        (slotDef.grid_col + 1) +
-        ";grid-row:" +
-        (slotDef.grid_row + 1) +
-        ";";
+    var html = '<div class="assembly-puzzle">';
+    cells.forEach(function (cell) {
+      var imgClass = "assembly-puzzle-img";
+      if (sameImage) imgClass += " is-crop-quadrant";
+      var pos = sameImage ? cropPos[cell.slot_index] || "50% 50%" : "";
+      var posStyle = pos ? "object-position:" + pos + ";" : "";
       html +=
-        '<div class="assembly-slot is-filled" data-slot="' +
-        idx +
-        '" style="' +
-        style +
+        '<div class="assembly-puzzle-cell" data-slot="' +
+        cell.slot_index +
+        '" style="grid-column:' +
+        (cell.grid_col + 1) +
+        ";grid-row:" +
+        (cell.grid_row + 1) +
         '">' +
-        '<img class="assembly-slot-img is-placed" src="' +
-        escapeHtml(src) +
-        '" alt="" style="transform:rotate(' +
-        rot +
-        'deg)">' +
+        (cell.imageUrl
+          ? '<img class="' +
+            imgClass +
+            '" src="' +
+            escapeHtml(cell.imageUrl) +
+            '" alt="" style="transform:rotate(' +
+            cell.rotation_deg +
+            "deg);" +
+            posStyle +
+            '">'
+          : "") +
         "</div>";
     });
-
-    html +=
-      '<div class="assembly-complete-caption">' +
-      "<p><strong>" +
-      escapeHtml(meta.name || group.display_name || "Card") +
-      "</strong> assembled!</p>" +
-      '<p class="muted">' +
-      escapeHtml(meta.subline || "Pieces consumed") +
-      ' · <a href="/collection/">View collection</a></p>' +
-      "</div>";
-
+    html += "</div>";
     els.board.innerHTML = html;
 
     if (els.boardMeta) {
       els.boardMeta.hidden = false;
-      els.boardMeta.textContent = meta.metaLine || group.display_name || "";
+      els.boardMeta.innerHTML =
+        "<strong>" +
+        escapeHtml(meta.name || group.display_name || "Card") +
+        "</strong> assembled · " +
+        escapeHtml(meta.subline || "Pieces consumed") +
+        ' · <a href="/collection/">View collection</a>' +
+        (meta.metaLine ? "<br><span class=\"muted\">" + escapeHtml(meta.metaLine) + "</span>" : "");
     }
   }
 
@@ -367,7 +444,9 @@
         "</div>";
     });
 
-    if (g.result && g.result.image_large_url) {
+    var need = g.piece_count || g.slots.length;
+    var allFilled = slotCountFilled() >= need;
+    if (g.result && g.result.image_large_url && !allFilled) {
       html +=
         '<div class="assembly-result-ghost" aria-hidden="true"><img src="' +
         escapeHtml(g.result.image_large_url) +
@@ -786,15 +865,20 @@
           (res.body.card && res.body.card.name) ||
           (group && group.display_name) ||
           "Card";
-        renderBoardComplete(state.group, slotSnapshot, {
-          name: displayName,
-          subline: "Pieces consumed",
-          metaLine:
-            "Paid ₽" +
-            String(res.body.cost || 0) +
-            " · Balance ₽" +
-            String(res.body.new_balance != null ? res.body.new_balance : "—"),
-        });
+        renderBoardComplete(
+          state.group,
+          slotSnapshot,
+          {
+            name: displayName,
+            subline: "Pieces consumed",
+            metaLine:
+              "Paid ₽" +
+              String(res.body.cost || 0) +
+              " · Balance ₽" +
+              String(res.body.new_balance != null ? res.body.new_balance : "—"),
+          },
+          res.body.consumed_pieces
+        );
         state.slots = {};
         state.anchorPublicId = null;
         state.quoteCost = null;
