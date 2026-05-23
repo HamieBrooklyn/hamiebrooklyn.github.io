@@ -333,136 +333,128 @@ a:hover {
   margin-top: 0.5rem;
 }
 
-/* App dashboard — Discord event strip above page content */
-.app-events-banner {
-  margin: 0 0 1.1rem;
-  border-radius: calc(var(--radius) + 2px);
-  border: 1px solid rgba(88, 166, 255, 0.45);
-  background: linear-gradient(
-    135deg,
-    rgba(88, 166, 255, 0.14) 0%,
-    rgba(34, 197, 94, 0.06) 45%,
-    rgba(15, 23, 42, 0.55) 100%
-  );
-  box-shadow: 0 10px 32px rgba(88, 166, 255, 0.08);
-  overflow: hidden;
+/* App dashboard — fixed thin Discord event bar (full viewport top) */
+:root {
+  --app-events-bar-height: 0px;
 }
 
-.app-events-banner[hidden] {
+body.has-app-events-bar {
+  padding-top: var(--app-events-bar-height);
+}
+
+body.has-app-events-bar .sidebar {
+  top: var(--app-events-bar-height);
+  height: calc(100vh - var(--app-events-bar-height));
+}
+
+.app-events-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
+  height: var(--app-events-bar-height, 36px);
+  border-bottom: 1px solid rgba(88, 166, 255, 0.45);
+  background: linear-gradient(
+    90deg,
+    rgba(15, 23, 42, 0.97) 0%,
+    rgba(30, 58, 95, 0.95) 50%,
+    rgba(15, 23, 42, 0.97) 100%
+  );
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.app-events-bar[hidden] {
   display: none !important;
 }
 
-.app-events-banner-inner {
-  display: grid;
-  grid-template-columns: minmax(0, 220px) minmax(0, 1fr) auto;
-  gap: 0;
-  align-items: stretch;
-}
-
-.app-events-banner-media {
-  display: block;
-  aspect-ratio: 800 / 320;
-  background: rgba(15, 23, 42, 0.65);
+.app-events-bar-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem 0.75rem;
+  height: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  min-width: 0;
+  color: var(--text);
   text-decoration: none;
 }
 
-.app-events-banner-cover {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.app-events-bar-inner:hover {
+  color: var(--text);
+  background: rgba(88, 166, 255, 0.06);
 }
 
-.app-events-banner-body {
-  padding: 0.85rem 1rem;
-  min-width: 0;
-}
-
-.app-events-banner-kicker {
-  margin: 0 0 0.25rem;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #93c5fd;
-}
-
-.app-events-banner-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem 0.55rem;
-  margin-bottom: 0.2rem;
-}
-
-.app-events-banner-badge {
-  font-size: 0.65rem;
+.app-events-bar-badge {
+  flex-shrink: 0;
+  font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 0.12rem 0.42rem;
+  padding: 0.1rem 0.38rem;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.2);
+  background: rgba(148, 163, 184, 0.22);
   color: var(--muted);
 }
 
-.app-events-banner-badge-live {
-  background: rgba(34, 197, 94, 0.22);
+.app-events-bar-badge-live {
+  background: rgba(34, 197, 94, 0.25);
   color: #86efac;
 }
 
-.app-events-banner-title {
-  margin: 0;
-  font-size: 1.02rem;
+.app-events-bar-title {
+  flex-shrink: 1;
+  min-width: 0;
+  font-size: 0.82rem;
   font-weight: 700;
-  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.app-events-banner-countdown {
-  margin: 0 0 0.3rem;
+.app-events-bar-countdown {
+  flex-shrink: 0;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 0.92rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  line-height: 1.35;
-}
-
-.app-events-banner-countdown-soon {
-  color: #93c5fd;
-}
-
-.app-events-banner-countdown-live {
-  color: #86efac;
-}
-
-.app-events-banner-when,
-.app-events-banner-desc {
-  margin: 0 0 0.3rem;
-  font-size: 0.86rem;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-.app-events-banner-location {
-  color: var(--muted);
-}
-
-.app-events-banner-cta {
-  align-self: center;
-  margin: 0.85rem 1rem 0.85rem 0;
   white-space: nowrap;
 }
 
-@media (max-width: 900px) {
-  .app-events-banner-inner {
-    grid-template-columns: minmax(0, 1fr);
+.app-events-bar-countdown-soon {
+  color: #93c5fd;
+}
+
+.app-events-bar-countdown-live {
+  color: #86efac;
+}
+
+.app-events-bar-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-events-bar-cta {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #93c5fd;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .app-events-bar-meta {
+    display: none;
   }
-  .app-events-banner-media {
-    max-height: 140px;
-    aspect-ratio: 800 / 320;
-  }
-  .app-events-banner-cta {
-    margin: 0 1rem 1rem;
-    justify-self: start;
+  .app-events-bar-cta {
+    font-size: 0.68rem;
   }
 }
 

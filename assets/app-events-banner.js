@@ -1,11 +1,12 @@
-/* App pages — Discord event strip at top of .app-main */
+/* App pages — thin fixed Discord event bar at top of viewport */
 (function () {
   "use strict";
 
   var API_BASE = (window.POKEPON_API_BASE || "").replace(/\/+$/, "");
+  var BAR_HEIGHT_PX = 36;
   var tickTimer = null;
   var refreshTimer = null;
-  var bannerEl = null;
+  var barEl = null;
 
   function escapeHtml(s) {
     return String(s)
@@ -21,7 +22,7 @@
     return Number.isNaN(d.getTime()) ? null : d;
   }
 
-  function formatScheduleLine(isoStart, isoEnd) {
+  function formatScheduleShort(isoStart, isoEnd) {
     var start = parseIso(isoStart);
     if (!start) return "";
     var opts = {
@@ -76,37 +77,45 @@
     return { text: "", done: false };
   }
 
-  function ensureBannerHost() {
-    var main = document.querySelector(".app-main");
-    if (!main) return null;
+  function setBarVisible(show) {
+    document.body.classList.toggle("has-app-events-bar", show);
+    document.documentElement.style.setProperty(
+      "--app-events-bar-height",
+      show ? BAR_HEIGHT_PX + "px" : "0px"
+    );
+  }
+
+  function ensureBarHost() {
+    if (!document.querySelector(".app-main")) return null;
     var el = document.getElementById("app-events-banner");
     if (!el) {
       el = document.createElement("aside");
       el.id = "app-events-banner";
-      el.className = "app-events-banner";
+      el.className = "app-events-bar";
       el.hidden = true;
       el.setAttribute("aria-label", "Discord community event");
-      main.insertBefore(el, main.firstChild);
+      document.body.insertBefore(el, document.body.firstChild);
     }
     return el;
   }
 
   function updateCountdown() {
-    if (!bannerEl || bannerEl.hidden) return;
-    var el = bannerEl.querySelector(".app-events-banner-countdown");
+    if (!barEl || barEl.hidden) return;
+    var el = barEl.querySelector(".app-events-bar-countdown");
     if (!el) return;
     var status = el.getAttribute("data-status") || "";
     var startAt = parseIso(el.getAttribute("data-start"));
     var endAt = parseIso(el.getAttribute("data-end"));
     var info = countdownLabel(status, startAt, endAt, Date.now());
     if (info.done && status === "active") {
-      bannerEl.hidden = true;
+      barEl.hidden = true;
+      setBarVisible(false);
       stopTimers();
       return;
     }
     el.textContent = info.text;
-    el.classList.toggle("app-events-banner-countdown-live", status === "active");
-    el.classList.toggle("app-events-banner-countdown-soon", status === "scheduled");
+    el.classList.toggle("app-events-bar-countdown-live", status === "active");
+    el.classList.toggle("app-events-bar-countdown-soon", status === "scheduled");
   }
 
   function stopTimers() {
@@ -143,12 +152,13 @@
   }
 
   function render(ev) {
-    bannerEl = ensureBannerHost();
-    if (!bannerEl) return;
+    barEl = ensureBarHost();
+    if (!barEl) return;
 
     if (!ev) {
-      bannerEl.hidden = true;
-      bannerEl.innerHTML = "";
+      barEl.hidden = true;
+      barEl.innerHTML = "";
+      setBarVisible(false);
       stopTimers();
       return;
     }
@@ -156,62 +166,35 @@
     var status = ev.status === "active" ? "active" : "scheduled";
     var badge =
       status === "active"
-        ? '<span class="app-events-banner-badge app-events-banner-badge-live">Live</span>'
-        : '<span class="app-events-banner-badge">Scheduled</span>';
-    var schedule = formatScheduleLine(ev.start_at, ev.end_at);
-    var loc = ev.location
-      ? '<span class="app-events-banner-location">' + escapeHtml(ev.location) + "</span>"
-      : "";
-    var desc = ev.description
-      ? '<p class="app-events-banner-desc">' +
-        escapeHtml(ev.description.slice(0, 160)) +
-        (ev.description.length > 160 ? "…" : "") +
-        "</p>"
-      : "";
-    var media = ev.image_url
-      ? '<a class="app-events-banner-media" href="' +
-        escapeHtml(ev.url || "#") +
-        '" target="_blank" rel="noopener noreferrer">' +
-        '<img class="app-events-banner-cover" src="' +
-        escapeHtml(ev.image_url) +
-        '" alt="" loading="lazy" decoding="async" />' +
-        "</a>"
-      : "";
+        ? '<span class="app-events-bar-badge app-events-bar-badge-live">Live</span>'
+        : '<span class="app-events-bar-badge">Scheduled</span>';
+    var schedule = formatScheduleShort(ev.start_at, ev.end_at);
+    var meta = schedule;
+    if (ev.location) {
+      meta = meta ? meta + " · " + escapeHtml(ev.location) : escapeHtml(ev.location);
+    }
 
-    bannerEl.innerHTML =
-      '<div class="app-events-banner-inner">' +
-      media +
-      '<div class="app-events-banner-body">' +
-      '<p class="app-events-banner-kicker">Discord event</p>' +
-      '<div class="app-events-banner-head">' +
+    barEl.innerHTML =
+      '<a class="app-events-bar-inner" href="' +
+      escapeHtml(ev.url || "#") +
+      '" target="_blank" rel="noopener noreferrer">' +
       badge +
-      '<h2 class="app-events-banner-title">' +
-      escapeHtml(ev.name || "Community event") +
-      "</h2>" +
-      "</div>" +
-      '<p class="app-events-banner-countdown app-events-banner-countdown-soon" data-status="' +
+      '<span class="app-events-bar-title">' +
+      escapeHtml(ev.name || "Discord event") +
+      "</span>" +
+      '<span class="app-events-bar-countdown app-events-bar-countdown-soon" data-status="' +
       escapeHtml(status) +
       '" data-start="' +
       escapeHtml(ev.start_at || "") +
       '" data-end="' +
       escapeHtml(ev.end_at || "") +
-      '"></p>' +
-      (schedule
-        ? '<p class="app-events-banner-when">' +
-          escapeHtml(schedule) +
-          (loc ? " · " + loc : "") +
-          "</p>"
-        : loc
-          ? '<p class="app-events-banner-when">' + loc + "</p>"
-          : "") +
-      desc +
-      "</div>" +
-      '<a class="btn btn-primary btn-small app-events-banner-cta" href="' +
-      escapeHtml(ev.url || "#") +
-      '" target="_blank" rel="noopener noreferrer">Open in Discord</a>' +
-      "</div>";
+      '"></span>' +
+      (meta ? '<span class="app-events-bar-meta">' + meta + "</span>" : "") +
+      '<span class="app-events-bar-cta">Open in Discord</span>' +
+      "</a>";
 
-    bannerEl.hidden = false;
+    barEl.hidden = false;
+    setBarVisible(true);
     startTimers();
   }
 
@@ -229,14 +212,16 @@
         render(pickPrimaryEvent(events));
       })
       .catch(function () {
-        if (bannerEl) bannerEl.hidden = true;
+        if (barEl) barEl.hidden = true;
+        setBarVisible(false);
         stopTimers();
       });
   }
 
   function init() {
     if (!document.querySelector(".app-main")) return;
-    ensureBannerHost();
+    document.documentElement.style.setProperty("--app-events-bar-height", "0px");
+    ensureBarHost();
     load();
   }
 
