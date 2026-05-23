@@ -200,9 +200,12 @@
       .then(function (data) {
         render(data && data.events ? data.events : []);
       })
-      .catch(function () {
+      .catch(function (err) {
         if (panel) panel.hidden = true;
         stopTimers();
+        if (typeof console !== "undefined" && console.debug) {
+          console.debug("Poké Pon events: could not load /api/events", err);
+        }
       });
   }
 
