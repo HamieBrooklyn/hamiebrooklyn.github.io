@@ -61,22 +61,31 @@
     return parts.join(" ");
   }
 
+  function effectiveStatus(status, startAt, endAt, now) {
+    if (status === "active") return "active";
+    if (startAt && startAt.getTime() <= now) {
+      if (!endAt || endAt.getTime() > now) return "active";
+    }
+    return status === "active" ? "active" : "scheduled";
+  }
+
   function countdownLabel(status, startAt, endAt, now) {
+    status = effectiveStatus(status, startAt, endAt, now);
     if (status === "scheduled") {
-      if (!startAt) return { text: "Scheduled", done: false };
+      if (!startAt) return { text: "Scheduled", done: false, status: status };
       var untilStart = startAt.getTime() - now;
-      if (untilStart <= 0) return { text: "Starting soon", done: false };
+      if (untilStart <= 0) return { text: "Starting soon", done: false, status: status };
       var parts = formatCountdownParts(untilStart);
-      return { text: "Starts in " + parts, done: false };
+      return { text: "Starts in " + parts, done: false, status: status };
     }
     if (status === "active") {
-      if (!endAt) return { text: "Live now", done: false };
+      if (!endAt) return { text: "Live now", done: false, status: status };
       var untilEnd = endAt.getTime() - now;
-      if (untilEnd <= 0) return { text: "Ending now", done: true };
+      if (untilEnd <= 0) return { text: "Ending now", done: true, status: status };
       var endParts = formatCountdownParts(untilEnd);
-      return { text: "Ends in " + endParts, done: false };
+      return { text: "Ends in " + endParts, done: false, status: status };
     }
-    return { text: "", done: false };
+    return { text: "", done: false, status: status };
   }
 
   function updateCountdowns() {
@@ -91,14 +100,14 @@
       var startAt = parseIso(el.getAttribute("data-start"));
       var endAt = parseIso(el.getAttribute("data-end"));
       var info = countdownLabel(status, startAt, endAt, now);
-      if (info.done && status === "active") {
+      if (info.done && info.status === "active") {
         card.hidden = true;
         return;
       }
       visible += 1;
       el.textContent = info.text;
-      el.classList.toggle("home-events-countdown-live", status === "active");
-      el.classList.toggle("home-events-countdown-soon", status === "scheduled");
+      el.classList.toggle("home-events-countdown-live", info.status === "active");
+      el.classList.toggle("home-events-countdown-soon", info.status === "scheduled");
     });
     if (panel && cards.length > 0 && visible === 0) {
       panel.hidden = true;
@@ -134,7 +143,13 @@
     panel.hidden = false;
     listEl.innerHTML = events
       .map(function (ev) {
-        var status = ev.status === "active" ? "active" : "scheduled";
+        var rawStatus = ev.status === "active" ? "active" : "scheduled";
+        var status = effectiveStatus(
+          rawStatus,
+          parseIso(ev.start_at),
+          parseIso(ev.end_at),
+          Date.now()
+        );
         var badge =
           status === "active"
             ? '<span class="home-events-badge home-events-badge-live">Live</span>'
