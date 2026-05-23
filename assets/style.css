@@ -294,6 +294,23 @@ a:hover {
   line-height: 1.3;
 }
 
+.home-events-countdown {
+  margin: 0 0 0.35rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+}
+
+.home-events-countdown-soon {
+  color: #93c5fd;
+}
+
+.home-events-countdown-live {
+  color: #86efac;
+}
+
 .home-events-when,
 .home-events-location,
 .home-events-desc {
