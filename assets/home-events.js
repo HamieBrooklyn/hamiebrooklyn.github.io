@@ -149,16 +149,18 @@
             (ev.description.length > 220 ? "…" : "") +
             "</p>"
           : "";
-        var img = ev.image_url
-          ? '<img class="home-events-cover" src="' +
+        var banner = ev.image_url
+          ? '<div class="home-events-banner">' +
+            '<img class="home-events-cover" src="' +
             escapeHtml(ev.image_url) +
-            '" alt="" loading="lazy" decoding="async" />'
+            '" alt="" loading="lazy" decoding="async" />' +
+            "</div>"
           : "";
         return (
           '<article class="home-events-card" data-event-id="' +
           escapeHtml(ev.id || "") +
           '">' +
-          img +
+          banner +
           '<div class="home-events-card-body">' +
           '<div class="home-events-card-head">' +
           badge +
