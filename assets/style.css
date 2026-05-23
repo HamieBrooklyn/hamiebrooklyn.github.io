@@ -333,6 +333,139 @@ a:hover {
   margin-top: 0.5rem;
 }
 
+/* App dashboard — Discord event strip above page content */
+.app-events-banner {
+  margin: 0 0 1.1rem;
+  border-radius: calc(var(--radius) + 2px);
+  border: 1px solid rgba(88, 166, 255, 0.45);
+  background: linear-gradient(
+    135deg,
+    rgba(88, 166, 255, 0.14) 0%,
+    rgba(34, 197, 94, 0.06) 45%,
+    rgba(15, 23, 42, 0.55) 100%
+  );
+  box-shadow: 0 10px 32px rgba(88, 166, 255, 0.08);
+  overflow: hidden;
+}
+
+.app-events-banner[hidden] {
+  display: none !important;
+}
+
+.app-events-banner-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr) auto;
+  gap: 0;
+  align-items: stretch;
+}
+
+.app-events-banner-media {
+  display: block;
+  aspect-ratio: 800 / 320;
+  background: rgba(15, 23, 42, 0.65);
+  text-decoration: none;
+}
+
+.app-events-banner-cover {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.app-events-banner-body {
+  padding: 0.85rem 1rem;
+  min-width: 0;
+}
+
+.app-events-banner-kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #93c5fd;
+}
+
+.app-events-banner-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.55rem;
+  margin-bottom: 0.2rem;
+}
+
+.app-events-banner-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.12rem 0.42rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--muted);
+}
+
+.app-events-banner-badge-live {
+  background: rgba(34, 197, 94, 0.22);
+  color: #86efac;
+}
+
+.app-events-banner-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.app-events-banner-countdown {
+  margin: 0 0 0.3rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.app-events-banner-countdown-soon {
+  color: #93c5fd;
+}
+
+.app-events-banner-countdown-live {
+  color: #86efac;
+}
+
+.app-events-banner-when,
+.app-events-banner-desc {
+  margin: 0 0 0.3rem;
+  font-size: 0.86rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.app-events-banner-location {
+  color: var(--muted);
+}
+
+.app-events-banner-cta {
+  align-self: center;
+  margin: 0.85rem 1rem 0.85rem 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .app-events-banner-inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app-events-banner-media {
+    max-height: 140px;
+    aspect-ratio: 800 / 320;
+  }
+  .app-events-banner-cta {
+    margin: 0 1rem 1rem;
+    justify-self: start;
+  }
+}
+
 .referral-promo {
   margin: 0 0 1.35rem;
   padding: 1.1rem 1.2rem;

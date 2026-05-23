@@ -404,12 +404,23 @@
     }
   }
 
+  function initAppEventsBanner() {
+    if (!document.querySelector(".app-main") || !apiBase()) return;
+    if (document.getElementById("app-events-banner-script")) return;
+    var s = document.createElement("script");
+    s.id = "app-events-banner-script";
+    s.src = "/assets/app-events-banner.js?v=1";
+    s.defer = true;
+    document.body.appendChild(s);
+  }
+
   function init() {
     applyBrand();
     renderSidebarNav();
     initSidebar();
     initSidebarBalances();
     initProfileShortcut();
+    initAppEventsBanner();
   }
 
   if (document.readyState === "loading") {
