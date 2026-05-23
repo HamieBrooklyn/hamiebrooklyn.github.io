@@ -8,7 +8,7 @@
   <title>Poké Pon — Discord bot</title>
   <meta name="description" content="Poké Pon: Pokémon TCG gacha, collection, trades, duels, and auctions on Discord." />
   <link rel="canonical" href="https://pokepon.org/" />
-  <link rel="stylesheet" href="assets/style.css?v=20" />
+  <link rel="stylesheet" href="assets/style.css?v=21" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -78,6 +78,12 @@
       <p class="hero-lead">
         Poké Pon is a Discord bot for curated TCG drops, inventory, player trades, PvP-style duels, and timed card auctions—built on real printings from the Pokémon TCG API.
       </p>
+
+      <aside id="home-events" class="home-events" hidden aria-label="Current events">
+        <p class="home-events-kicker">Community</p>
+        <h2 class="home-events-title">What&apos;s on in Discord</h2>
+        <div id="home-events-list" class="home-events-list"></div>
+      </aside>
 
       <aside class="referral-promo" aria-label="Refer a friend">
         <p class="referral-promo-kicker">Invite friends · earn Crystals</p>
@@ -217,7 +223,41 @@
       <a href="/privacy/">Privacy</a>
     </span>
   </footer>
+  <meta name="pokepon-api-base" content="https://api.pokepon.org" />
+  <script>
+    (function () {
+      var KEY = "pokepon-api-base";
+      function isValidBase(value) {
+        if (!value || !/^https?:\/\//i.test(value)) return false;
+        try {
+          var u = new URL(value);
+          return /^https?:$/.test(u.protocol) && !!u.hostname && !/[<>{}\s]/.test(u.hostname);
+        } catch (_) {
+          return false;
+        }
+      }
+      var params = new URLSearchParams(window.location.search);
+      var override = params.get("api");
+      if (override === "clear" || override === "reset") {
+        try { localStorage.removeItem(KEY); } catch (_) {}
+        override = "";
+      }
+      if (override && isValidBase(override)) {
+        try { localStorage.setItem(KEY, override.replace(/\/+$/, "")); } catch (_) {}
+      }
+      var stored = "";
+      try { stored = localStorage.getItem(KEY) || ""; } catch (_) {}
+      if (stored && !isValidBase(stored)) {
+        try { localStorage.removeItem(KEY); } catch (_) {}
+        stored = "";
+      }
+      var meta = document.querySelector('meta[name="pokepon-api-base"]');
+      var fromMeta = meta && meta.getAttribute("content") ? meta.getAttribute("content").trim() : "";
+      window.POKEPON_API_BASE = (stored && isValidBase(stored) ? stored : fromMeta) || "";
+    })();
+  </script>
   <script src="assets/site-links.js?v=1" defer></script>
+  <script src="assets/home-events.js?v=1" defer></script>
   <script>
     document.getElementById("y").textContent = new Date().getFullYear();
   </script>
