@@ -762,12 +762,6 @@
       });
     });
   }
-  if (els.sidebarToggle && els.sidebar) {
-    els.sidebarToggle.addEventListener("click", function () {
-      var open = els.sidebar.classList.toggle("is-open");
-      els.sidebarToggle.setAttribute("aria-expanded", open ? "true" : "false");
-    });
-  }
 
   bootAuth();
   loadCatalog();

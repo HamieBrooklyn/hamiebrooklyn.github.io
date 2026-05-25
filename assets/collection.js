@@ -1617,11 +1617,6 @@
     });
   }
 
-  els.sidebarToggle.addEventListener("click", function () {
-    var open = els.sidebar.classList.toggle("is-open");
-    els.sidebarToggle.setAttribute("aria-expanded", open ? "true" : "false");
-  });
-
   function commitSellWithQuote(confirmRare) {
     var item = state.modalItem;
     if (!item || !item.sell || item.sell.quote_pokedollars == null) return;

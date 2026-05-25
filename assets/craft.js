@@ -1034,11 +1034,6 @@
       renderPicker(state.pickerRole);
     });
   }
-  if (els.sidebarToggle && els.sidebar) {
-    els.sidebarToggle.addEventListener("click", function () {
-      els.sidebar.classList.toggle("is-open");
-    });
-  }
 
   initCraftSubtabs();
   if (craftTabShowPanel) craftTabShowPanel("packs");

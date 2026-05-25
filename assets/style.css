@@ -2954,19 +2954,12 @@ body.deck-editor-active .app-main {
     padding-top: 0.5rem;
   }
 
-  .app-shell::after {
+  .app-shell:has(.sidebar.is-open)::after {
     content: "";
     position: fixed;
     inset: 0;
     z-index: 45;
     background: rgba(6, 8, 12, 0.55);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.22s ease;
-  }
-
-  .app-shell:has(.sidebar.is-open)::after {
-    opacity: 1;
     pointer-events: auto;
   }
 
@@ -3054,25 +3047,60 @@ body.deck-editor-active .app-main {
     font-size: 0.9rem;
   }
 
+  .home-nav {
+    display: none;
+  }
+
+  .site-header-cta {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .site-header-cta .btn {
+    flex: 1 1 0;
+    text-align: center;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.82rem;
+  }
+
+  .hero {
+    display: flex;
+    flex-direction: column;
+    padding-top: 1.25rem;
+    padding-bottom: 2rem;
+  }
+
+  .hero-kicker { order: 1; }
+  .hero h1 { order: 2; }
+  .hero-lead { order: 3; }
+  .hero-actions { order: 4; }
+  .home-features { order: 5; margin-top: 0.5rem; }
+  .home-events { order: 6; }
+  .referral-promo { order: 7; }
+  .hero-note { order: 8; }
+
   .home-features {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
   }
 
-  .home-nav-more {
-    margin-left: 0;
-    width: 100%;
+  .home-feature-card {
+    padding: 0.85rem 0.85rem 0.75rem;
   }
 
-  .home-nav-more-menu {
-    position: static;
-    margin-top: 0.35rem;
-    box-shadow: none;
+  .home-feature-card h3 {
+    font-size: 0.92rem;
+  }
+
+  .home-feature-card p {
+    font-size: 0.78rem;
   }
 }
 
 @media (max-width: 600px) {
   .home-features {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
   }
 
   body {

@@ -1338,12 +1338,6 @@
     if (window.PokeponEvoFocus) {
       PokeponEvoFocus.mount({ fmtCost: fmtPd, rarityClassFor: rarityClassFor });
     }
-    if (els.sidebarToggle && els.sidebar) {
-      els.sidebarToggle.addEventListener("click", function () {
-        var open = els.sidebar.classList.toggle("is-open");
-        els.sidebarToggle.setAttribute("aria-expanded", open ? "true" : "false");
-      });
-    }
     if (els.btnInvite) els.btnInvite.addEventListener("click", sendInvite);
     if (els.inviteInput) {
       els.inviteInput.addEventListener("input", scheduleInviteUserSearch);
