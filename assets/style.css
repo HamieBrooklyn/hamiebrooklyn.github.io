@@ -2997,6 +2997,9 @@ body.deck-editor-active .app-main {
     border-radius: 0;
     border-left: none;
     border-right: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   .modal-grid,
@@ -3007,6 +3010,10 @@ body.deck-editor-active .app-main {
 
   #card-modal .modal-card {
     max-height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   #card-modal .modal-aside {
@@ -3017,6 +3024,40 @@ body.deck-editor-active .app-main {
 
   #card-modal .modal-body {
     overflow: visible;
+  }
+
+  #card-modal .modal-body-scroll {
+    overflow: visible;
+    min-height: auto;
+  }
+
+  .modal-close {
+    position: sticky;
+    top: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: 0.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: -2rem;
+    width: 42px;
+    height: 42px;
+    font-size: 1.35rem;
+    z-index: 5;
+    flex-shrink: 0;
+  }
+
+  .evo-focus-card {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .evo-focus-card .modal-evo-back {
+    position: sticky;
+    top: 0.5rem;
+    z-index: 5;
+    margin-left: 0.5rem;
+    margin-bottom: -2rem;
   }
 
   .deck-bench {
