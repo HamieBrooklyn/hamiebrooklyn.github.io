@@ -2998,6 +2998,7 @@ body.deck-editor-active .app-main {
     border-left: none;
     border-right: none;
     overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
   }
@@ -3012,7 +3013,7 @@ body.deck-editor-active .app-main {
 
   #card-modal .modal-card {
     max-height: 100dvh;
-    max-width: 100vw;
+    max-width: 100%;
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
@@ -3044,7 +3045,7 @@ body.deck-editor-active .app-main {
 
   .modal-close {
     position: absolute;
-    top: 0.5rem;
+    top: calc(0.5rem + env(safe-area-inset-top, 0px));
     right: 0.5rem;
     width: 42px;
     height: 42px;
