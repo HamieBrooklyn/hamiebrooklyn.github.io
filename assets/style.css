@@ -3006,20 +3006,25 @@ body.deck-editor-active .app-main {
   #card-modal .modal-grid {
     grid-template-columns: 1fr;
     overflow: visible;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   #card-modal .modal-card {
     max-height: 100dvh;
+    max-width: 100vw;
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    box-sizing: border-box;
   }
 
   #card-modal .modal-aside {
     position: static;
     max-height: none;
     overflow: visible;
+    max-width: 100%;
   }
 
   #card-modal .modal-body {
@@ -3031,19 +3036,20 @@ body.deck-editor-active .app-main {
     min-height: auto;
   }
 
+  #card-modal .modal-aside .modal-image img {
+    width: 100%;
+    max-width: 280px;
+    margin-inline: auto;
+  }
+
   .modal-close {
-    position: sticky;
-    top: 0;
-    right: 0;
-    margin-left: auto;
-    margin-right: 0.5rem;
-    margin-top: 0.5rem;
-    margin-bottom: -2rem;
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
     width: 42px;
     height: 42px;
     font-size: 1.35rem;
     z-index: 5;
-    flex-shrink: 0;
   }
 
   .evo-focus-card {
