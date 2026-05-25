@@ -335,7 +335,7 @@
 
   // ------- collection fetch + render ------------------------------------
 
-  var CRAFT_TRAINER_SUBTYPES = ["Stadium", "Supporter", "Tool", "Pokémon Tool"];
+  var CRAFT_TRAINER_SUBTYPES = ["Stadium", "Supporter", "Tool"];
   var ITEM_NAME_HINTS = [
     "Potion", "Ball", "Berry", "Mail", "Rod", "Stone", "Pass", "Candy",
     "Module", "Toolkit", "Glove", "Charm", "Case", "Box", "Capsule",
@@ -401,6 +401,7 @@
     if (st === "Energy") return "item";
     if (st !== "Trainer") return role || "other";
     if (hasSubtype(subs, "Item")) return "item";
+    if (hasSubtype(subs, "Pokémon Tool")) return "item";
     if (
       CRAFT_TRAINER_SUBTYPES.some(function (label) {
         return hasSubtype(subs, label);

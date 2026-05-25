@@ -134,6 +134,7 @@
     if (st === "Energy") return "item";
     if (st !== "Trainer") return role || "other";
     if (hasSubtype(subs, "Item")) return "item";
+    if (hasSubtype(subs, "Pokémon Tool")) return "item";
     if (
       CRAFT_TRAINER_SUBTYPES.some(function (label) {
         return hasSubtype(subs, label);
