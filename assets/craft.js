@@ -63,6 +63,7 @@
     pickerLead: document.getElementById("craft-picker-lead"),
     search: document.getElementById("search-input"),
     searchClear: document.getElementById("search-clear"),
+    rarityFilter: document.getElementById("craft-rarity-filter"),
     grid: document.getElementById("card-grid"),
     pickerStatus: document.getElementById("picker-status"),
   };
@@ -151,8 +152,10 @@
     itemSlots: [],
     trainerEntry: null,
     query: "",
+    rarityFilter: "",
     page: 1,
     pageSize: 120,
+    allPickerItems: [],
     items: [],
     inflight: null,
     crafting: false,
@@ -263,6 +266,8 @@
 
   function setPickerRole(role) {
     state.pickerRole = role;
+    state.rarityFilter = "";
+    if (els.rarityFilter) els.rarityFilter.value = "";
     if (els.nodeMaterials) {
       els.nodeMaterials.classList.toggle("is-active", role === "item");
     }
@@ -315,7 +320,9 @@
           });
         }
         rows.forEach(rememberItem);
-        state.items = rows;
+        state.allPickerItems = rows;
+        populateRarityDropdown(rows);
+        state.items = applyRarityFilter(rows);
         renderPicker(role);
       })
       .catch(function (err) {
@@ -338,6 +345,56 @@
     els.pickerStatus.hidden = false;
     els.pickerStatus.className = "craft-picker-status state-" + kind;
     els.pickerStatus.innerHTML = html;
+  }
+
+  function itemRarityCode(item) {
+    var r = item && item.card && item.card.rarity;
+    return (r && r.code) || "";
+  }
+
+  function itemRarityDisplay(item) {
+    var r = item && item.card && item.card.rarity;
+    return (r && r.display_name) || "";
+  }
+
+  function itemRaritySort(item) {
+    var r = item && item.card && item.card.rarity;
+    return (r && typeof r.sort_order === "number") ? r.sort_order : 0;
+  }
+
+  function populateRarityDropdown(items) {
+    if (!els.rarityFilter) return;
+    var prev = state.rarityFilter;
+    var seen = {};
+    var opts = [];
+    items.forEach(function (it) {
+      var code = itemRarityCode(it);
+      if (!code || seen[code]) return;
+      seen[code] = true;
+      opts.push({ code: code, name: itemRarityDisplay(it), sort: itemRaritySort(it) });
+    });
+    opts.sort(function (a, b) { return a.sort - b.sort; });
+    els.rarityFilter.innerHTML = '<option value="">All rarities</option>';
+    opts.forEach(function (o) {
+      var opt = document.createElement("option");
+      opt.value = o.code;
+      opt.textContent = o.name || o.code;
+      els.rarityFilter.appendChild(opt);
+    });
+    if (prev && seen[prev]) {
+      els.rarityFilter.value = prev;
+    } else {
+      state.rarityFilter = "";
+      els.rarityFilter.value = "";
+    }
+  }
+
+  function applyRarityFilter(items) {
+    var code = state.rarityFilter;
+    if (!code) return items;
+    return items.filter(function (it) {
+      return itemRarityCode(it) === code;
+    });
   }
 
   function renderPicker(role) {
@@ -967,6 +1024,13 @@
       els.searchClear.hidden = true;
       state.query = "";
       loadPicker(state.pickerRole);
+    });
+  }
+  if (els.rarityFilter) {
+    els.rarityFilter.addEventListener("change", function () {
+      state.rarityFilter = els.rarityFilter.value;
+      state.items = applyRarityFilter(state.allPickerItems);
+      renderPicker(state.pickerRole);
     });
   }
   if (els.sidebarToggle && els.sidebar) {
