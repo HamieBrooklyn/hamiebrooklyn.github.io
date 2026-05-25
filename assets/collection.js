@@ -134,6 +134,7 @@
     searchClear: document.getElementById("search-clear"),
     chips: Array.prototype.slice.call(document.querySelectorAll(".chip[data-sort]")),
     filterFavoritedBtn: document.getElementById("filter-favorited"),
+    filterEvolvableBtn: document.getElementById("filter-evolvable"),
     status: document.getElementById("status"),
     grid: document.getElementById("card-grid"),
     evoSections: document.getElementById("evo-sections"),
@@ -186,6 +187,7 @@
     sort: "newest",
     query: "",
     filterFavorited: false,
+    filterEvolvable: false,
     craftRole: "",
     total: 0,
     items: [],
@@ -464,6 +466,7 @@
     qs.set("sort", state.sort);
     if (state.query) qs.set("q", state.query);
     if (state.filterFavorited) qs.set("favorited", "1");
+    if (state.filterEvolvable) qs.set("evolvable", "1");
     if (state.craftRole === "craft_trainer") {
       qs.set("supertype", "Trainer");
     } else if (state.craftRole) {
@@ -629,15 +632,19 @@
       els.pager.hidden = true;
       setStatus(
         STATUS_KIND.EMPTY,
-        state.filterFavorited
+        state.filterEvolvable
           ? state.query
-            ? "No favorited copies match <strong>" + escapeHtml(state.query) + "</strong>."
-            : "You have no favorited copies yet. Star a card in your collection or with <code>cv c</code> in Discord."
-          : state.query
-            ? "No cards in your collection match <strong>" +
-                escapeHtml(state.query) +
-                "</strong>."
-            : "Your collection is empty. Run <code>ppcd</code> in Discord to claim your first card."
+            ? "No evolvable cards match <strong>" + escapeHtml(state.query) + "</strong>."
+            : "You have no evolvable cards in your collection."
+          : state.filterFavorited
+            ? state.query
+              ? "No favorited copies match <strong>" + escapeHtml(state.query) + "</strong>."
+              : "You have no favorited copies yet. Star a card in your collection or with <code>cv c</code> in Discord."
+            : state.query
+              ? "No cards in your collection match <strong>" +
+                  escapeHtml(state.query) +
+                  "</strong>."
+              : "Your collection is empty. Run <code>ppcd</code> in Discord to claim your first card."
       );
       return;
     }
@@ -660,6 +667,7 @@
         "</strong> card" +
         (state.total === 1 ? "" : "s") +
         (state.filterFavorited ? " (favorites)" : "") +
+        (state.filterEvolvable ? " (evolvable)" : "") +
         (state.query ? ' matching "' + escapeHtml(state.query) + '"' : "") +
         " · sorted by <strong>" +
         sortLabel(state.sort) +
@@ -1507,6 +1515,17 @@
       var on = state.filterFavorited;
       els.filterFavoritedBtn.classList.toggle("is-active", on);
       els.filterFavoritedBtn.setAttribute("aria-pressed", on ? "true" : "false");
+      state.page = 1;
+      loadCollection(false);
+    });
+  }
+
+  if (els.filterEvolvableBtn) {
+    els.filterEvolvableBtn.addEventListener("click", function () {
+      state.filterEvolvable = !state.filterEvolvable;
+      var on = state.filterEvolvable;
+      els.filterEvolvableBtn.classList.toggle("is-active", on);
+      els.filterEvolvableBtn.setAttribute("aria-pressed", on ? "true" : "false");
       state.page = 1;
       loadCollection(false);
     });
