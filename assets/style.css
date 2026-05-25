@@ -347,6 +347,12 @@ body.has-app-events-bar .sidebar {
   height: calc(100vh - var(--app-events-bar-height));
 }
 
+@media (max-width: 880px) {
+  body.has-app-events-bar .sidebar {
+    height: auto;
+  }
+}
+
 .app-events-bar {
   position: fixed;
   top: 0;
