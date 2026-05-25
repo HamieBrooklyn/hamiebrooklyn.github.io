@@ -335,7 +335,7 @@
 
   // ------- collection fetch + render ------------------------------------
 
-  var CRAFT_TRAINER_SUBTYPES = ["Stadium", "Supporter", "Tool"];
+  var CRAFT_TRAINER_SUBTYPES = ["Stadium", "Supporter", "Tool", "Pokémon Tool"];
   var ITEM_NAME_HINTS = [
     "Potion", "Ball", "Berry", "Mail", "Rod", "Stone", "Pass", "Candy",
     "Module", "Toolkit", "Glove", "Charm", "Case", "Box", "Capsule",
