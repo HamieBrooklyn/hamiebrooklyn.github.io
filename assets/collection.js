@@ -1372,8 +1372,14 @@
     els.modalPid.textContent = item.public_id || "—";
     if (item.obtained_at) {
       var d = new Date(item.obtained_at);
-      els.modalObtained.textContent =
+      var obtainedText =
         "Obtained " + d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+      if (item.auction_obtained_at) {
+        var ad = new Date(item.auction_obtained_at);
+        obtainedText +=
+          "\nWon from auction " + ad.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+      }
+      els.modalObtained.textContent = obtainedText;
     } else {
       els.modalObtained.textContent = "";
     }

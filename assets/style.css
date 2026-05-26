@@ -2126,6 +2126,7 @@ main {
   margin: 0;
   color: var(--muted);
   font-size: 0.82rem;
+  white-space: pre-line;
 }
 
 .modal-sell {
