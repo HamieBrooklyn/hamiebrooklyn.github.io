@@ -155,47 +155,95 @@
   }
 
   function inviteSearchQuery() {
-    var raw = String((els.inviteInput && els.inviteInput.value) || "").trim();
-    raw = raw.replace(/^@+/, "");
-    return raw;
+    var v = String((els.inviteInput && els.inviteInput.value) || "").trim();
+    v = v.replace(/^@+/, "").trim();
+    var paren = v.match(/\(@([^)]+)\)\s*$/);
+    if (paren) return paren[1].trim();
+    return v;
   }
 
-  function hideInviteSuggestions() {
+  function clearInviteSuggestions() {
     if (!els.inviteSuggestions) return;
-    els.inviteSuggestions.hidden = true;
     els.inviteSuggestions.innerHTML = "";
+    els.inviteSuggestions.hidden = true;
   }
 
-  function profileUser(u) {
-    if (!u) return null;
-    if (u.username || u.global_name || u.avatar_url) return u;
-    if (u.id) return u;
-    return null;
+  function inviteCacheGet(raw) {
+    var key = raw.toLowerCase();
+    var hit = state.inviteSearchCache[key];
+    if (!hit) return null;
+    if (Date.now() - hit.ts > 60000) {
+      delete state.inviteSearchCache[key];
+      return null;
+    }
+    return hit.users;
+  }
+
+  function inviteCacheSet(raw, users) {
+    state.inviteSearchCache[raw.toLowerCase()] = { users: users, ts: Date.now() };
+  }
+
+  function showInviteSearching() {
+    if (!els.inviteSuggestions) return;
+    els.inviteSuggestions.innerHTML = '<div class="invite-suggestion-hint">Searching…</div>';
+    els.inviteSuggestions.hidden = false;
+  }
+
+  function selectPartnerFromSuggestion(u) {
+    state.selectedPartnerId = u.id;
+    var handle = u.username || "";
+    var disp = u.global_name || u.display_name || "";
+    if (els.inviteInput) {
+      els.inviteInput.value = disp ? disp + " (@" + handle + ")" : "@" + handle;
+    }
+    clearInviteSuggestions();
   }
 
   function renderInviteSuggestions(users) {
     if (!els.inviteSuggestions) return;
     els.inviteSuggestions.innerHTML = "";
-    if (!users || !users.length) {
+    users = Array.isArray(users) ? users : [];
+    if (!users.length) {
       var empty = document.createElement("div");
       empty.className = "invite-suggestion-hint";
-      empty.textContent = "No users match that prefix.";
+      empty.textContent = "No users in your shared servers match that prefix.";
       els.inviteSuggestions.appendChild(empty);
       els.inviteSuggestions.hidden = false;
       return;
     }
     users.forEach(function (u) {
-      u = profileUser(u);
+      if (!u || !u.id) return;
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "invite-suggestion";
-      var display = (u.global_name || u.username || ("User " + u.id));
-      btn.textContent = display;
-      btn.addEventListener("click", function () {
-        state.selectedPartnerId = u.id;
-        if (els.inviteInput) els.inviteInput.value = display;
-        hideInviteSuggestions();
-      });
+      btn.setAttribute("role", "option");
+      if (u.avatar_url) {
+        var img = document.createElement("img");
+        img.className = "invite-suggestion-avatar";
+        img.src = u.avatar_url;
+        img.alt = "";
+        btn.appendChild(img);
+      } else {
+        var ph = document.createElement("span");
+        ph.className = "invite-suggestion-avatar";
+        ph.setAttribute("aria-hidden", "true");
+        btn.appendChild(ph);
+      }
+      var meta = document.createElement("span");
+      meta.className = "invite-suggestion-meta";
+      var handle = document.createElement("span");
+      handle.className = "invite-suggestion-handle";
+      handle.textContent = "@" + (u.username || "?");
+      meta.appendChild(handle);
+      var gn = u.global_name || u.display_name || "";
+      if (gn) {
+        var disp = document.createElement("span");
+        disp.className = "invite-suggestion-display";
+        disp.textContent = gn;
+        meta.appendChild(disp);
+      }
+      btn.appendChild(meta);
+      btn.onclick = function () { selectPartnerFromSuggestion(u); };
       els.inviteSuggestions.appendChild(btn);
     });
     els.inviteSuggestions.hidden = false;
@@ -203,30 +251,60 @@
 
   function scheduleInviteUserSearch() {
     if (!state.authenticated) return;
+    clearTimeout(state.inviteSearchDebounce);
     state.selectedPartnerId = null;
-    var q = inviteSearchQuery();
-    if (!q || /^\d+$/.test(q)) { hideInviteSuggestions(); return; }
-    if (state.inviteSearchDebounce) clearTimeout(state.inviteSearchDebounce);
-    state.inviteSearchDebounce = setTimeout(function () {
-      state.inviteSearchDebounce = 0;
-      fetchInviteUserSuggestions(q);
-    }, 80);
+    var raw = inviteSearchQuery();
+    if (!els.inviteSuggestions) return;
+    if (/^\d+$/.test(raw) || !raw) {
+      clearInviteSuggestions();
+      return;
+    }
+    var cached = inviteCacheGet(raw);
+    if (cached) {
+      renderInviteSuggestions(cached);
+    } else {
+      showInviteSearching();
+    }
+    state.inviteSearchDebounce = setTimeout(fetchInviteUserSuggestions, cached ? 120 : 35);
   }
 
-  async function fetchInviteUserSuggestions(q) {
+  async function fetchInviteUserSuggestions() {
+    if (!els.inviteSuggestions || !state.authenticated) return;
+    var raw = inviteSearchQuery();
+    if (/^\d+$/.test(raw) || !raw) {
+      clearInviteSuggestions();
+      return;
+    }
     if (state.inviteSearchInFlight) state.inviteSearchInFlight.abort();
     var ctrl = new AbortController();
     state.inviteSearchInFlight = ctrl;
     try {
-      var r = await apiFetch("/api/me/duel-user-search?q=" + encodeURIComponent(q) + "&limit=12", { signal: ctrl.signal });
-      if (!r.ok) return;
+      var r = await apiFetch(
+        "/api/me/duel-user-search?q=" + encodeURIComponent(raw) + "&limit=12",
+        { signal: ctrl.signal }
+      );
+      state.inviteSearchInFlight = null;
+      if (!r.ok) {
+        if (els.inviteSuggestions) {
+          els.inviteSuggestions.innerHTML =
+            '<div class="invite-suggestion-hint">Could not search users. Try again.</div>';
+          els.inviteSuggestions.hidden = false;
+        }
+        return;
+      }
       var body = await r.json();
-      if (inviteSearchQuery() !== q) return;
-      renderInviteSuggestions(body.users || []);
-    } catch (_) {
-      /* ignore */
-    } finally {
-      if (state.inviteSearchInFlight === ctrl) state.inviteSearchInFlight = null;
+      var users = body.users || [];
+      if (inviteSearchQuery() !== raw) return;
+      inviteCacheSet(raw, users);
+      renderInviteSuggestions(users);
+    } catch (err) {
+      state.inviteSearchInFlight = null;
+      if (err && err.name === "AbortError") return;
+      if (els.inviteSuggestions) {
+        els.inviteSuggestions.innerHTML =
+          '<div class="invite-suggestion-hint">Could not search users. Try again.</div>';
+        els.inviteSuggestions.hidden = false;
+      }
     }
   }
 
@@ -560,10 +638,18 @@
   function bindActions() {
     if (els.inviteInput) {
       els.inviteInput.addEventListener("input", scheduleInviteUserSearch);
+      els.inviteInput.addEventListener("paste", function () {
+        setTimeout(scheduleInviteUserSearch, 0);
+      });
       els.inviteInput.addEventListener("keydown", function (e) {
         if (e.key === "Enter") { e.preventDefault(); sendInvite(); }
       });
     }
+    document.addEventListener("click", function (e) {
+      if (!els.inviteSuggestions || els.inviteSuggestions.hidden) return;
+      var wrap = document.querySelector(".duel-field-invite");
+      if (wrap && !wrap.contains(e.target)) clearInviteSuggestions();
+    });
     if (els.btnInvite) els.btnInvite.addEventListener("click", sendInvite);
     if (els.btnLeave) els.btnLeave.addEventListener("click", leaveRoom);
     if (els.btnSurrender) els.btnSurrender.addEventListener("click", function () {

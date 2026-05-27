@@ -9,7 +9,7 @@
   <meta name="description" content="Challenge other players to advanced PvP duels on Poké Pon." />
   <link rel="canonical" href="https://pokepon.org/duel/" />
   <link rel="stylesheet" href="/assets/style.css?v=41" />
-  <link rel="stylesheet" href="/assets/duel.css?v=2" />
+  <link rel="stylesheet" href="/assets/duel.css?v=3" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -74,7 +74,7 @@
           <div class="duel-field duel-field-invite">
             <label class="label" for="invite-input">Opponent</label>
             <input class="input" id="invite-input" autocomplete="off" placeholder="Search username…" />
-            <div class="invite-suggestions" id="invite-suggestions" hidden></div>
+            <div id="invite-suggestions" class="invite-suggestions" role="listbox" aria-label="Matching users" hidden></div>
           </div>
           <div class="duel-field">
             <label class="label" for="bet-currency">Bet currency</label>
@@ -168,7 +168,7 @@
     })();
   </script>
   <script src="/assets/app-shell.js" defer></script>
-  <script src="/assets/duel.js?v=1" defer></script>
+  <script src="/assets/duel.js?v=2" defer></script>
 </body>
 </html>
 
