@@ -595,6 +595,35 @@
       });
   }
 
+  function primaryDexNumber(item) {
+    var dns = item && item.card && item.card.dex_numbers;
+    if (!Array.isArray(dns) || !dns.length) return null;
+    var n = Number(dns[0]);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function groupItemsByDex(items) {
+    var map = Object.create(null);
+    var order = [];
+    items.forEach(function (it) {
+      var dex = primaryDexNumber(it);
+      var key =
+        dex != null ? "d:" + dex : "n:" + ((it.card && it.card.name) || "?");
+      if (!map[key]) {
+        map[key] = {
+          dex: dex,
+          label: (it.card && it.card.name) || "Unknown",
+          items: [],
+        };
+        order.push(key);
+      }
+      map[key].items.push(it);
+    });
+    return order.map(function (k) {
+      return map[k];
+    });
+  }
+
   function hasEvolutionSections() {
     return !!(state.query && state.page === 1 && state.sections && state.sections.length);
   }
@@ -684,12 +713,41 @@
     );
 
     revokeTileSlabUrls();
-    var frag = document.createDocumentFragment();
-    state.items.forEach(function (it, idx) {
-      frag.appendChild(buildTile(it, idx));
-    });
     els.grid.innerHTML = "";
-    els.grid.appendChild(frag);
+    if (state.filterDuplicates) {
+      var groups = groupItemsByDex(state.items);
+      var wrap = document.createDocumentFragment();
+      groups.forEach(function (g) {
+        var block = document.createElement("section");
+        block.className = "collection-evo-section collection-dup-section";
+        var heading = document.createElement("h2");
+        heading.className = "collection-evo-heading";
+        var dexLabel = g.dex != null ? " · #" + g.dex : "";
+        heading.textContent =
+          g.label +
+          dexLabel +
+          " · " +
+          g.items.length +
+          (g.items.length === 1 ? " copy" : " copies");
+        var grid = document.createElement("div");
+        grid.className = "card-grid collection-evo-grid";
+        g.items.forEach(function (it, idx) {
+          grid.appendChild(buildTile(it, idx));
+        });
+        block.appendChild(heading);
+        block.appendChild(grid);
+        wrap.appendChild(block);
+      });
+      els.grid.classList.add("collection-dup-groups");
+      els.grid.appendChild(wrap);
+    } else {
+      els.grid.classList.remove("collection-dup-groups");
+      var frag = document.createDocumentFragment();
+      state.items.forEach(function (it, idx) {
+        frag.appendChild(buildTile(it, idx));
+      });
+      els.grid.appendChild(frag);
+    }
 
     var pages = Math.max(1, Math.ceil(state.total / state.pageSize));
     els.pagerInfo.textContent = "Page " + state.page + " of " + pages;

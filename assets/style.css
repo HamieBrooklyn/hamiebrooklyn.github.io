@@ -1518,6 +1518,12 @@ main {
   margin-top: 0;
 }
 
+.card-grid.collection-dup-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
 .card-tile-wrap {
   display: flex;
   flex-direction: column;
