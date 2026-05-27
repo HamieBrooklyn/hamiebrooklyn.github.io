@@ -1,8 +1,79 @@
+/* Invite panel — matches trades invite styling */
+.duel-invite {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.duel-invite .h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
 .duel-invite-form {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
   gap: 0.9rem;
   align-items: end;
+}
+
+.duel-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.duel-field .label,
+.duel-field label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.duel-field .input,
+.duel-field input,
+.duel-field select {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  line-height: 1.35;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.duel-field select {
+  padding-right: 2rem;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  background-size: 12px;
+}
+
+.duel-field .input::placeholder,
+.duel-field input::placeholder {
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+.duel-field .input:focus,
+.duel-field input:focus,
+.duel-field select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
 }
 
 .duel-field-invite {
