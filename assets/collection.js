@@ -135,6 +135,7 @@
     chips: Array.prototype.slice.call(document.querySelectorAll(".chip[data-sort]")),
     filterFavoritedBtn: document.getElementById("filter-favorited"),
     filterEvolvableBtn: document.getElementById("filter-evolvable"),
+    filterDuplicatesBtn: document.getElementById("filter-duplicates"),
     status: document.getElementById("status"),
     grid: document.getElementById("card-grid"),
     evoSections: document.getElementById("evo-sections"),
@@ -188,6 +189,7 @@
     query: "",
     filterFavorited: false,
     filterEvolvable: false,
+    filterDuplicates: false,
     craftRole: "",
     total: 0,
     items: [],
@@ -467,6 +469,7 @@
     if (state.query) qs.set("q", state.query);
     if (state.filterFavorited) qs.set("favorited", "1");
     if (state.filterEvolvable) qs.set("evolvable", "1");
+    if (state.filterDuplicates) qs.set("duplicates", "1");
     if (state.craftRole === "craft_trainer") {
       qs.set("supertype", "Trainer");
     } else if (state.craftRole) {
@@ -498,6 +501,7 @@
     qs.set("sort", state.sort);
     qs.set("q", state.query);
     if (state.filterFavorited) qs.set("favorited", "1");
+    if (state.filterDuplicates) qs.set("duplicates", "1");
     return "/api/me/collection/evolution-sections?" + qs.toString();
   }
 
@@ -632,7 +636,11 @@
       els.pager.hidden = true;
       setStatus(
         STATUS_KIND.EMPTY,
-        state.filterEvolvable
+        state.filterDuplicates
+          ? state.query
+            ? "No duplicate Pokémon match <strong>" + escapeHtml(state.query) + "</strong>."
+            : "You have no duplicate Pokémon in your collection yet."
+          : state.filterEvolvable
           ? state.query
             ? "No evolvable cards match <strong>" + escapeHtml(state.query) + "</strong>."
             : "You have no evolvable cards in your collection."
@@ -668,6 +676,7 @@
         (state.total === 1 ? "" : "s") +
         (state.filterFavorited ? " (favorites)" : "") +
         (state.filterEvolvable ? " (evolvable)" : "") +
+        (state.filterDuplicates ? " (duplicates)" : "") +
         (state.query ? ' matching "' + escapeHtml(state.query) + '"' : "") +
         " · sorted by <strong>" +
         sortLabel(state.sort) +
@@ -1532,6 +1541,17 @@
       var on = state.filterEvolvable;
       els.filterEvolvableBtn.classList.toggle("is-active", on);
       els.filterEvolvableBtn.setAttribute("aria-pressed", on ? "true" : "false");
+      state.page = 1;
+      loadCollection(false);
+    });
+  }
+
+  if (els.filterDuplicatesBtn) {
+    els.filterDuplicatesBtn.addEventListener("click", function () {
+      state.filterDuplicates = !state.filterDuplicates;
+      var on = state.filterDuplicates;
+      els.filterDuplicatesBtn.classList.toggle("is-active", on);
+      els.filterDuplicatesBtn.setAttribute("aria-pressed", on ? "true" : "false");
       state.page = 1;
       loadCollection(false);
     });
