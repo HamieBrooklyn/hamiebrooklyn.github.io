@@ -745,13 +745,41 @@
           updateCraftUi();
           return;
         }
+        var usedTrainerPid = trainerId();
         state.itemSlots = [];
         state.trainerEntry = null;
         state.lastPackId = (d.pack && d.pack.public_id) || null;
+        if (usedTrainerPid) {
+          if (d.trainer_uses_remaining == null) {
+            state.allPickerItems = state.allPickerItems.filter(function (it) {
+              return it.public_id !== usedTrainerPid;
+            });
+            if (state.itemCache && state.itemCache[usedTrainerPid]) {
+              delete state.itemCache[usedTrainerPid];
+            }
+          } else {
+            var rem = Number(d.trainer_uses_remaining);
+            var maxUses = Number(d.trainer_max_uses) || 3;
+            function patchUses(it) {
+              if (!it || it.public_id !== usedTrainerPid) return it;
+              it.craft_uses = {
+                max: maxUses,
+                remaining: rem,
+                used: maxUses - rem,
+              };
+              return it;
+            }
+            state.allPickerItems = state.allPickerItems.map(patchUses);
+            if (state.itemCache && state.itemCache[usedTrainerPid]) {
+              patchUses(state.itemCache[usedTrainerPid]);
+            }
+          }
+        }
         renderItemSlots();
         renderTrainerSlot();
         renderOutput(d);
         updateCraftUi();
+        loadPicker(state.pickerRole);
       })
       .catch(function () {
         state.crafting = false;
