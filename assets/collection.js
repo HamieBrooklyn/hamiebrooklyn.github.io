@@ -135,6 +135,7 @@
     chips: Array.prototype.slice.call(document.querySelectorAll(".chip[data-sort]")),
     filterFavoritedBtn: document.getElementById("filter-favorited"),
     filterEvolvableBtn: document.getElementById("filter-evolvable"),
+    filterNonEvolvableBtn: document.getElementById("filter-non-evolvable"),
     filterDuplicatesBtn: document.getElementById("filter-duplicates"),
     btnBulkSell: document.getElementById("btn-bulk-sell"),
     status: document.getElementById("status"),
@@ -198,6 +199,7 @@
     query: "",
     filterFavorited: false,
     filterEvolvable: false,
+    filterNonEvolvable: false,
     filterDuplicates: false,
     craftRole: "",
     total: 0,
@@ -483,6 +485,7 @@
     if (state.query) qs.set("q", state.query);
     if (state.filterFavorited) qs.set("favorited", "1");
     if (state.filterEvolvable) qs.set("evolvable", "1");
+    if (state.filterNonEvolvable) qs.set("non_evolvable", "1");
     if (state.filterDuplicates) qs.set("duplicates", "1");
     if (state.craftRole === "craft_trainer") {
       qs.set("supertype", "Trainer");
@@ -687,6 +690,10 @@
           ? state.query
             ? "No evolvable cards match <strong>" + escapeHtml(state.query) + "</strong>."
             : "You have no evolvable cards in your collection."
+          : state.filterNonEvolvable
+          ? state.query
+            ? "No non-evolvable cards match <strong>" + escapeHtml(state.query) + "</strong>."
+            : "You have no non-evolvable cards in your collection."
           : state.filterFavorited
             ? state.query
               ? "No favorited copies match <strong>" + escapeHtml(state.query) + "</strong>."
@@ -719,6 +726,7 @@
         (state.total === 1 ? "" : "s") +
         (state.filterFavorited ? " (favorites)" : "") +
         (state.filterEvolvable ? " (evolvable)" : "") +
+        (state.filterNonEvolvable ? " (non-evolvable)" : "") +
         (state.filterDuplicates ? " (duplicates)" : "") +
         (state.query ? ' matching "' + escapeHtml(state.query) + '"' : "") +
         " · sorted by <strong>" +
@@ -1869,12 +1877,36 @@
     });
   }
 
+  function syncEvolvableFilterChips() {
+    if (els.filterEvolvableBtn) {
+      var evoOn = !!state.filterEvolvable;
+      els.filterEvolvableBtn.classList.toggle("is-active", evoOn);
+      els.filterEvolvableBtn.setAttribute("aria-pressed", evoOn ? "true" : "false");
+    }
+    if (els.filterNonEvolvableBtn) {
+      var nonOn = !!state.filterNonEvolvable;
+      els.filterNonEvolvableBtn.classList.toggle("is-active", nonOn);
+      els.filterNonEvolvableBtn.setAttribute("aria-pressed", nonOn ? "true" : "false");
+    }
+  }
+
   if (els.filterEvolvableBtn) {
     els.filterEvolvableBtn.addEventListener("click", function () {
-      state.filterEvolvable = !state.filterEvolvable;
-      var on = state.filterEvolvable;
-      els.filterEvolvableBtn.classList.toggle("is-active", on);
-      els.filterEvolvableBtn.setAttribute("aria-pressed", on ? "true" : "false");
+      var on = !state.filterEvolvable;
+      state.filterEvolvable = on;
+      if (on) state.filterNonEvolvable = false;
+      syncEvolvableFilterChips();
+      state.page = 1;
+      loadCollection(false);
+    });
+  }
+
+  if (els.filterNonEvolvableBtn) {
+    els.filterNonEvolvableBtn.addEventListener("click", function () {
+      var on = !state.filterNonEvolvable;
+      state.filterNonEvolvable = on;
+      if (on) state.filterEvolvable = false;
+      syncEvolvableFilterChips();
       state.page = 1;
       loadCollection(false);
     });
