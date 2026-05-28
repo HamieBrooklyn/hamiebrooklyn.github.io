@@ -82,6 +82,7 @@
     inviteSearchCache: {},
     ws: null,
     wsConnected: false,
+    pollTimer: null,
     selectedAttackerSlot: null,
     selectedItemId: null,
   };
@@ -316,11 +317,7 @@
       var body = await r.json();
       state.duels = body.duels || [];
       renderDuelsList();
-      var qid = duelIdFromQuery();
-      if (qid) {
-        var hit = state.duels.find(function (d) { return Number(d.id) === Number(qid); });
-        if (hit) enterRoom(hit.id);
-      }
+      await openDuelFromQuery();
     } catch (e) {
       if (els.listError) { els.listError.hidden = false; els.listError.textContent = "Could not load duels."; }
     }
@@ -416,6 +413,7 @@
       winner_id: body.winner_id,
       bet: body.bet,
       viewer_id: body.viewer_id,
+      viewer_role: body.viewer_role,
       starting_player_id: body.starting_player_id,
     };
     state.activeState = body.state || {};
@@ -449,27 +447,71 @@
     state.wsConnected = false;
   }
 
+  function isViewerPartner(body) {
+    if (!body) return false;
+    if (body.viewer_role === "partner") return true;
+    var meId = String(body.viewer_id || (state.me && state.me.id) || "");
+    var partnerId = String((body.partner && body.partner.id) || "");
+    return !!(meId && partnerId && meId === partnerId);
+  }
+
   async function acceptIfNeeded(duelId) {
     try {
       var r = await apiFetch("/api/me/duels/" + encodeURIComponent(String(duelId)));
       if (!r.ok) return null;
       var body = await r.json();
-      if (body && body.status === "invited") {
-        var meId = String((body.viewer_id || (state.me && state.me.id) || "") || "");
-        var partnerId = String((body.partner && body.partner.id) || "");
-        if (meId && partnerId && meId === partnerId) {
-          var ar = await apiFetch(
-            "/api/me/duels/" + encodeURIComponent(String(duelId)) + "/accept",
-            { method: "POST" }
-          );
-          if (ar.ok) {
-            body = await ar.json();
-          }
+      if (body && body.status === "invited" && isViewerPartner(body)) {
+        var ar = await apiFetch(
+          "/api/me/duels/" + encodeURIComponent(String(duelId)) + "/accept",
+          { method: "POST" }
+        );
+        var accepted = await ar.json().catch(function () { return null; });
+        if (ar.ok && accepted) return accepted;
+        if (!ar.ok && els.log) {
+          els.log.textContent =
+            (accepted && accepted.message) || "Could not accept duel invite.";
         }
       }
       return body;
     } catch (_) {
       return null;
+    }
+  }
+
+  async function openDuelFromQuery() {
+    var id = duelIdFromQuery();
+    if (!id || !state.authenticated) return;
+    try {
+      var r = await apiFetch("/api/me/duels/" + encodeURIComponent(String(id)));
+      if (!r.ok) return;
+      await enterRoom(id);
+    } catch (_) {
+      /* invite may still appear in list */
+    }
+  }
+
+  function startRoomPolling(duelId) {
+    stopRoomPolling();
+    function tick() {
+      var d = state.activeDuel || {};
+      if (Number(d.id) !== Number(duelId)) {
+        stopRoomPolling();
+        return;
+      }
+      if (d.status !== "invited" && d.status !== "active") {
+        stopRoomPolling();
+        return;
+      }
+      loadDuelSnapshot(duelId);
+    }
+    tick();
+    state.pollTimer = setInterval(tick, state.wsConnected ? 15000 : 3000);
+  }
+
+  function stopRoomPolling() {
+    if (state.pollTimer) {
+      clearInterval(state.pollTimer);
+      state.pollTimer = null;
     }
   }
 
@@ -485,10 +527,12 @@
     if (body) applyDuelPayload(body);
     else await loadDuelSnapshot(duelId);
     connectWs(duelId);
+    startRoomPolling(duelId);
     window.history.replaceState(null, "", "/duel/?duel=" + duelId);
   }
 
   function leaveRoom() {
+    stopRoomPolling();
     disconnectWs();
     state.activeDuel = null;
     state.activeState = null;
@@ -509,7 +553,10 @@
     var ws = new WebSocket(url);
     state.ws = ws;
     state.wsConnected = false;
-    ws.onopen = function () { state.wsConnected = true; };
+    ws.onopen = function () {
+      state.wsConnected = true;
+      if (state.activeDuel && state.activeDuel.id === duelId) startRoomPolling(duelId);
+    };
     ws.onmessage = function (ev) {
       var msg;
       try { msg = JSON.parse(ev.data); } catch (_) { return; }
@@ -520,6 +567,9 @@
         state.activeDuel = Object.assign({}, prev, duel);
         if (prev.viewer_id != null && state.activeDuel.viewer_id == null) {
           state.activeDuel.viewer_id = prev.viewer_id;
+        }
+        if (prev.viewer_role != null && state.activeDuel.viewer_role == null) {
+          state.activeDuel.viewer_role = prev.viewer_role;
         }
         state.activeState = msg.state || {};
         renderRoom();
@@ -580,7 +630,10 @@
         var won = d.winner_id != null && String(d.winner_id) === me;
         els.drawHint.textContent = won ? "You won this duel." : "Duel finished.";
       } else if (invited) {
-        els.drawHint.textContent = "Waiting for opponent to accept the invite…";
+        els.drawHint.textContent =
+          (state.activeDuel && state.activeDuel.viewer_role) === "partner"
+            ? "Accepting invite…"
+            : "Waiting for opponent to accept the invite…";
       } else if (!state.wsConnected) {
         els.drawHint.textContent = "Connecting…";
       } else if (isMyTurn()) {
