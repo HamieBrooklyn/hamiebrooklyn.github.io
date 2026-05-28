@@ -1,0 +1,37 @@
+---
+description: Commit and push PokePon website changes to hamiebrooklyn.github.io when shipping UI features
+globs: "{**/hamiebrooklyn.github.io/**,**/collection/**,**/assets/*.js,**/assets/*.css,**/duel/**}"
+alwaysApply: false
+---
+
+# PokePon GitHub Pages deploy workflow
+
+The live site is **https://pokepon.org**, served from the **`hamiebrooklyn.github.io`** repository (local path is often `~/Documents/GitHub/hamiebrooklyn.github.io`).
+
+## When this applies
+
+After you change website files (HTML, `assets/*.js`, `assets/*.css`, pages under `collection/`, `duel/`, `trades/`, etc.) for a user-facing feature or bugfix:
+
+1. **Commit** in `hamiebrooklyn.github.io` with a clear message (what changed and why).
+2. **Push** to `origin/main` so GitHub Pages updates — do not leave site-only work only on disk.
+3. **Bump cache-busters** on touched assets (e.g. `collection.js?v=N`, `style.css?v=N` in the HTML that loads them).
+
+## Bot API vs site
+
+- **Website repo** → UI, client JS, styles.
+- **`Poke-Cards` bot repo** (`Developer/Poke-Cards` or workspace clone) → `/api/*` handlers; commit and push separately when API changes are part of the same feature.
+- Remind the user to **restart the bot** after API deploys; Pages deploy alone is not enough for backend fixes.
+
+## Unless the user says otherwise
+
+- Do **not** skip push because of the general “only commit when asked” rule — **shipping site work includes push** once the user is iterating on pokepon.org features.
+- Do **not** commit secrets (`.env`, tokens).
+- Do **not** force-push `main`.
+
+## Quick check before closing the task
+
+```bash
+cd ~/Documents/GitHub/hamiebrooklyn.github.io
+git status -sb
+git push origin main   # if ahead of origin
+```
