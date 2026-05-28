@@ -58,8 +58,14 @@
     selectedCardIds: [],
     pollTimer: null,
     listTimer: null,
+    tradeWs: null,
+    tradeWsConnected: false,
     pickerQuery: "",
     pickerFavoritedOnly: false,
+    pickerEvolvable: false,
+    pickerNonEvolvable: false,
+    pickerDuplicates: false,
+    pickerCraftRole: "",
     pickerPage: 1,
     pickerTotal: 0,
     pickerSections: [],
@@ -117,6 +123,10 @@
     theirReadyStatus: document.getElementById("their-ready-status"),
     pickerSearch: document.getElementById("picker-search"),
     pickerFilterFavorited: document.getElementById("picker-filter-favorited"),
+    pickerFilterEvolvable: document.getElementById("picker-filter-evolvable"),
+    pickerFilterNonEvolvable: document.getElementById("picker-filter-non-evolvable"),
+    pickerFilterDuplicates: document.getElementById("picker-filter-duplicates"),
+    tradeLiveHint: document.getElementById("trade-live-hint"),
     pickerResults: document.getElementById("picker-results"),
     pickerEvoSections: document.getElementById("picker-evo-sections"),
     sidebarToggle: document.getElementById("sidebar-toggle"),
@@ -933,11 +943,231 @@
     state.selectedCardIds = [];
     await loadTradeState(id);
     await loadMyCollection();
+    connectTradeWs(id);
     startPolling(id);
+  }
+
+  var CRAFT_TRAINER_SUBTYPES = ["Supporter", "Stadium"];
+
+  function subtypeList(card) {
+    var subs = card && card.tcg_subtypes;
+    return Array.isArray(subs) ? subs : [];
+  }
+
+  function hasSubtype(subs, label) {
+    var want = label.toLowerCase();
+    return subs.some(function (s) {
+      return String(s).toLowerCase() === want;
+    });
+  }
+
+  function nameLooksLikeItem(name) {
+    var n = String(name || "").toLowerCase();
+    return /\b(energy|ball|potion|medicine|ticket|fossil|stone|orb|capsule|case|box|pass|map|rod|scope|finder|charm|bell|mulch|compost|core|module|part|fragment|shard|dust|incense|lure|module|patch|scarf|band|coat|belt|glasses|helmet|mask|plate|rock|scale|shell|fang|claw|wing|feather|leaf|root|mushroom|honey|berry|sweet|sour|dry|bitter|spicy|fresh|big|tiny|pretty|strange|nugget|pearl|stardust|star\s*piece|thunder|fire|water|leaf|moon|sun|dawn|dusk|shiny|oval|ever|kings|metal|heart|soul|plume|reveal|escape|switch|focus|heavy|float|light|quick|smooth|repeat|exp|lucky|master|safari|net|dive|nest|repeat|timer|luxury|premier|heal|hyper|max|full|revive|ether|elixir|antidote|awakening|burn|ice|paralyze|full\s*heal|lava|old\s*amber|helix|dome|root|claw)\b/.test(n);
+  }
+
+  function effectiveCraftRole(item) {
+    var role = item.craft_role;
+    var card = item.card || {};
+    var st = (card.supertype || "").trim();
+    var subs = subtypeList(card);
+    if (st === "Energy") return "item";
+    if (st !== "Trainer") return role || "other";
+    if (hasSubtype(subs, "Item")) return "item";
+    if (hasSubtype(subs, "Pokémon Tool")) return "item";
+    if (CRAFT_TRAINER_SUBTYPES.some(function (label) {
+      return hasSubtype(subs, label);
+    })) {
+      return "craft_trainer";
+    }
+    if (nameLooksLikeItem(card.name)) return "item";
+    if (role === "item") return "item";
+    return "other";
+  }
+
+  function filterPickerRowsForCraftChip(rows) {
+    var role = state.pickerCraftRole;
+    if (!role) return rows;
+    if (role === "item") {
+      return rows.filter(function (it) {
+        return effectiveCraftRole(it) === "item";
+      });
+    }
+    if (role === "craft_trainer") {
+      return rows.filter(function (it) {
+        return effectiveCraftRole(it) === "craft_trainer";
+      });
+    }
+    return rows;
+  }
+
+  function appendPickerCollectionQuery(qs) {
+    if (state.pickerQuery) qs.set("q", state.pickerQuery);
+    if (state.pickerFavoritedOnly) qs.set("favorited", "1");
+    if (state.pickerEvolvable) qs.set("evolvable", "1");
+    if (state.pickerNonEvolvable) qs.set("non_evolvable", "1");
+    if (state.pickerDuplicates) qs.set("duplicates", "1");
+    if (state.pickerCraftRole === "craft_trainer") {
+      qs.set("supertype", "Trainer");
+    } else if (state.pickerCraftRole) {
+      qs.set("craft_role", state.pickerCraftRole);
+    }
+  }
+
+  function syncPickerEvolvableChips() {
+    if (els.pickerFilterEvolvable) {
+      els.pickerFilterEvolvable.classList.toggle("is-active", !!state.pickerEvolvable);
+      els.pickerFilterEvolvable.setAttribute("aria-pressed", state.pickerEvolvable ? "true" : "false");
+    }
+    if (els.pickerFilterNonEvolvable) {
+      els.pickerFilterNonEvolvable.classList.toggle("is-active", !!state.pickerNonEvolvable);
+      els.pickerFilterNonEvolvable.setAttribute("aria-pressed", state.pickerNonEvolvable ? "true" : "false");
+    }
+  }
+
+  function updateTradeLiveHint() {
+    if (!els.tradeLiveHint) return;
+    if (!state.activeTrade || state.activeTrade.status !== "active") {
+      els.tradeLiveHint.hidden = true;
+      return;
+    }
+    els.tradeLiveHint.hidden = false;
+    if (state.tradeWsConnected) {
+      els.tradeLiveHint.textContent = "Live updates on — changes appear without refreshing.";
+      els.tradeLiveHint.classList.add("is-live");
+    } else {
+      els.tradeLiveHint.textContent = "Reconnecting… (backup sync every few seconds)";
+      els.tradeLiveHint.classList.remove("is-live");
+    }
+  }
+
+  function wsUrlForTrade(tradeId) {
+    var base = API_BASE || "";
+    if (/^https:/i.test(base)) base = base.replace(/^https:/i, "wss:");
+    else if (/^http:/i.test(base)) base = base.replace(/^http:/i, "ws:");
+    var url = base + "/ws/trades/" + encodeURIComponent(String(tradeId));
+    var tok = readSessionToken();
+    if (tok) url += (url.indexOf("?") >= 0 ? "&" : "?") + "session=" + encodeURIComponent(tok);
+    return url;
+  }
+
+  function disconnectTradeWs() {
+    if (state.tradeWs) {
+      try {
+        state.tradeWs.onopen = null;
+        state.tradeWs.onmessage = null;
+        state.tradeWs.onerror = null;
+        state.tradeWs.onclose = null;
+        state.tradeWs.close();
+      } catch (_) {}
+    }
+    state.tradeWs = null;
+    state.tradeWsConnected = false;
+    updateTradeLiveHint();
+  }
+
+  function connectTradeWs(tradeId) {
+    disconnectTradeWs();
+    var ws = new WebSocket(wsUrlForTrade(tradeId));
+    state.tradeWs = ws;
+    ws.onopen = function () {
+      state.tradeWsConnected = true;
+      updateTradeLiveHint();
+      if (state.activeTrade && state.activeTrade.id) {
+        startPolling(state.activeTrade.id);
+      }
+    };
+    ws.onmessage = function (ev) {
+      var msg;
+      try {
+        msg = JSON.parse(ev.data);
+      } catch (_) {
+        return;
+      }
+      if (msg && msg.type === "trade" && msg.trade) {
+        applyTradePayload(msg.trade);
+      }
+    };
+    ws.onclose = function () {
+      state.tradeWsConnected = false;
+      updateTradeLiveHint();
+    };
+    ws.onerror = function () {
+      state.tradeWsConnected = false;
+      updateTradeLiveHint();
+    };
+  }
+
+  function applyTradePayload(t) {
+    if (!t) return;
+    state.activeTrade = t;
+
+    if (t.status === "completed") {
+      stopPolling();
+      disconnectTradeWs();
+      if (els.roomMsg) {
+        els.roomMsg.innerHTML =
+          '<div class="trade-msg-ok" style="font-size:1.1rem;font-weight:600">Trade completed! Check your collection.</div>';
+      }
+      els.btnReady.hidden = true;
+      els.btnCancelTrade.hidden = true;
+      updateTradeLiveHint();
+      return;
+    }
+    if (t.status !== "active") {
+      stopPolling();
+      disconnectTradeWs();
+      if (els.roomMsg) {
+        els.roomMsg.innerHTML =
+          '<div class="trade-msg-err">Trade is no longer active (' + t.status + ").</div>";
+      }
+      els.btnReady.hidden = true;
+      els.btnCancelTrade.hidden = true;
+      updateTradeLiveHint();
+      return;
+    }
+
+    var other = t.viewer_role === "initiator" ? t.partner : t.initiator;
+    if (els.roomTitle) els.roomTitle.textContent = "Trade room";
+    if (els.roomPartner) {
+      els.roomPartner.innerHTML = "";
+      els.roomPartner.appendChild(buildUserChip(other));
+    }
+
+    var mySide = t.viewer_role === "initiator" ? t.initiator_side : t.partner_side;
+    var theirSide = t.viewer_role === "initiator" ? t.partner_side : t.initiator_side;
+
+    renderSideCards(els.sideMineCards, mySide.cards, true);
+    renderSideCards(els.sideTheirsCards, theirSide.cards, false);
+
+    state.selectedCardIds = mySide.cards.map(function (c) {
+      return c.instance_id;
+    });
+
+    syncCurrencyInputsFromServer(mySide);
+    if (t.viewer_balance) renderViewerBalance(t.viewer_balance);
+    els.theirPd.textContent = fmtPd(theirSide.pokedollars);
+    els.theirCr.textContent = fmtCr(theirSide.crystals);
+
+    var myReady = mySide.ready;
+    els.btnReady.textContent = myReady ? "Unready" : "Ready";
+    els.btnReady.classList.toggle("is-ready", myReady);
+    els.btnReady.hidden = false;
+    els.btnCancelTrade.hidden = false;
+
+    if (theirSide.ready) {
+      els.theirReadyStatus.innerHTML = '<span class="trade-ready-badge is-ready">Ready</span>';
+    } else {
+      els.theirReadyStatus.innerHTML = '<span class="trade-ready-badge not-ready">Not ready</span>';
+    }
+
+    renderPicker();
+    updateTradeLiveHint();
   }
 
   function leaveRoom() {
     document.body.classList.remove("trade-room-active");
+    disconnectTradeWs();
     stopPolling();
     clearCurrencySaveTimer();
     state.currencyDirty = false;
@@ -952,7 +1182,11 @@
 
   function startPolling(id) {
     stopPolling();
-    state.pollTimer = setInterval(function () { loadTradeState(id); }, 3000);
+    function tick() {
+      loadTradeState(id);
+    }
+    tick();
+    state.pollTimer = setInterval(tick, state.tradeWsConnected ? 15000 : 3000);
   }
 
   function stopPolling() {
@@ -962,60 +1196,17 @@
   async function loadTradeState(id) {
     try {
       var r = await apiFetch("/api/me/trades/" + id);
-      if (!r.ok) { var j = await r.json(); throw new Error(j.message || j.error || "not found"); }
+      if (!r.ok) {
+        var j = await r.json();
+        throw new Error(j.message || j.error || "not found");
+      }
       var t = await r.json();
-      state.activeTrade = t;
-
-      if (t.status === "completed") {
-        stopPolling();
-        if (els.roomMsg) els.roomMsg.innerHTML = '<div class="trade-msg-ok" style="font-size:1.1rem;font-weight:600">Trade completed! Check your collection.</div>';
-        els.btnReady.hidden = true;
-        els.btnCancelTrade.hidden = true;
-        return;
-      }
-      if (t.status !== "active") {
-        stopPolling();
-        if (els.roomMsg) els.roomMsg.innerHTML = '<div class="trade-msg-err">Trade is no longer active (' + t.status + ').</div>';
-        els.btnReady.hidden = true;
-        els.btnCancelTrade.hidden = true;
-        return;
-      }
-
-      var other = t.viewer_role === "initiator" ? t.partner : t.initiator;
-      if (els.roomTitle) els.roomTitle.textContent = "Trade room";
-      if (els.roomPartner) {
-        els.roomPartner.innerHTML = "";
-        els.roomPartner.appendChild(buildUserChip(other));
-      }
-
-      var mySide = t.viewer_role === "initiator" ? t.initiator_side : t.partner_side;
-      var theirSide = t.viewer_role === "initiator" ? t.partner_side : t.initiator_side;
-
-      renderSideCards(els.sideMineCards, mySide.cards, true);
-      renderSideCards(els.sideTheirsCards, theirSide.cards, false);
-
-      state.selectedCardIds = mySide.cards.map(function (c) { return c.instance_id; });
-
-      syncCurrencyInputsFromServer(mySide);
-      if (t.viewer_balance) renderViewerBalance(t.viewer_balance);
-      els.theirPd.textContent = fmtPd(theirSide.pokedollars);
-      els.theirCr.textContent = fmtCr(theirSide.crystals);
-
-      var myReady = mySide.ready;
-      els.btnReady.textContent = myReady ? "Unready" : "Ready";
-      els.btnReady.classList.toggle("is-ready", myReady);
-      els.btnReady.hidden = false;
-      els.btnCancelTrade.hidden = false;
-
-      if (theirSide.ready) {
-        els.theirReadyStatus.innerHTML = '<span class="trade-ready-badge is-ready">Ready</span>';
-      } else {
-        els.theirReadyStatus.innerHTML = '<span class="trade-ready-badge not-ready">Not ready</span>';
-      }
-
-      renderPicker();
+      applyTradePayload(t);
     } catch (e) {
-      if (els.roomMsg) els.roomMsg.innerHTML = '<div class="trade-msg-err">' + String(e.message || e) + "</div>";
+      if (els.roomMsg) {
+        els.roomMsg.innerHTML =
+          '<div class="trade-msg-err">' + String(e.message || e) + "</div>";
+      }
     }
   }
 
@@ -1121,8 +1312,7 @@
     qs.set("page", String(state.pickerPage));
     qs.set("page_size", String(PICKER_PAGE_SIZE));
     qs.set("sort", "newest");
-    if (state.pickerQuery) qs.set("q", state.pickerQuery);
-    if (state.pickerFavoritedOnly) qs.set("favorited", "1");
+    appendPickerCollectionQuery(qs);
     return "/api/me/collection?" + qs.toString();
   }
 
@@ -1132,6 +1322,7 @@
     qs.set("sort", "newest");
     qs.set("q", state.pickerQuery);
     if (state.pickerFavoritedOnly) qs.set("favorited", "1");
+    if (state.pickerDuplicates) qs.set("duplicates", "1");
     return "/api/me/collection/evolution-sections?" + qs.toString();
   }
 
@@ -1185,6 +1376,8 @@
           image_small_url: c.card ? c.card.image_small_url : null,
           is_favorite: !!c.is_favorite,
           blocked_reason: c.sell && c.sell.blocked_reason ? c.sell.blocked_reason : null,
+          craft_role: c.craft_role,
+          card: c.card,
         };
       });
       state.pickerTotal = Number(j.total) || 0;
@@ -1303,9 +1496,14 @@
       renderPickerEvoSections();
       return;
     }
-    state.myCards.forEach(function (c) {
+    var visible = filterPickerRowsForCraftChip(state.myCards);
+    visible.forEach(function (c) {
       appendPickerCard(els.pickerResults, c);
     });
+    if (!visible.length && state.myCards.length) {
+      els.pickerResults.innerHTML =
+        '<div class="trade-muted">No cards match the selected type filter on this page.</div>';
+    }
     var totalPages = Math.max(1, Math.ceil(state.pickerTotal / PICKER_PAGE_SIZE));
     if (totalPages > 1) {
       var nav = document.createElement("div");
@@ -1390,6 +1588,50 @@
         loadMyCollection();
       });
     }
+    if (els.pickerFilterEvolvable) {
+      els.pickerFilterEvolvable.addEventListener("click", function () {
+        state.pickerEvolvable = !state.pickerEvolvable;
+        if (state.pickerEvolvable) state.pickerNonEvolvable = false;
+        syncPickerEvolvableChips();
+        state.pickerPage = 1;
+        loadMyCollection();
+      });
+    }
+    if (els.pickerFilterNonEvolvable) {
+      els.pickerFilterNonEvolvable.addEventListener("click", function () {
+        state.pickerNonEvolvable = !state.pickerNonEvolvable;
+        if (state.pickerNonEvolvable) state.pickerEvolvable = false;
+        syncPickerEvolvableChips();
+        state.pickerPage = 1;
+        loadMyCollection();
+      });
+    }
+    if (els.pickerFilterDuplicates) {
+      els.pickerFilterDuplicates.addEventListener("click", function () {
+        state.pickerDuplicates = !state.pickerDuplicates;
+        var on = state.pickerDuplicates;
+        els.pickerFilterDuplicates.classList.toggle("is-active", on);
+        els.pickerFilterDuplicates.setAttribute("aria-pressed", on ? "true" : "false");
+        state.pickerPage = 1;
+        loadMyCollection();
+      });
+    }
+    var pickerCraftChips = Array.prototype.slice.call(
+      document.querySelectorAll(".chip[data-picker-craft-role]")
+    );
+    pickerCraftChips.forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        var role = chip.getAttribute("data-picker-craft-role") || "";
+        state.pickerCraftRole = role;
+        pickerCraftChips.forEach(function (c) {
+          var on = (c.getAttribute("data-picker-craft-role") || "") === role;
+          c.classList.toggle("is-active", on);
+          c.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        state.pickerPage = 1;
+        loadMyCollection();
+      });
+    });
 
     document.addEventListener("click", function (e) {
       var t = e.target;

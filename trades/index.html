@@ -176,6 +176,7 @@
             <button type="button" class="btn btn-ghost" id="btn-cancel-trade">Cancel trade</button>
           </div>
         </div>
+        <p class="trade-live-hint" id="trade-live-hint" hidden aria-live="polite">Connecting live updates…</p>
         <div id="trade-room-msg"></div>
 
         <div class="trade-offers-compare" aria-label="Trade offers">
@@ -219,8 +220,19 @@
         <details class="trade-picker-panel" id="trade-picker-panel" open>
           <summary class="trade-picker-summary">Add cards from your collection</summary>
           <div class="trade-card-picker">
-            <input id="picker-search" type="search" placeholder="Search your cards…" aria-label="Search your cards" />
-            <button type="button" class="chip chip-filter" id="picker-filter-favorited" aria-pressed="false">Favorites</button>
+            <div class="picker-toolbar">
+              <input id="picker-search" type="search" placeholder="Search by name or type…" aria-label="Search your cards" />
+              <div class="picker-filters" role="group" aria-label="Collection filters">
+                <button type="button" class="chip chip-filter" id="picker-filter-favorited" aria-pressed="false">Favorites</button>
+                <button type="button" class="chip chip-filter" id="picker-filter-evolvable" aria-pressed="false">Evolvable</button>
+                <button type="button" class="chip chip-filter" id="picker-filter-non-evolvable" aria-pressed="false">Non evolvable</button>
+                <button type="button" class="chip chip-filter" id="picker-filter-duplicates" aria-pressed="false">Duplicates</button>
+                <button type="button" class="chip chip-filter" data-picker-craft-role="" aria-pressed="true">All</button>
+                <button type="button" class="chip chip-filter" data-picker-craft-role="pokemon" aria-pressed="false">Pokémon</button>
+                <button type="button" class="chip chip-filter" data-picker-craft-role="item" aria-pressed="false">Items &amp; Energy</button>
+                <button type="button" class="chip chip-filter" data-picker-craft-role="craft_trainer" aria-pressed="false">Trainers</button>
+              </div>
+            </div>
             <div id="picker-results" class="picker-grid"></div>
             <div id="picker-evo-sections" class="picker-evo-sections" hidden aria-live="polite"></div>
           </div>
@@ -331,6 +343,6 @@
   </script>
   <script src="/assets/app-shell.js?v=8" defer></script>
   <script src="/assets/evo-focus.js?v=5" defer></script>
-  <script src="/assets/trades.js?v=19" defer></script>
+  <script src="/assets/trades.js?v=20" defer></script>
 </body>
 </html>

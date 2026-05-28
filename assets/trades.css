@@ -322,6 +322,39 @@ body.trade-room-active .app-main {
   padding: 0.85rem 1rem 1rem;
 }
 
+.picker-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.picker-toolbar input[type="search"] {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.picker-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.trade-live-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0 0 0.5rem;
+}
+
+.trade-live-hint.is-live {
+  color: #7eb6ff;
+}
+
 /* Legacy side blocks (picker moved out) */
 .trade-room-grid {
   display: grid;
