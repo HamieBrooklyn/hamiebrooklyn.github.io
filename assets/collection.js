@@ -831,6 +831,15 @@
           renderSellUi(d.card);
           renderEvolutionUi(d.card);
           renderGradeUi(d.card);
+          if (
+            state.bulkMode &&
+            d.card.is_favorite &&
+            state.bulkSelected &&
+            state.bulkSelected[d.card.public_id]
+          ) {
+            delete state.bulkSelected[d.card.public_id];
+            scheduleBulkQuote();
+          }
           loadCollection(false);
           return;
         }
@@ -968,6 +977,7 @@
 
   function isItemSellable(item) {
     if (!item || !item.public_id) return false;
+    if (item.is_favorite) return false;
     var sell = item.sell;
     if (!sell) return true;
     return sell.can_sell !== false;
@@ -1128,8 +1138,9 @@
     var pid = item.public_id;
     if (!pid) return;
     if (!isItemSellable(item)) {
-      var reason =
-        (item.sell && item.sell.blocked_reason) || "This copy cannot be sold.";
+      var reason = item.is_favorite
+        ? "Unfavorite this copy before selling it."
+        : (item.sell && item.sell.blocked_reason) || "This copy cannot be sold.";
       if (els.bulkHint) els.bulkHint.textContent = String(reason).replace(/\*\*/g, "");
       return;
     }
