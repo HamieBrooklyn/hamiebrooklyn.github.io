@@ -1415,10 +1415,26 @@ main {
   background: rgba(255, 255, 255, 0.12);
 }
 
+.collection-bulk-sell-btn {
+  flex: 0 0 auto;
+  align-self: center;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  padding: 0.55rem 1rem;
+  border-radius: 12px;
+}
+
+.collection-bulk-sell-btn.is-active {
+  border-color: rgba(91, 140, 255, 0.75);
+  color: var(--text);
+  background: rgba(91, 140, 255, 0.14);
+}
+
 .toolbar-sort {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
+  flex: 1 1 100%;
 }
 
 .chip {

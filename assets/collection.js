@@ -136,7 +136,7 @@
     filterFavoritedBtn: document.getElementById("filter-favorited"),
     filterEvolvableBtn: document.getElementById("filter-evolvable"),
     filterDuplicatesBtn: document.getElementById("filter-duplicates"),
-    filterBulkSellBtn: document.getElementById("filter-bulk-sell"),
+    btnBulkSell: document.getElementById("btn-bulk-sell"),
     status: document.getElementById("status"),
     grid: document.getElementById("card-grid"),
     evoSections: document.getElementById("evo-sections"),
@@ -939,11 +939,12 @@
     return wrap;
   }
 
-  function syncBulkSellChip() {
-    if (!els.filterBulkSellBtn) return;
+  function syncBulkSellButton() {
+    if (!els.btnBulkSell) return;
     var on = !!state.bulkMode;
-    els.filterBulkSellBtn.classList.toggle("is-active", on);
-    els.filterBulkSellBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    els.btnBulkSell.classList.toggle("is-active", on);
+    els.btnBulkSell.setAttribute("aria-pressed", on ? "true" : "false");
+    els.btnBulkSell.textContent = on ? "Exit bulk sell" : "Bulk sell";
   }
 
   function forEachVisibleItem(fn) {
@@ -982,7 +983,7 @@
 
   function setBulkMode(on) {
     state.bulkMode = !!on;
-    syncBulkSellChip();
+    syncBulkSellButton();
     if (!state.bulkMode) {
       state.bulkSelected = {};
       state.bulkQuote = null;
@@ -1890,8 +1891,8 @@
     });
   }
 
-  if (els.filterBulkSellBtn) {
-    els.filterBulkSellBtn.addEventListener("click", function () {
+  if (els.btnBulkSell) {
+    els.btnBulkSell.addEventListener("click", function () {
       setBulkMode(!state.bulkMode);
     });
   }
