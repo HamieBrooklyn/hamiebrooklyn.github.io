@@ -22,9 +22,19 @@ After you change website files (HTML, `assets/*.js`, `assets/*.css`, pages under
 - **`Poke-Cards` bot repo** (`~/Developer/Poke-Cards` or workspace clone) → `/api/*` handlers; commit and push separately when API changes are part of the same feature.
 - Pages deploy alone is **not** enough when the bot API changed.
 
-## Restart background services (required for API changes)
+## Do not stop services while editing
 
-The bot and tunnel usually run **in the background** on the Mac host. After pulling or editing bot code, **you must restart them yourself** — do not assume a code push reloads the running process.
+The bot, Cloudflare tunnel, and other background terminals are **production-like dev infrastructure**. While implementing a feature:
+
+- **Do not** run `stop-bot.sh`, `pkill` the bot/tunnel, or otherwise shut down service terminals **at the start** of work just because you are about to edit code.
+- **Do not** stop services “to be safe” before making website or API changes — leave them running unless the user asks to stop them.
+- **Only restart** (stop → start) when changes are **ready for testing** or when shipping (after commit/push), so the running process loads new code.
+
+If a service is already down, starting it is fine; the rule is about not unnecessarily tearing down working background processes mid-task.
+
+## Restart background services (when ready to test or ship)
+
+After bot/API edits are complete and you need the live process to pick them up:
 
 From `~/Developer/Poke-Cards` (or the active bot clone):
 
@@ -37,7 +47,7 @@ sleep 2
 nohup bash scripts/run-bot.sh >> logs/bot.log 2>&1 &
 
 # 3. Confirm API is up
-curl -s http://localhost:8080/api/health
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/events
 ```
 
 If **https://api.pokepon.org** still returns 502/Bad Gateway, restart the Cloudflare tunnel (forwards to localhost:8080):
@@ -46,15 +56,16 @@ If **https://api.pokepon.org** still returns 502/Bad Gateway, restart the Cloudf
 pkill -f "cloudflared tunnel run pokepon-api" 2>/dev/null || true
 sleep 1
 nohup cloudflared tunnel run pokepon-api >> logs/cloudflared.log 2>&1 &
-curl -s https://api.pokepon.org/api/health
+curl -s -o /dev/null -w "%{http_code}\n" https://api.pokepon.org/api/events
 ```
 
 Other long-running services (only if relevant to the change):
 
 - **GitHub Actions self-hosted runner** — restart only when CI/runner config changed, not for normal bot API edits.
+- **GitHub Pages** — no local server to restart; push to `main` and hard-refresh the site.
 - See `docs/MAC-STARTUP.md` in the bot repo for full stack checks (`pgrep -lf poke_pon_bot`, `pgrep -lf cloudflared`).
 
-Treat **restart + health check** as part of “done” for any task that touches `poke_pon_bot/`.
+Treat **restart + health check** as part of “done” for any task that touches `poke_pon_bot/`, not as a first step before coding.
 
 ## Unless the user says otherwise
 
@@ -69,8 +80,8 @@ cd ~/Documents/GitHub/hamiebrooklyn.github.io
 git status -sb
 git push origin main   # if ahead of origin
 
-# If bot API changed:
+# If bot API changed (after edits are ready — do not stop services at the start):
 cd ~/Developer/Poke-Cards
 bash scripts/stop-bot.sh && sleep 2 && nohup bash scripts/run-bot.sh >> logs/bot.log 2>&1 &
-curl -s http://localhost:8080/api/health
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/events
 ```
