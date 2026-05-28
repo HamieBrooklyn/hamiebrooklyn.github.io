@@ -179,6 +179,12 @@
     modalEvoMsg: document.getElementById("modal-evo-msg"),
     sidebarToggle: document.getElementById("sidebar-toggle"),
     sidebar: document.getElementById("sidebar"),
+    bulkBar: document.getElementById("bulk-sell-bar"),
+    bulkCount: document.getElementById("bulk-sell-count"),
+    bulkTotal: document.getElementById("bulk-sell-total"),
+    bulkHint: document.getElementById("bulk-sell-hint"),
+    bulkCancel: document.getElementById("bulk-sell-cancel"),
+    bulkNext: document.getElementById("bulk-sell-next"),
   };
 
   var state = {
@@ -206,6 +212,11 @@
     gradeInFlight: false,
     modalSlabObjectUrl: null,
     tileSlabUrls: {},
+    bulkMode: false,
+    bulkSelected: {},
+    bulkQuoteInFlight: null,
+    bulkQuoteDebounce: 0,
+    bulkQuote: null,
   };
 
   var modalHistory = { card: false, evo: false };
@@ -828,6 +839,9 @@
 
     var wrap = document.createElement("div");
     wrap.className = "card-tile-wrap";
+    if (state.bulkMode && state.bulkSelected && state.bulkSelected[publicId]) {
+      wrap.classList.add("is-bulk-selected");
+    }
 
     var btn = document.createElement("button");
     btn.type = "button";
@@ -873,8 +887,20 @@
     if (meter) btn.appendChild(meter);
     btn.appendChild(statsRow);
     btn.addEventListener("click", function () {
+      if (state.bulkMode) {
+        toggleBulkSelected(item);
+        return;
+      }
       openModal(item);
     });
+
+    if (state.bulkMode) {
+      var chk = document.createElement("span");
+      chk.className =
+        "card-tile-bulk-check" + (state.bulkSelected[publicId] ? " is-on" : "");
+      chk.textContent = state.bulkSelected[publicId] ? "✓" : "+";
+      wrap.appendChild(chk);
+    }
 
     if (item.is_favorite) {
       var favBadge = document.createElement("span");
@@ -905,6 +931,157 @@
     wrap.appendChild(btn);
     wrap.appendChild(copyBtn);
     return wrap;
+  }
+
+  function setBulkMode(on) {
+    state.bulkMode = !!on;
+    if (!state.bulkMode) {
+      state.bulkSelected = {};
+      state.bulkQuote = null;
+      if (els.bulkBar) els.bulkBar.hidden = true;
+    } else {
+      if (els.bulkBar) els.bulkBar.hidden = false;
+      renderBulkBar();
+    }
+    renderCollection();
+  }
+
+  function bulkSelectedIds() {
+    var out = [];
+    var m = state.bulkSelected || {};
+    Object.keys(m).forEach(function (k) {
+      if (m[k]) out.push(k);
+    });
+    return out;
+  }
+
+  function renderBulkBar() {
+    if (!els.bulkBar) return;
+    if (!state.bulkMode) {
+      els.bulkBar.hidden = true;
+      return;
+    }
+    els.bulkBar.hidden = false;
+    var ids = bulkSelectedIds();
+    if (els.bulkCount) {
+      els.bulkCount.textContent = ids.length + " selected";
+    }
+    var total = (state.bulkQuote && state.bulkQuote.total_pokedollars) || 0;
+    if (els.bulkTotal) els.bulkTotal.textContent = "Total: " + fmtPokedollars(total);
+    var hint = "";
+    if (!ids.length) hint = "Select cards to sell (Shift+B to toggle).";
+    else if (state.bulkQuote && state.bulkQuote.confirm_required) hint = "High tier cards selected — confirmation required.";
+    else hint = "Review and confirm before selling.";
+    if (els.bulkHint) els.bulkHint.textContent = hint;
+    if (els.bulkNext) els.bulkNext.disabled = ids.length === 0 || !state.bulkQuote;
+  }
+
+  function scheduleBulkQuote() {
+    if (!state.bulkMode) return;
+    if (state.bulkQuoteDebounce) clearTimeout(state.bulkQuoteDebounce);
+    state.bulkQuoteDebounce = setTimeout(function () {
+      state.bulkQuoteDebounce = 0;
+      loadBulkQuote();
+    }, 150);
+  }
+
+  function loadBulkQuote() {
+    var ids = bulkSelectedIds();
+    state.bulkQuote = null;
+    renderBulkBar();
+    if (!ids.length) return;
+    if (state.bulkQuoteInFlight) state.bulkQuoteInFlight.abort();
+    var ctrl = new AbortController();
+    state.bulkQuoteInFlight = ctrl;
+    apiFetch("/api/me/cards/bulk-sell/quote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ public_ids: ids }),
+      signal: ctrl.signal,
+    })
+      .then(function (r) {
+        return r
+          .json()
+          .catch(function () {
+            return {};
+          })
+          .then(function (d) {
+            return { ok: r.ok, status: r.status, data: d };
+          });
+      })
+      .then(function (res) {
+        if (state.bulkQuoteInFlight !== ctrl) return;
+        state.bulkQuoteInFlight = null;
+        if (!res.ok) return;
+        state.bulkQuote = res.data || null;
+        renderBulkBar();
+      })
+      .catch(function (err) {
+        if (err && err.name === "AbortError") return;
+        if (state.bulkQuoteInFlight === ctrl) state.bulkQuoteInFlight = null;
+      });
+  }
+
+  function toggleBulkSelected(item) {
+    if (!item) return;
+    var pid = item.public_id;
+    if (!pid) return;
+    if (!state.bulkSelected) state.bulkSelected = {};
+    state.bulkSelected[pid] = !state.bulkSelected[pid];
+    if (!state.bulkSelected[pid]) delete state.bulkSelected[pid];
+    scheduleBulkQuote();
+    renderCollection();
+  }
+
+  function bulkSellConfirmText(ids, quote) {
+    var total = (quote && quote.total_pokedollars) || 0;
+    var warn = quote && quote.confirm_required ? "\n\nSome selected cards are high tier." : "";
+    return "Sell " + ids.length + " card" + (ids.length === 1 ? "" : "s") + " for " + fmtPokedollars(total) + "?" + warn;
+  }
+
+  function commitBulkSell() {
+    var ids = bulkSelectedIds();
+    if (!ids.length || !state.bulkQuote) return;
+    var items = [];
+    var itemMap = {};
+    (state.bulkQuote.items || []).forEach(function (it) {
+      if (it && it.public_id) itemMap[it.public_id] = it;
+    });
+    ids.forEach(function (pid) {
+      var q = itemMap[pid] && itemMap[pid].quote_pokedollars;
+      if (q == null) return;
+      items.push({ public_id: pid, expected_payout: q });
+    });
+    if (!items.length) return;
+    var confirmRare = !!(state.bulkQuote && state.bulkQuote.confirm_required);
+    apiFetch("/api/me/cards/bulk-sell", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items: items, confirm_rare: confirmRare }),
+    })
+      .then(function (r) {
+        return r
+          .json()
+          .catch(function () {
+            return {};
+          })
+          .then(function (d) {
+            return { ok: r.ok, status: r.status, data: d };
+          });
+      })
+      .then(function (res) {
+        var d = res.data || {};
+        if (res.ok && d.ok) {
+          if (window.PokePonApp && window.PokePonApp.notifyBalancesChanged) {
+            window.PokePonApp.notifyBalancesChanged();
+          }
+          setBulkMode(false);
+          loadCollection(false);
+          return;
+        }
+        scheduleBulkQuote();
+      })
+      .catch(function () {});
   }
 
   function isEvoFocusOpen() {
@@ -1612,6 +1789,29 @@
       els.filterDuplicatesBtn.setAttribute("aria-pressed", on ? "true" : "false");
       state.page = 1;
       loadCollection(false);
+    });
+  }
+
+  // Bulk sell mode (no chip yet): Shift+B to toggle.
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "b" && e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+      if (!els.modal.hidden) return;
+      setBulkMode(!state.bulkMode);
+    }
+  });
+
+  if (els.bulkCancel) {
+    els.bulkCancel.addEventListener("click", function () {
+      setBulkMode(false);
+    });
+  }
+  if (els.bulkNext) {
+    els.bulkNext.addEventListener("click", function () {
+      var ids = bulkSelectedIds();
+      if (!ids.length || !state.bulkQuote) return;
+      var ok = window.confirm(bulkSellConfirmText(ids, state.bulkQuote));
+      if (!ok) return;
+      commitBulkSell();
     });
   }
 

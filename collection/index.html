@@ -173,6 +173,18 @@
 
       <section class="card-grid" id="card-grid" aria-live="polite"></section>
 
+      <section class="bulk-sell-bar" id="bulk-sell-bar" hidden aria-label="Bulk sell controls">
+        <div class="bulk-sell-left">
+          <strong id="bulk-sell-count">0 selected</strong>
+          <span class="bulk-sell-total" id="bulk-sell-total">Total: ₽0</span>
+          <span class="bulk-sell-hint" id="bulk-sell-hint"></span>
+        </div>
+        <div class="bulk-sell-actions">
+          <button class="btn btn-ghost btn-small" type="button" id="bulk-sell-cancel">Cancel</button>
+          <button class="btn btn-primary btn-small" type="button" id="bulk-sell-next" disabled>Sell…</button>
+        </div>
+      </section>
+
       <div id="evo-sections" class="collection-evo-sections" hidden aria-live="polite"></div>
 
       <nav class="pager" id="pager" hidden aria-label="Pagination">
@@ -377,6 +389,6 @@
   <script src="/assets/site-links.js?v=1" defer></script>
   <script src="/assets/app-shell.js?v=3" defer></script>
   <script src="/assets/evo-focus.js?v=5" defer></script>
-  <script src="/assets/collection.js?v=26" defer></script>
+  <script src="/assets/collection.js?v=28" defer></script>
 </body>
 </html>
