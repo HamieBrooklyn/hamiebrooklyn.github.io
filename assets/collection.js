@@ -136,6 +136,7 @@
     filterFavoritedBtn: document.getElementById("filter-favorited"),
     filterEvolvableBtn: document.getElementById("filter-evolvable"),
     filterDuplicatesBtn: document.getElementById("filter-duplicates"),
+    filterBulkSellBtn: document.getElementById("filter-bulk-sell"),
     status: document.getElementById("status"),
     grid: document.getElementById("card-grid"),
     evoSections: document.getElementById("evo-sections"),
@@ -185,6 +186,8 @@
     bulkHint: document.getElementById("bulk-sell-hint"),
     bulkCancel: document.getElementById("bulk-sell-cancel"),
     bulkNext: document.getElementById("bulk-sell-next"),
+    bulkSelectPage: document.getElementById("bulk-select-page"),
+    bulkClearSelection: document.getElementById("bulk-clear-selection"),
   };
 
   var state = {
@@ -842,6 +845,9 @@
     if (state.bulkMode && state.bulkSelected && state.bulkSelected[publicId]) {
       wrap.classList.add("is-bulk-selected");
     }
+    if (state.bulkMode && !isItemSellable(item)) {
+      wrap.classList.add("is-bulk-unsellable");
+    }
 
     var btn = document.createElement("button");
     btn.type = "button";
@@ -933,16 +939,87 @@
     return wrap;
   }
 
+  function syncBulkSellChip() {
+    if (!els.filterBulkSellBtn) return;
+    var on = !!state.bulkMode;
+    els.filterBulkSellBtn.classList.toggle("is-active", on);
+    els.filterBulkSellBtn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+
+  function forEachVisibleItem(fn) {
+    if (!state.items || !state.items.length) return;
+    if (state.filterDuplicates) {
+      groupItemsByDex(state.items).forEach(function (g) {
+        g.items.forEach(fn);
+      });
+    } else {
+      state.items.forEach(fn);
+    }
+  }
+
+  function isItemSellable(item) {
+    if (!item || !item.public_id) return false;
+    var sell = item.sell;
+    if (!sell) return true;
+    return sell.can_sell !== false;
+  }
+
+  function setBulkBarOpen(open) {
+    if (!els.bulkBar) return;
+    var on = !!open;
+    els.bulkBar.classList.toggle("is-open", on);
+    els.bulkBar.setAttribute("aria-hidden", on ? "false" : "true");
+    els.bulkBar.removeAttribute("hidden");
+  }
+
+  function sellableCountOnPage() {
+    var n = 0;
+    forEachVisibleItem(function (it) {
+      if (isItemSellable(it)) n += 1;
+    });
+    return n;
+  }
+
   function setBulkMode(on) {
     state.bulkMode = !!on;
+    syncBulkSellChip();
     if (!state.bulkMode) {
       state.bulkSelected = {};
       state.bulkQuote = null;
-      if (els.bulkBar) els.bulkBar.hidden = true;
+      setBulkBarOpen(false);
     } else {
-      if (els.bulkBar) els.bulkBar.hidden = false;
+      setBulkBarOpen(true);
       renderBulkBar();
     }
+    renderCollection();
+  }
+
+  function selectAllSellableOnPage() {
+    if (!state.bulkMode) setBulkMode(true);
+    if (!state.bulkSelected) state.bulkSelected = {};
+    var added = 0;
+    forEachVisibleItem(function (it) {
+      if (!isItemSellable(it) || !it.public_id) return;
+      if (!state.bulkSelected[it.public_id]) added += 1;
+      state.bulkSelected[it.public_id] = true;
+    });
+    scheduleBulkQuote();
+    renderCollection();
+    if (els.bulkHint && added === 0 && sellableCountOnPage() === 0) {
+      els.bulkHint.textContent = "No sellable cards on this page.";
+    }
+  }
+
+  function clearBulkSelection() {
+    state.bulkSelected = {};
+    state.bulkQuote = null;
+    if (state.bulkQuoteInFlight) {
+      try {
+        state.bulkQuoteInFlight.abort();
+      } catch (_) {}
+      state.bulkQuoteInFlight = null;
+    }
+    renderBulkBar();
     renderCollection();
   }
 
@@ -958,22 +1035,37 @@
   function renderBulkBar() {
     if (!els.bulkBar) return;
     if (!state.bulkMode) {
-      els.bulkBar.hidden = true;
+      setBulkBarOpen(false);
       return;
     }
-    els.bulkBar.hidden = false;
+    setBulkBarOpen(true);
     var ids = bulkSelectedIds();
     if (els.bulkCount) {
       els.bulkCount.textContent = ids.length + " selected";
     }
     var total = (state.bulkQuote && state.bulkQuote.total_pokedollars) || 0;
     if (els.bulkTotal) els.bulkTotal.textContent = "Total: " + fmtPokedollars(total);
+    var sellable = sellableCountOnPage();
     var hint = "";
-    if (!ids.length) hint = "Select cards to sell (Shift+B to toggle).";
-    else if (state.bulkQuote && state.bulkQuote.confirm_required) hint = "High tier cards selected — confirmation required.";
-    else hint = "Review and confirm before selling.";
+    if (!ids.length) {
+      hint =
+        sellable > 0
+          ? sellable +
+            " sellable on this page — use Select sellable on page or click tiles."
+          : "No sellable cards on this page.";
+    } else if (state.bulkQuote && state.bulkQuote.confirm_required) {
+      hint = "High tier cards selected — confirmation required.";
+    } else {
+      hint = "Review and confirm before selling.";
+    }
     if (els.bulkHint) els.bulkHint.textContent = hint;
     if (els.bulkNext) els.bulkNext.disabled = ids.length === 0 || !state.bulkQuote;
+    if (els.bulkSelectPage) {
+      els.bulkSelectPage.disabled = sellable === 0;
+    }
+    if (els.bulkClearSelection) {
+      els.bulkClearSelection.disabled = ids.length === 0;
+    }
   }
 
   function scheduleBulkQuote() {
@@ -1026,6 +1118,12 @@
     if (!item) return;
     var pid = item.public_id;
     if (!pid) return;
+    if (!isItemSellable(item)) {
+      var reason =
+        (item.sell && item.sell.blocked_reason) || "This copy cannot be sold.";
+      if (els.bulkHint) els.bulkHint.textContent = String(reason).replace(/\*\*/g, "");
+      return;
+    }
     if (!state.bulkSelected) state.bulkSelected = {};
     state.bulkSelected[pid] = !state.bulkSelected[pid];
     if (!state.bulkSelected[pid]) delete state.bulkSelected[pid];
@@ -1792,10 +1890,17 @@
     });
   }
 
-  // Bulk sell mode (no chip yet): Shift+B to toggle.
+  if (els.filterBulkSellBtn) {
+    els.filterBulkSellBtn.addEventListener("click", function () {
+      setBulkMode(!state.bulkMode);
+    });
+  }
+
   document.addEventListener("keydown", function (e) {
     if (e.key === "b" && e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
       if (!els.modal.hidden) return;
+      var tag = (e.target && e.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       setBulkMode(!state.bulkMode);
     }
   });
@@ -1803,6 +1908,16 @@
   if (els.bulkCancel) {
     els.bulkCancel.addEventListener("click", function () {
       setBulkMode(false);
+    });
+  }
+  if (els.bulkSelectPage) {
+    els.bulkSelectPage.addEventListener("click", function () {
+      selectAllSellableOnPage();
+    });
+  }
+  if (els.bulkClearSelection) {
+    els.bulkClearSelection.addEventListener("click", function () {
+      clearBulkSelection();
     });
   }
   if (els.bulkNext) {
@@ -2144,5 +2259,6 @@
     });
   }
   captureSessionFromFragment();
+  setBulkMode(false);
   bootAuth();
 })();
