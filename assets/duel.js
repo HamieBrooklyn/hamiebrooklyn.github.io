@@ -401,7 +401,44 @@
     // convert https->wss, http->ws
     if (/^https:/i.test(base)) base = base.replace(/^https:/i, "wss:");
     else if (/^http:/i.test(base)) base = base.replace(/^http:/i, "ws:");
-    return base + "/ws/duels/" + encodeURIComponent(String(duelId));
+    var url = base + "/ws/duels/" + encodeURIComponent(String(duelId));
+    var tok = readSessionToken();
+    if (tok) url += (url.indexOf("?") >= 0 ? "&" : "?") + "session=" + encodeURIComponent(tok);
+    return url;
+  }
+
+  function applyDuelPayload(body) {
+    if (!body) return;
+    state.activeDuel = {
+      id: body.id,
+      status: body.status,
+      version: body.version,
+      winner_id: body.winner_id,
+      bet: body.bet,
+      viewer_id: body.viewer_id,
+      starting_player_id: body.starting_player_id,
+    };
+    state.activeState = body.state || {};
+    renderRoom();
+  }
+
+  async function loadDuelSnapshot(duelId) {
+    try {
+      var r = await apiFetch("/api/me/duels/" + encodeURIComponent(String(duelId)));
+      if (!r.ok) return false;
+      var body = await r.json();
+      applyDuelPayload(body);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function isDuelFinished() {
+    var d = state.activeDuel || {};
+    var st = state.activeState || {};
+    return d.status === "completed" || d.status === "cancelled" || d.status === "expired" ||
+      d.status === "declined" || d.winner_id != null || st.winner != null;
   }
 
   function disconnectWs() {
@@ -413,20 +450,27 @@
   }
 
   async function acceptIfNeeded(duelId) {
-    // If duel is still invited and I am partner, accept so gameplay can start.
     try {
-      var r = await apiFetch("/api/me/duels/" + duelId);
-      if (!r.ok) return;
+      var r = await apiFetch("/api/me/duels/" + encodeURIComponent(String(duelId)));
+      if (!r.ok) return null;
       var body = await r.json();
-      state.activeDuel = body;
       if (body && body.status === "invited") {
         var meId = String((body.viewer_id || (state.me && state.me.id) || "") || "");
         var partnerId = String((body.partner && body.partner.id) || "");
         if (meId && partnerId && meId === partnerId) {
-          await apiFetch("/api/me/duels/" + duelId + "/accept", { method: "POST" });
+          var ar = await apiFetch(
+            "/api/me/duels/" + encodeURIComponent(String(duelId)) + "/accept",
+            { method: "POST" }
+          );
+          if (ar.ok) {
+            body = await ar.json();
+          }
         }
       }
-    } catch (_) {}
+      return body;
+    } catch (_) {
+      return null;
+    }
   }
 
   async function enterRoom(duelId) {
@@ -437,7 +481,9 @@
     if (els.listSection) els.listSection.hidden = true;
     if (els.roomTitle) els.roomTitle.textContent = "Duel #" + duelId;
     disconnectWs();
-    await acceptIfNeeded(duelId);
+    var body = await acceptIfNeeded(duelId);
+    if (body) applyDuelPayload(body);
+    else await loadDuelSnapshot(duelId);
     connectWs(duelId);
     window.history.replaceState(null, "", "/duel/?duel=" + duelId);
   }
@@ -448,6 +494,10 @@
     state.activeState = null;
     state.selectedAttackerSlot = null;
     state.selectedItemId = null;
+    if (els.yourDeck) els.yourDeck.innerHTML = "";
+    if (els.oppDeck) els.oppDeck.innerHTML = "";
+    if (els.itemsHand) els.itemsHand.innerHTML = "";
+    if (els.log) els.log.textContent = "";
     if (els.room) els.room.hidden = true;
     if (els.inviteSection) els.inviteSection.hidden = false;
     if (els.listSection) els.listSection.hidden = false;
@@ -465,9 +515,19 @@
       try { msg = JSON.parse(ev.data); } catch (_) { return; }
       if (!msg) return;
       if (msg.type === "state") {
-        state.activeDuel = msg.duel || state.activeDuel;
+        var prev = state.activeDuel || {};
+        var duel = msg.duel || {};
+        state.activeDuel = Object.assign({}, prev, duel);
+        if (prev.viewer_id != null && state.activeDuel.viewer_id == null) {
+          state.activeDuel.viewer_id = prev.viewer_id;
+        }
         state.activeState = msg.state || {};
         renderRoom();
+        if (isDuelFinished()) {
+          setTimeout(function () {
+            if (isDuelFinished()) loadDuels();
+          }, 800);
+        }
       } else if (msg.type === "error") {
         if (els.log) els.log.textContent = "Error: " + (msg.message || "unknown");
       }
@@ -496,25 +556,45 @@
     var d = state.activeDuel || {};
     var st = state.activeState || {};
     var me = myId();
+    var finished = isDuelFinished();
+    var invited = d.status === "invited";
     if (els.roomMeta) {
-      els.roomMeta.textContent =
-        "Turn: " + (st.turn ? ("User " + st.turn) : "—") +
-        " · draws left: " + Number(st.draws_remaining || 0) +
+      var meta = "Status: " + (d.status || "—") +
         " · version: " + Number(d.version || 0);
+      if (!finished && !invited) {
+        meta += " · turn: " + (st.turn ? String(st.turn) : "—") +
+          " · draws left: " + Number(st.draws_remaining || 0);
+      }
+      els.roomMeta.textContent = meta;
     }
-    if (els.coinFace) els.coinFace.textContent = isMyTurn() ? "YOU" : "THEM";
+    if (els.coinFace) {
+      if (finished) els.coinFace.textContent = "END";
+      else if (invited) els.coinFace.textContent = "…";
+      else els.coinFace.textContent = isMyTurn() ? "YOU" : "THEM";
+    }
     if (els.stakes) {
       els.stakes.textContent = "Stake: " + fmtBet(d.bet && d.bet.currency, d.bet && d.bet.amount);
     }
     if (els.drawHint) {
-      els.drawHint.textContent = isMyTurn()
-        ? "Draw up to 2 cards (2 from one stack or 1+1)."
-        : "Waiting for opponent…";
+      if (finished) {
+        var won = d.winner_id != null && String(d.winner_id) === me;
+        els.drawHint.textContent = won ? "You won this duel." : "Duel finished.";
+      } else if (invited) {
+        els.drawHint.textContent = "Waiting for opponent to accept the invite…";
+      } else if (!state.wsConnected) {
+        els.drawHint.textContent = "Connecting…";
+      } else if (isMyTurn()) {
+        els.drawHint.textContent = "Draw up to 2 cards (2 from one stack or 1+1).";
+      } else {
+        els.drawHint.textContent = "Waiting for opponent…";
+      }
     }
     var drawsRemaining = Number(st.draws_remaining || 0);
-    if (els.drawEnergy) els.drawEnergy.disabled = !isMyTurn() || drawsRemaining <= 0;
-    if (els.drawItem) els.drawItem.disabled = !isMyTurn() || drawsRemaining <= 0;
-    if (els.btnEndTurn) els.btnEndTurn.disabled = !isMyTurn();
+    var canPlay = !finished && !invited && state.wsConnected;
+    if (els.drawEnergy) els.drawEnergy.disabled = !canPlay || !isMyTurn() || drawsRemaining <= 0;
+    if (els.drawItem) els.drawItem.disabled = !canPlay || !isMyTurn() || drawsRemaining <= 0;
+    if (els.btnEndTurn) els.btnEndTurn.disabled = !canPlay || !isMyTurn();
+    if (els.btnSurrender) els.btnSurrender.disabled = !canPlay || d.status !== "active";
 
     renderDecks();
     renderItems();
@@ -653,9 +733,34 @@
     if (els.btnInvite) els.btnInvite.addEventListener("click", sendInvite);
     if (els.btnLeave) els.btnLeave.addEventListener("click", leaveRoom);
     if (els.btnSurrender) els.btnSurrender.addEventListener("click", function () {
-      var did = duelIdFromQuery();
+      var did = (state.activeDuel && state.activeDuel.id) || duelIdFromQuery();
       if (!did) return;
-      apiFetch("/api/me/duels/" + did + "/surrender", { method: "POST" }).then(function () { leaveRoom(); loadDuels(); });
+      if (els.btnSurrender.disabled) return;
+      els.btnSurrender.disabled = true;
+      apiFetch("/api/me/duels/" + encodeURIComponent(String(did)) + "/surrender", { method: "POST" })
+        .then(function (r) {
+          return r.json().catch(function () { return {}; }).then(function (body) {
+            return { ok: r.ok, body: body };
+          });
+        })
+        .then(function (res) {
+          if (res.ok && res.body) applyDuelPayload(res.body);
+          if (els.log) {
+            els.log.textContent = res.ok ? "You surrendered." : ((res.body && res.body.message) || "Could not surrender.");
+          }
+          if (res.ok) {
+            setTimeout(function () {
+              leaveRoom();
+              loadDuels();
+            }, 600);
+          } else if (els.btnSurrender) {
+            els.btnSurrender.disabled = false;
+          }
+        })
+        .catch(function () {
+          if (els.log) els.log.textContent = "Network error while surrendering.";
+          if (els.btnSurrender) els.btnSurrender.disabled = false;
+        });
     });
     if (els.drawEnergy) els.drawEnergy.addEventListener("click", function () {
       var st = state.activeState || {};
@@ -684,8 +789,6 @@
     await loadMe();
     if (!state.authenticated) return;
     await loadDuels();
-    var qid = duelIdFromQuery();
-    if (qid) enterRoom(qid);
   }
 
   boot();
