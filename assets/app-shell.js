@@ -417,12 +417,22 @@
     document.body.appendChild(s);
   }
 
+  function initStagingEnvBanner() {
+    if (document.getElementById("pokepon-staging-env-script")) return;
+    var s = document.createElement("script");
+    s.id = "pokepon-staging-env-script";
+    s.src = "/assets/staging-env.js?v=1";
+    s.defer = true;
+    document.body.appendChild(s);
+  }
+
   function init() {
     applyBrand();
     renderSidebarNav();
     initSidebar();
     initSidebarBalances();
     initProfileShortcut();
+    initStagingEnvBanner();
     initAppEventsBanner();
   }
 
