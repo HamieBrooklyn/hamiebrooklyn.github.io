@@ -9,7 +9,7 @@
   <meta name="description" content="Browse Poké Pon card auctions: search, bid with Pokedollars or Crystals, list cards from your collection, and see live balances." />
   <link rel="canonical" href="https://pokepon.org/auctions/" />
   <link rel="stylesheet" href="/assets/style.css?v=39" />
-  <link rel="stylesheet" href="/assets/auctions.css?v=5" />
+  <link rel="stylesheet" href="/assets/auctions.css?v=6" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -183,20 +183,24 @@
         <details class="auction-picker-panel" open>
           <summary class="auction-picker-summary">Choose a card from your collection</summary>
           <div class="auction-card-picker">
-            <input
-              id="auction-picker-search"
-              type="search"
-              placeholder="Search your cards…"
-              aria-label="Search your cards"
-            />
-            <button
-              type="button"
-              class="chip chip-filter"
-              id="auction-picker-filter-favorited"
-              aria-pressed="false"
-            >
-              Favorites
-            </button>
+            <div class="picker-toolbar">
+              <input
+                id="auction-picker-search"
+                type="search"
+                placeholder="Search by name or type…"
+                aria-label="Search your cards"
+              />
+              <div class="picker-filters" role="group" aria-label="Collection filters">
+                <button type="button" class="chip chip-filter" id="auction-picker-filter-favorited" aria-pressed="false">Favorites</button>
+                <button type="button" class="chip chip-filter" id="auction-picker-filter-evolvable" aria-pressed="false">Evolvable</button>
+                <button type="button" class="chip chip-filter" id="auction-picker-filter-non-evolvable" aria-pressed="false">Non evolvable</button>
+                <button type="button" class="chip chip-filter" id="auction-picker-filter-duplicates" aria-pressed="false">Duplicates</button>
+                <button type="button" class="chip chip-filter" data-auction-picker-craft-role="" aria-pressed="true">All</button>
+                <button type="button" class="chip chip-filter" data-auction-picker-craft-role="pokemon" aria-pressed="false">Pokémon</button>
+                <button type="button" class="chip chip-filter" data-auction-picker-craft-role="item" aria-pressed="false">Items &amp; Energy</button>
+                <button type="button" class="chip chip-filter" data-auction-picker-craft-role="craft_trainer" aria-pressed="false">Trainers</button>
+              </div>
+            </div>
             <div id="auction-picker-results" class="picker-grid"></div>
             <div id="auction-picker-evo-sections" class="picker-evo-sections" hidden aria-live="polite"></div>
             <p class="auction-muted auction-picker-selected" id="auction-picker-selected" hidden></p>
@@ -259,6 +263,41 @@
     </div>
   </div>
 
+  <div class="modal" id="card-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" role="document">
+      <button class="modal-close" type="button" data-close aria-label="Close">×</button>
+      <div class="modal-grid">
+        <div class="modal-image">
+          <img id="modal-img" alt="" />
+        </div>
+        <div class="modal-body">
+          <p class="modal-set" id="modal-set"></p>
+          <h2 class="modal-title" id="modal-title"></h2>
+          <p class="modal-rarity" id="modal-rarity"></p>
+          <dl class="modal-stats">
+            <div><dt>HP</dt><dd id="modal-hp">—</dd></div>
+            <div><dt>Max damage</dt><dd id="modal-damage">—</dd></div>
+            <div><dt>Types</dt><dd id="modal-types">—</dd></div>
+            <div class="modal-id-row"><dt>Card ID</dt><dd class="modal-id-dd"><code id="modal-pid">—</code> <button type="button" class="btn btn-ghost btn-copy-inline" id="modal-copy-id" aria-label="Copy Card ID">Copy</button></dd></div>
+          </dl>
+          <section class="modal-attacks" id="modal-attacks-section" hidden>
+            <h3>Attacks</h3>
+            <ul id="modal-attacks"></ul>
+          </section>
+          <p class="modal-obtained" id="modal-obtained"></p>
+          <section class="modal-evolve" id="modal-evolve-section" hidden aria-label="Evolution">
+            <h3 class="modal-evolve-heading">Evolution</h3>
+            <p class="modal-evolve-desc muted" id="modal-evo-desc">Possible evolutions for this printing (view only).</p>
+            <p class="modal-evolve-stages" id="modal-evo-stages"></p>
+            <p class="modal-evolve-block" id="modal-evo-block" hidden></p>
+            <div class="modal-evolve-targets" id="modal-evo-targets" role="list"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <meta name="pokepon-api-base" content="https://api.pokepon.org" />
   <script>
     (function () {
@@ -296,6 +335,7 @@
     })();
   </script>
   <script src="/assets/app-shell.js?v=8" defer></script>
-  <script src="/assets/auctions.js?v=8" defer></script>
+  <script src="/assets/evo-focus.js?v=5" defer></script>
+  <script src="/assets/auctions.js?v=9" defer></script>
 </body>
 </html>

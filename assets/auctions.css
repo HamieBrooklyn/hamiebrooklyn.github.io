@@ -148,7 +148,14 @@
   color: var(--text);
 }
 
-.auction-card-picker input[type="search"] {
+.picker-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin: 0.65rem 0 0.5rem;
+}
+
+.picker-toolbar input[type="search"] {
   width: 100%;
   padding: 0.4rem 0.6rem;
   border-radius: 8px;
@@ -156,11 +163,12 @@
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
-  margin: 0.65rem 0 0.5rem;
 }
 
-.auction-card-picker .chip-filter {
-  margin-bottom: 0.65rem;
+.picker-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
 .picker-grid {
@@ -196,7 +204,9 @@
 }
 
 .picker-card {
-  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
@@ -217,13 +227,35 @@
 
 .picker-card.is-disabled {
   opacity: 0.45;
+}
+
+.picker-card-hit {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: center;
+}
+
+.picker-card.is-disabled .picker-card-hit {
   cursor: not-allowed;
+}
+
+.picker-card-view {
+  width: 100%;
+  font-size: 0.65rem;
+  padding: 0.2rem 0.35rem;
 }
 
 .picker-card img {
   width: 100%;
   height: auto;
   border-radius: 6px;
+  display: block;
 }
 
 .picker-fav {
