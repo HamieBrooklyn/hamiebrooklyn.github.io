@@ -30,7 +30,6 @@
     {
       title: "Multiplayer",
       items: [
-        { key: "duel", href: "/duel/", label: "Duels" },
         { key: "trades", href: "/trades/", label: "Trades" },
         { key: "auctions", href: "/auctions/", label: "Auctions" },
         { key: "leaderboard", href: "/leaderboard/", label: "Leaderboards" },
@@ -86,8 +85,6 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3h4l1 5h-6l1-5z"/><path d="M8 8h8l2 11H6L8 8z"/><path d="M9 14h6"/></svg>',
     deck:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="11" height="15" rx="1.5"/><rect x="8" y="6" width="11" height="15" rx="1.5"/><path d="M11 10h5M11 13h5"/></svg>',
-    duel:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l2 2-5 5 3 3 5-5 2 2"/><path d="M16 4l-2 2 5 5-3 3-5-5-2 2"/></svg>',
     trades:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h11l-3-3M18 17H7l3 3"/><path d="M4 12h16"/></svg>',
     auctions:

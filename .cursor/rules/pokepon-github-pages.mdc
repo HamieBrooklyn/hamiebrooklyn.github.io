@@ -1,6 +1,6 @@
 ---
 description: Commit and push PokePon website changes to hamiebrooklyn.github.io when shipping UI features
-globs: "{**/hamiebrooklyn.github.io/**,**/collection/**,**/assets/*.js,**/assets/*.css,**/duel/**}"
+globs: "{**/hamiebrooklyn.github.io/**,**/collection/**,**/assets/*.js,**/assets/*.css}"
 alwaysApply: false
 ---
 
@@ -8,13 +8,24 @@ alwaysApply: false
 
 The live site is **https://pokepon.org**, served from the **`hamiebrooklyn.github.io`** repository (local path is often `~/Documents/GitHub/hamiebrooklyn.github.io`).
 
+## Staging first (mandatory)
+
+Before commit/push to `main`, test on staging:
+
+1. Staging bot up: `bash scripts/start-bot-staging.sh` in `~/Developer/Poke-Cards`
+2. Open: `https://pokepon.org/<page>/?api=https://api-staging.pokepon.org` (amber **STAGING** banner)
+3. `bash scripts/verify-staging.sh`
+
+See `.cursor/rules/staging-before-production.mdc`. **Do not push to production website until staging passes.**
+
 ## When this applies
 
-After you change website files (HTML, `assets/*.js`, `assets/*.css`, pages under `collection/`, `duel/`, `trades/`, etc.) for a user-facing feature or bugfix:
+After you change website files (HTML, `assets/*.js`, `assets/*.css`, pages under `collection/`, `trades/`, etc.) for a user-facing feature or bugfix:
 
-1. **Commit** in `hamiebrooklyn.github.io` with a clear message (what changed and why).
-2. **Push** to `origin/main` so GitHub Pages updates — do not leave site-only work only on disk.
-3. **Bump cache-busters** on touched assets (e.g. `collection.js?v=N`, `style.css?v=N` in the HTML that loads them).
+1. **Verify on staging** (above).
+2. **Commit** in `hamiebrooklyn.github.io` with a clear message (what changed and why).
+3. **Push** to `origin/main` so GitHub Pages updates — do not leave site-only work only on disk.
+4. **Bump cache-busters** on touched assets (e.g. `collection.js?v=N`, `style.css?v=N` in the HTML that loads them).
 
 ## Bot API vs site
 

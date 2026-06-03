@@ -1,0 +1,33 @@
+---
+description: Test on staging API before pushing website changes to production
+alwaysApply: true
+---
+
+# Staging before production (website)
+
+Every user-facing website or API-dependent change must be verified on **staging** before pushing to `main` (live pokepon.org).
+
+## Staging URLs
+
+| What | URL |
+|------|-----|
+| Staging API | `https://api-staging.pokepon.org` |
+| Test any page | `https://pokepon.org/<path>/?api=https://api-staging.pokepon.org` |
+| Clear pinned API | `?api=clear` then re-open with staging `?api=` |
+| Staging banner | Amber **STAGING** bar at top when API is staging |
+
+**Never** use `http://127.0.0.1:8081` from `https://pokepon.org` (browser blocks mixed content).
+
+## Required workflow
+
+1. Implement changes locally (website repo + bot repo if API changed).
+2. **Bot:** deploy to staging only — `bash scripts/deploy-mac-staging.sh` in `~/Developer/Poke-Cards` (not `deploy-mac.sh`).
+3. **Verify:** `bash scripts/verify-staging.sh` and manually test the feature with staging `?api=` URL + staging Discord bot sign-in.
+4. **Only then** push website to `origin/main` and deploy production bot (`deploy-mac.sh`).
+
+## Do not
+
+- Push website JS/HTML that calls new or changed API endpoints without staging smoke test.
+- Change production `pokepon-api-base` meta to `api-staging` on `main` — production meta stays `https://api.pokepon.org`.
+
+Bot staging docs: `~/Developer/Poke-Cards/docs/STAGING.md`.
