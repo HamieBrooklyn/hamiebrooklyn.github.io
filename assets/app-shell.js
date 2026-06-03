@@ -11,6 +11,7 @@
       title: "Your cards",
       items: [
         { key: "collection", href: "/collection/", label: "Collection" },
+        { key: "missions", href: "/missions/", label: "Missions" },
       ],
     },
     {
@@ -77,6 +78,8 @@
   var NAV_SVG = {
     collection:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+    missions:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.4 7.4H22l-6 4.6 2.3 7L12 17.8 5.7 22l2.3-7-6-4.6h7.6L12 3z"/></svg>',
     pokedex:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/></svg>',
     packs:
@@ -121,6 +124,7 @@
   function activeNavKey() {
     var path = normalizePath();
     if (path === "/collection" || path.indexOf("/collection/") === 0) return "collection";
+    if (path === "/missions" || path.indexOf("/missions/") === 0) return "missions";
     if (path === "/pokedex" || path.indexOf("/pokedex/") === 0) return "pokedex";
     if (path === "/craft" || path.indexOf("/craft/") === 0) return "craft";
     if (path === "/packs" || path.indexOf("/packs/") === 0) return "packs";

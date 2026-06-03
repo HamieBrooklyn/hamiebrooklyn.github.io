@@ -83,6 +83,7 @@
     notifyTrades: document.getElementById("notify-trades"),
     notifyAuctions: document.getElementById("notify-auctions"),
     notifyReferrals: document.getElementById("notify-referrals"),
+    notifyMissions: document.getElementById("notify-missions"),
     notifySaveMsg: document.getElementById("notify-save-msg"),
     inviteLinkInput: document.getElementById("invite-link-input"),
     btnCopyInvite: document.getElementById("btn-copy-invite"),
@@ -303,6 +304,7 @@
     if (els.notifyTrades) els.notifyTrades.checked = !!settings.notify_trades;
     if (els.notifyAuctions) els.notifyAuctions.checked = !!settings.notify_auctions;
     if (els.notifyReferrals) els.notifyReferrals.checked = !!settings.notify_referrals;
+    if (els.notifyMissions) els.notifyMissions.checked = settings.notify_missions !== false;
     state.settingsLoaded = true;
   }
 
@@ -327,6 +329,7 @@
       notify_trades: els.notifyTrades.checked,
       notify_auctions: els.notifyAuctions.checked,
       notify_referrals: els.notifyReferrals.checked,
+      notify_missions: els.notifyMissions ? els.notifyMissions.checked : true,
     };
     apiFetch("/api/me/settings", {
       method: "PATCH",

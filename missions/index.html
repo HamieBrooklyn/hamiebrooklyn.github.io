@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="icon" type="image/png" href="/assets/favicon.png" />
+  <link rel="apple-touch-icon" href="/assets/favicon.png" />
+  <title>Missions — Poké Pon</title>
+  <meta name="description" content="Daily and weekly Poké Pon missions — track progress and claim Crystal rewards on the website." />
+  <link rel="canonical" href="https://pokepon.org/missions/" />
+  <link rel="stylesheet" href="/assets/style.css?v=46" />
+  <link rel="stylesheet" href="/assets/missions.css?v=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+</head>
+<body class="app-body missions-body">
+  <div class="bg-grid"></div>
+
+  <div class="app-shell" id="app">
+    <aside class="sidebar" id="sidebar" aria-label="Primary">
+      <div class="sidebar-top">
+        <a class="logo sidebar-logo" href="/">Poké Pon</a>
+        <button class="sidebar-toggle" type="button" id="sidebar-toggle" aria-controls="sidebar" aria-expanded="false">
+          <span class="sidebar-toggle-bar"></span>
+          <span class="sidebar-toggle-bar"></span>
+          <span class="sidebar-toggle-bar"></span>
+        </button>
+      </div>
+      <nav class="sidebar-nav" aria-label="Sections"></nav>
+      <div class="sidebar-user" id="sidebar-user" data-state="loading">
+        <div class="sidebar-user-loading">Checking session…</div>
+        <div class="sidebar-user-signedout" hidden>
+          <p>Sign in with Discord to view your missions.</p>
+          <button class="btn btn-primary btn-block" type="button" id="btn-login">Sign in with Discord</button>
+        </div>
+        <div class="sidebar-user-signedin" hidden>
+          <img class="sidebar-avatar" alt="" src="" id="user-avatar" />
+          <div class="sidebar-user-text">
+            <span class="sidebar-user-name" id="user-name">—</span>
+            <div class="sidebar-user-hint">Signed in</div>
+          </div>
+          <button class="btn-link" type="button" id="btn-logout" title="Sign out">Sign out</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <header class="page-head missions-hero">
+        <p class="hero-kicker">Earn crystals</p>
+        <h1>Missions</h1>
+        <p class="page-lead">
+          Complete daily and weekly goals in Discord — card drops, set claims, and duels count here.
+          Claim your Crystal rewards on the web or with <code>/missions</code>.
+        </p>
+      </header>
+
+      <div class="missions-gate" id="missions-gate">
+        <p>Sign in with Discord to see your mission board.</p>
+        <button class="btn btn-primary" type="button" id="btn-login-main">Sign in with Discord</button>
+      </div>
+
+      <div class="missions-panel" id="missions-panel" hidden>
+        <div class="missions-summary">
+          <div class="missions-balance">
+            <span class="missions-balance-label">Your Crystals</span>
+            <span class="missions-balance-value" id="missions-balance">—</span>
+          </div>
+          <p class="missions-summary-meta" id="missions-summary-meta"></p>
+        </div>
+
+        <p class="missions-status" id="missions-status" aria-live="polite"></p>
+
+        <section class="missions-section" aria-labelledby="missions-daily-heading">
+          <h2 class="missions-section-title" id="missions-daily-heading">Daily missions</h2>
+          <p class="missions-section-lead" id="missions-daily-meta"></p>
+          <div class="missions-list" id="missions-daily-list"></div>
+        </section>
+
+        <section class="missions-section" aria-labelledby="missions-weekly-heading">
+          <h2 class="missions-section-title" id="missions-weekly-heading">Weekly mission</h2>
+          <p class="missions-section-lead" id="missions-weekly-meta"></p>
+          <div class="missions-list" id="missions-weekly-list"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <meta name="pokepon-api-base" content="https://api.pokepon.org" />
+  <script>
+    (function () {
+      var KEY = "pokepon-api-base";
+      function isValidBase(value) {
+        if (!value || !/^https?:\/\//i.test(value)) return false;
+        try {
+          var u = new URL(value);
+          return /^https?:$/.test(u.protocol) && !!u.hostname && !/[<>{}\s]/.test(u.hostname);
+        } catch (_) { return false; }
+      }
+      var params = new URLSearchParams(window.location.search);
+      var override = params.get("api");
+      if (override === "clear" || override === "reset") {
+        try { localStorage.removeItem(KEY); } catch (_) {}
+        override = "";
+      }
+      if (override && isValidBase(override)) {
+        try { localStorage.setItem(KEY, override.replace(/\/+$/, "")); } catch (_) {}
+      }
+      var stored = "";
+      try { stored = localStorage.getItem(KEY) || ""; } catch (_) {}
+      if (stored && !isValidBase(stored)) {
+        try { localStorage.removeItem(KEY); } catch (_) {}
+        stored = "";
+      }
+      var meta = document.querySelector('meta[name="pokepon-api-base"]');
+      var fromMeta = (meta && meta.content && meta.content.trim()) || "";
+      if (fromMeta && !isValidBase(fromMeta)) fromMeta = "";
+      window.POKEPON_API_BASE = stored || fromMeta || "";
+    })();
+  </script>
+  <script src="/assets/app-shell.js?v=12" defer></script>
+  <script src="/assets/missions.js?v=1" defer></script>
+</body>
+</html>
