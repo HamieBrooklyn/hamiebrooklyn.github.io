@@ -9,6 +9,21 @@
   <script src="/assets/staging-env.js?v=1"></script>
   <script>
     (function () {
+      var SESSION_KEY = "pokepon-session";
+      if (window.location.hash) {
+        var p = new URLSearchParams(window.location.hash.slice(1));
+        var t = p.get("session");
+        if (t) {
+          try { localStorage.setItem(SESSION_KEY, t); } catch (_) {}
+          p.delete("session");
+          var h = p.toString();
+          window.history.replaceState(
+            null,
+            "",
+            window.location.pathname + window.location.search + (h ? "#" + h : "")
+          );
+        }
+      }
       var API_KEY = "pokepon-api-base";
       var params = new URLSearchParams(window.location.search);
       var override = params.get("api");
@@ -44,7 +59,15 @@
   </style>
 </head>
 <body>
-  <a class="duel-play-back" href="/duel/">← Lobby</a>
+  <a class="duel-play-back" id="duel-play-back" href="/duel/">← Lobby</a>
+  <script>
+    (function () {
+      var back = document.getElementById("duel-play-back");
+      if (!back) return;
+      var api = new URLSearchParams(window.location.search).get("api");
+      if (api) back.href = "/duel/?api=" + encodeURIComponent(api);
+    })();
+  </script>
   <div id="game-root"></div>
   <script type="module" crossorigin src="/duel/play/game/assets/index.js"></script>
 </body>
