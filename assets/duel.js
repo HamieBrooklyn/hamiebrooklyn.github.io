@@ -85,6 +85,7 @@
     pollTimer: null,
     selectedAttackerSlot: null,
     selectedItemId: null,
+    acceptError: null,
   };
 
   function escapeHtml(s) {
@@ -455,25 +456,45 @@
     return !!(meId && partnerId && meId === partnerId);
   }
 
-  async function acceptIfNeeded(duelId) {
+  function duelErrorMessage(payload, fallback) {
+    if (!payload || typeof payload !== "object") return fallback;
+    return payload.message || payload.error || fallback;
+  }
+
+  async function fetchDuelDetail(duelId) {
     try {
       var r = await apiFetch("/api/me/duels/" + encodeURIComponent(String(duelId)));
       if (!r.ok) return null;
-      var body = await r.json();
-      if (body && body.status === "invited" && isViewerPartner(body)) {
-        var ar = await apiFetch(
-          "/api/me/duels/" + encodeURIComponent(String(duelId)) + "/accept",
-          { method: "POST" }
-        );
-        var accepted = await ar.json().catch(function () { return null; });
-        if (ar.ok && accepted) return accepted;
-        if (!ar.ok && els.log) {
-          els.log.textContent =
-            (accepted && accepted.message) || "Could not accept duel invite.";
-        }
-      }
-      return body;
+      return await r.json();
     } catch (_) {
+      return null;
+    }
+  }
+
+  async function acceptIfNeeded(duelId) {
+    state.acceptError = null;
+    try {
+      var body = await fetchDuelDetail(duelId);
+      if (!body) return null;
+      if (body.status === "active") return body;
+      if (body.status !== "invited" || !isViewerPartner(body)) return body;
+
+      var ar = await apiFetch(
+        "/api/me/duels/" + encodeURIComponent(String(duelId)) + "/accept",
+        { method: "POST" }
+      );
+      var accepted = await ar.json().catch(function () { return {}; });
+      if (ar.ok && accepted && accepted.status === "active") return accepted;
+
+      var fresh = await fetchDuelDetail(duelId);
+      if (fresh && fresh.status === "active") return fresh;
+
+      var msg = duelErrorMessage(accepted, "Could not accept duel invite.");
+      state.acceptError = msg;
+      if (els.log) els.log.textContent = msg;
+      return fresh || body;
+    } catch (_) {
+      state.acceptError = "Network error while accepting invite.";
       return null;
     }
   }
@@ -518,6 +539,7 @@
   async function enterRoom(duelId) {
     duelId = Number(duelId);
     if (!duelId) return;
+    state.acceptError = null;
     if (els.room) els.room.hidden = false;
     if (els.inviteSection) els.inviteSection.hidden = true;
     if (els.listSection) els.listSection.hidden = true;
@@ -538,6 +560,7 @@
     state.activeState = null;
     state.selectedAttackerSlot = null;
     state.selectedItemId = null;
+    state.acceptError = null;
     if (els.yourDeck) els.yourDeck.innerHTML = "";
     if (els.oppDeck) els.oppDeck.innerHTML = "";
     if (els.itemsHand) els.itemsHand.innerHTML = "";
@@ -630,10 +653,14 @@
         var won = d.winner_id != null && String(d.winner_id) === me;
         els.drawHint.textContent = won ? "You won this duel." : "Duel finished.";
       } else if (invited) {
-        els.drawHint.textContent =
-          (state.activeDuel && state.activeDuel.viewer_role) === "partner"
-            ? "Accepting invite…"
-            : "Waiting for opponent to accept the invite…";
+        if (state.acceptError) {
+          els.drawHint.textContent = state.acceptError;
+        } else if ((state.activeDuel && state.activeDuel.viewer_role) === "partner") {
+          els.drawHint.textContent = "Accepting invite…";
+        } else {
+          els.drawHint.textContent =
+            "Waiting for opponent to accept the invite… (they need a saved deck on Deck editor)";
+        }
       } else if (!state.wsConnected) {
         els.drawHint.textContent = "Connecting…";
       } else if (isMyTurn()) {
