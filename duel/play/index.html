@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="icon" type="image/png" href="/assets/favicon.png" />
+  <title>Duel Arena — Poké Pon</title>
+  <meta name="pokepon-api-base" content="https://api.pokepon.org" />
+  <script src="/assets/staging-env.js?v=1"></script>
+  <script>
+    (function () {
+      var API_KEY = "pokepon-api-base";
+      var params = new URLSearchParams(window.location.search);
+      var override = params.get("api");
+      if (override === "clear" || override === "reset") {
+        try { localStorage.removeItem(API_KEY); } catch (_) {}
+      } else if (override && /^https?:\/\//i.test(override)) {
+        try { localStorage.setItem(API_KEY, override.replace(/\/+$/, "")); } catch (_) {}
+      }
+      var stored = "";
+      try { stored = localStorage.getItem(API_KEY) || ""; } catch (_) {}
+      var meta = document.querySelector('meta[name="pokepon-api-base"]');
+      var fromMeta = (meta && meta.content) ? meta.content.trim() : "";
+      var base = stored || fromMeta || "";
+      window.POKEPON_API_BASE = base.replace(/\/+$/, "");
+    })();
+  </script>
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #0c0e12; overflow: hidden; }
+    #game-root { width: 100%; height: 100%; }
+    .duel-play-back {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 10;
+      font: 600 13px system-ui, sans-serif;
+      color: #9aa0a6;
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(30, 36, 48, 0.85);
+    }
+    .duel-play-back:hover { color: #fff; }
+  </style>
+</head>
+<body>
+  <a class="duel-play-back" href="/duel/">← Lobby</a>
+  <div id="game-root"></div>
+  <script type="module" crossorigin src="/duel/play/game/assets/index.js"></script>
+</body>
+</html>

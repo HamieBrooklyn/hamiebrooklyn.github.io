@@ -1,4 +1,4 @@
-/* PokePon duels — advanced PvP duel minigame */
+/* PokePon duels — lobby + invites (arena: /duel/play/) */
 (function () {
   "use strict";
 
@@ -536,21 +536,17 @@
     }
   }
 
+  function playArenaUrl(duelId) {
+    var q = "?duel=" + encodeURIComponent(String(duelId));
+    var apiParam = new URLSearchParams(window.location.search).get("api");
+    if (apiParam) q += "&api=" + encodeURIComponent(apiParam);
+    return "/duel/play/" + q;
+  }
+
   async function enterRoom(duelId) {
     duelId = Number(duelId);
     if (!duelId) return;
-    state.acceptError = null;
-    if (els.room) els.room.hidden = false;
-    if (els.inviteSection) els.inviteSection.hidden = true;
-    if (els.listSection) els.listSection.hidden = true;
-    if (els.roomTitle) els.roomTitle.textContent = "Duel #" + duelId;
-    disconnectWs();
-    var body = await acceptIfNeeded(duelId);
-    if (body) applyDuelPayload(body);
-    else await loadDuelSnapshot(duelId);
-    connectWs(duelId);
-    startRoomPolling(duelId);
-    window.history.replaceState(null, "", "/duel/?duel=" + duelId);
+    window.location.href = playArenaUrl(duelId);
   }
 
   function leaveRoom() {
