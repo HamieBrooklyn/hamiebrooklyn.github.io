@@ -1,12 +1,19 @@
-/* Home page — upcoming Discord events from bot API */
+/* Home page — Discord events + seasonal set chase from bot API */
 (function () {
   "use strict";
 
   var API_BASE = (window.POKEPON_API_BASE || "").replace(/\/+$/, "");
   var panel = document.getElementById("home-events");
   var listEl = document.getElementById("home-events-list");
+  var chasePanel = document.getElementById("home-set-chase");
+  var chaseTitle = document.getElementById("home-set-chase-title");
+  var chaseLead = document.getElementById("home-set-chase-lead");
+  var chaseBars = document.getElementById("home-set-chase-bars");
+  var chaseMeta = document.getElementById("home-set-chase-meta");
+  var chaseClaim = document.getElementById("home-set-chase-claim");
   var tickTimer = null;
   var refreshTimer = null;
+  var lastSetChase = null;
 
   function escapeHtml(s) {
     return String(s)
@@ -20,6 +27,117 @@
     if (!iso) return null;
     var d = new Date(iso);
     return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  function progressFill(percent) {
+    return Math.max(0, Math.min(100, Number(percent) || 0));
+  }
+
+  function apiFetch(path, opts) {
+    opts = opts || {};
+    opts.credentials = "include";
+    var headers = { "ngrok-skip-browser-warning": "1" };
+    try {
+      var tok = localStorage.getItem("pokepon-session") || "";
+      if (tok) headers.Authorization = "Bearer " + tok;
+    } catch (_) {}
+    opts.headers = Object.assign(headers, opts.headers || {});
+    return fetch(API_BASE + path, opts);
+  }
+
+  function renderSetChase(sc) {
+    if (!chasePanel || !sc || !sc.active) {
+      if (chasePanel) chasePanel.hidden = true;
+      lastSetChase = null;
+      return;
+    }
+    lastSetChase = sc;
+    chasePanel.hidden = false;
+    if (chaseTitle) chaseTitle.textContent = sc.title || "Set chase";
+    if (chaseLead) {
+      chaseLead.textContent =
+        "Chase " +
+        (sc.set_name || sc.set_code) +
+        " together. Claim cards from /cd to fill the community bar and your binder.";
+    }
+    var globalPct = progressFill(sc.global && sc.global.percent);
+    var globalClaims = sc.global ? Number(sc.global.claims || 0) : 0;
+    var globalTarget = sc.global ? Number(sc.global.target || 0) : 0;
+    var bars =
+      '<div class="home-set-chase-bar">' +
+      '<div class="home-set-chase-bar-label"><span>Community</span><span>' +
+      globalClaims.toLocaleString() +
+      " / " +
+      globalTarget.toLocaleString() +
+      " claims</span></div>" +
+      '<div class="home-set-chase-track"><div class="home-set-chase-fill" style="width:' +
+      globalPct +
+      '%"></div></div></div>';
+    if (sc.personal) {
+      var pPct = progressFill(sc.personal.percent);
+      bars +=
+        '<div class="home-set-chase-bar">' +
+        '<div class="home-set-chase-bar-label"><span>Your binder</span><span>' +
+        Number(sc.personal.owned_unique || 0) +
+        " / " +
+        Number(sc.personal.total_unique || 0) +
+        " unique</span></div>" +
+        '<div class="home-set-chase-track"><div class="home-set-chase-fill home-set-chase-fill-personal" style="width:' +
+        pPct +
+        '%"></div></div></div>';
+    }
+    if (chaseBars) chaseBars.innerHTML = bars;
+    if (chaseMeta) {
+      var parts = [
+        "Drop boost: " + Number(sc.drop_boost_percent || 0) + "% of each /cd card from this set.",
+        "Personal reward at " + Number(sc.completion_threshold_pct || 80) + "%: 💎 " +
+          Number(sc.reward_crystals || 0) +
+          " + ₽" +
+          Number(sc.reward_pokedollars || 0).toLocaleString() +
+          ".",
+      ];
+      if (sc.personal && sc.personal.reward_claimed) parts.push("You already claimed this season's reward.");
+      else if (sc.personal && sc.personal.reward_eligible) parts.push("Your reward is ready to claim.");
+      else if (!sc.personal) parts.push("Sign in on the web app to track your binder progress.");
+      chaseMeta.textContent = parts.join(" ");
+    }
+    if (chaseClaim) {
+      var canClaim = !!(sc.personal && sc.personal.reward_eligible && !sc.personal.reward_claimed);
+      chaseClaim.hidden = !canClaim;
+      chaseClaim.disabled = false;
+      chaseClaim.textContent = "Claim reward";
+    }
+  }
+
+  function bindClaimButton() {
+    if (!chaseClaim || chaseClaim.dataset.bound) return;
+    chaseClaim.dataset.bound = "1";
+    chaseClaim.addEventListener("click", function () {
+      if (!API_BASE) return;
+      chaseClaim.disabled = true;
+      chaseClaim.textContent = "Claiming…";
+      apiFetch("/api/me/set-chase/claim", { method: "POST" })
+        .then(function (r) {
+          return r.json().then(function (body) {
+            return { ok: r.ok, body: body };
+          });
+        })
+        .then(function (res) {
+          if (res.ok && res.body && res.body.set_chase) {
+            renderSetChase(res.body.set_chase);
+            chaseClaim.textContent = "Claimed!";
+            return;
+          }
+          var msg = (res.body && res.body.message) || "Could not claim reward.";
+          if (chaseMeta) chaseMeta.textContent = msg;
+          chaseClaim.hidden = true;
+        })
+        .catch(function () {
+          if (chaseMeta) chaseMeta.textContent = "Network error while claiming.";
+          chaseClaim.disabled = false;
+          chaseClaim.textContent = "Claim reward";
+        });
+    });
   }
 
   function formatScheduleLine(isoStart, isoEnd) {
@@ -215,6 +333,7 @@
         return r.json();
       })
       .then(function (data) {
+        renderSetChase(data && data.set_chase ? data.set_chase : null);
         render(data && data.events ? data.events : []);
       })
       .catch(function (err) {
@@ -227,8 +346,12 @@
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", load);
+    document.addEventListener("DOMContentLoaded", function () {
+      bindClaimButton();
+      load();
+    });
   } else {
+    bindClaimButton();
     load();
   }
 })();

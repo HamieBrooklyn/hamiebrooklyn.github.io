@@ -8,7 +8,7 @@
   <title>Poké Pon — Discord bot</title>
   <meta name="description" content="Poké Pon: Pokémon TCG gacha, collection, trades, and auctions on Discord." />
   <link rel="canonical" href="https://pokepon.org/" />
-  <link rel="stylesheet" href="assets/style.css?v=45" />
+  <link rel="stylesheet" href="assets/style.css?v=46" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -78,6 +78,15 @@
       <p class="hero-lead">
         Poké Pon is a Discord bot for curated TCG drops, inventory, player trades, and timed card auctions—built on real printings from the Pokémon TCG API.
       </p>
+
+      <aside id="home-set-chase" class="home-set-chase" hidden aria-label="Seasonal set chase">
+        <p class="home-set-chase-kicker">Season event</p>
+        <h2 class="home-set-chase-title" id="home-set-chase-title">Set chase</h2>
+        <p class="home-set-chase-lead" id="home-set-chase-lead"></p>
+        <div class="home-set-chase-bars" id="home-set-chase-bars"></div>
+        <p class="home-set-chase-meta" id="home-set-chase-meta"></p>
+        <button class="btn btn-primary btn-small" type="button" id="home-set-chase-claim" hidden>Claim reward</button>
+      </aside>
 
       <aside id="home-events" class="home-events" hidden aria-label="Current events">
         <p class="home-events-kicker">Community</p>
@@ -258,7 +267,7 @@
   </script>
   <script src="/assets/staging-env.js?v=1" defer></script>
   <script src="assets/site-links.js?v=1" defer></script>
-  <script src="assets/home-events.js?v=5" defer></script>
+  <script src="assets/home-events.js?v=6" defer></script>
   <script>
     document.getElementById("y").textContent = new Date().getFullYear();
   </script>

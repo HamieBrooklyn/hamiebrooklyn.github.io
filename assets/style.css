@@ -333,6 +333,81 @@ a:hover {
   margin-top: 0.5rem;
 }
 
+.home-set-chase {
+  order: 5;
+  margin: 0 0 1.5rem;
+  padding: 1.25rem 1.35rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(120, 180, 255, 0.22);
+  background: linear-gradient(135deg, rgba(30, 42, 68, 0.92), rgba(18, 22, 32, 0.95));
+}
+
+.home-set-chase[hidden] {
+  display: none !important;
+}
+
+.home-set-chase-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8ab4ff;
+}
+
+.home-set-chase-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+}
+
+.home-set-chase-lead {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.home-set-chase-bars {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.home-set-chase-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+.home-set-chase-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.home-set-chase-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #5b9bd5, #8ab4ff);
+  transition: width 0.35s ease;
+}
+
+.home-set-chase-fill-personal {
+  background: linear-gradient(90deg, #6bcf8e, #9ee6b4);
+}
+
+.home-set-chase-meta {
+  margin: 0.85rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+#home-set-chase-claim {
+  margin-top: 0.85rem;
+}
+
 /* App dashboard — fixed thin Discord event bar (full viewport top) */
 :root {
   --app-events-bar-height: 0px;
