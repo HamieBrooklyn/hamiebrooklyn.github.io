@@ -90,15 +90,39 @@
     if (chaseMeta) {
       var parts = [
         "Drop boost: " + Number(sc.drop_boost_percent || 0) + "% of each /cd card from this set.",
-        "Personal reward at " + Number(sc.completion_threshold_pct || 80) + "%: 💎 " +
+      ];
+      var partCr = Number(sc.community_participation_crystals || 0);
+      if (sc.community_goal_reached) {
+        parts.push(
+          "Community goal complete — each participant received " + partCr + " crystals."
+        );
+      } else if (partCr > 0) {
+        parts.push(
+          "When the community bar fills, everyone who claimed at least one card from this set earns " +
+            partCr +
+            " crystals."
+        );
+      }
+      parts.push(
+        "Personal reward at " +
+          Number(sc.completion_threshold_pct || 80) +
+          "%: 💎 " +
           Number(sc.reward_crystals || 0) +
           " + ₽" +
           Number(sc.reward_pokedollars || 0).toLocaleString() +
-          ".",
-      ];
-      if (sc.personal && sc.personal.reward_claimed) parts.push("You already claimed this season's reward.");
-      else if (sc.personal && sc.personal.reward_eligible) parts.push("Your reward is ready to claim.");
-      else if (!sc.personal) parts.push("Sign in on the web app to track your binder progress.");
+          "."
+      );
+      if (sc.personal && sc.personal.community_reward_paid) {
+        parts.push("You received the community participation bonus.");
+      } else if (sc.personal && sc.personal.participated && !sc.community_goal_reached) {
+        parts.push("You are registered for the community bonus.");
+      } else if (sc.personal && sc.personal.reward_claimed) {
+        parts.push("You already claimed this season's personal reward.");
+      } else if (sc.personal && sc.personal.reward_eligible) {
+        parts.push("Your personal reward is ready to claim.");
+      } else if (!sc.personal) {
+        parts.push("Sign in on the web app to track your binder progress.");
+      }
       chaseMeta.textContent = parts.join(" ");
     }
     if (chaseClaim) {
