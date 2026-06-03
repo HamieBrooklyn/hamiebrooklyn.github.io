@@ -539,6 +539,10 @@
   function playArenaUrl(duelId) {
     var q = "?duel=" + encodeURIComponent(String(duelId));
     var apiParam = new URLSearchParams(window.location.search).get("api");
+    if (!apiParam) {
+      try { apiParam = localStorage.getItem("pokepon-api-base") || ""; } catch (_) { apiParam = ""; }
+    }
+    if (!apiParam && API_BASE) apiParam = API_BASE;
     if (apiParam) q += "&api=" + encodeURIComponent(apiParam);
     return "/duel/play/" + q;
   }
