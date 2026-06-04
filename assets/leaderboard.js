@@ -285,13 +285,13 @@
     });
     var meta = CATEGORY_META[state.category];
     if (els.lead && meta) {
-      var scopeNote =
-        state.scope === "server" && state.guildName
-          ? " Rankings for **" + state.guildName + "**."
-          : state.scope === "server"
-            ? " Pick a server you share with the bot."
-            : "";
-      els.lead.textContent = meta.lead + scopeNote;
+      if (state.scope === "server") {
+        els.lead.textContent =
+          "Pick a Discord server that has Poké Pon, then browse rankings for members in that server only. " +
+          (meta ? meta.lead : "");
+      } else if (els.lead && meta) {
+        els.lead.textContent = meta.lead;
+      }
     }
     if (els.previewHint) {
       els.previewHint.hidden = isServerCategory(state.category);
