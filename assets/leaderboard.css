@@ -52,21 +52,77 @@
   color: var(--text);
 }
 
-.lb-guild-picker {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  font-size: 0.82rem;
+.lb-server-picker {
+  margin: 0 0 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+}
+
+.lb-server-picker[hidden],
+.lb-server-detail[hidden] {
+  display: none !important;
+}
+
+.lb-server-picker-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.lb-server-picker-lead {
+  margin: 0 0 0.85rem;
+  font-size: 0.88rem;
   color: var(--muted);
 }
 
-.lb-guild-picker select {
-  min-width: 12rem;
-  padding: 0.4rem 0.55rem;
-  border-radius: var(--radius);
+.lb-server-picker-empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.lb-server-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.65rem;
+}
+
+.lb-server-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 0.75rem 0.85rem;
+  text-align: left;
   border: 1px solid var(--border);
+  border-radius: var(--radius);
   background: var(--surface);
   color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.lb-server-card:hover,
+.lb-server-card:focus-visible {
+  border-color: rgba(129, 140, 248, 0.55);
+  outline: none;
+}
+
+.lb-server-card.is-selected {
+  border-color: rgba(129, 140, 248, 0.75);
+  background: rgba(99, 102, 241, 0.16);
+  box-shadow: 0 0 0 1px rgba(124, 156, 255, 0.35);
+}
+
+.lb-server-card-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.lb-server-card-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
 }
 
 .lb-milestone-panel {

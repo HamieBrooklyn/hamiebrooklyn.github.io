@@ -175,8 +175,11 @@
     modalStat: document.getElementById("lb-modal-stat"),
     scopeGlobal: document.getElementById("lb-scope-global"),
     scopeServer: document.getElementById("lb-scope-server"),
-    guildPicker: document.getElementById("lb-guild-picker"),
-    guildSelect: document.getElementById("lb-guild-select"),
+    serverPicker: document.getElementById("lb-server-picker"),
+    serverPickerLead: document.getElementById("lb-server-picker-lead"),
+    serverPickerEmpty: document.getElementById("lb-server-picker-empty"),
+    serverList: document.getElementById("lb-server-list"),
+    serverDetail: document.getElementById("lb-server-detail"),
     milestonePanel: document.getElementById("lb-milestone-panel"),
     milestoneTitle: document.getElementById("lb-milestone-title"),
     milestoneLead: document.getElementById("lb-milestone-lead"),
@@ -261,9 +264,7 @@
     if (els.scopeServer) {
       els.scopeServer.classList.toggle("is-active", state.scope === "server");
     }
-    if (els.guildPicker) {
-      els.guildPicker.hidden = state.scope !== "server";
-    }
+    updateServerPanels();
     els.tabs.forEach(function (tab) {
       var serverOnly = tab.getAttribute("data-server-only") === "true";
       if (serverOnly) {
@@ -305,37 +306,108 @@
     }
   }
 
-  function populateGuildSelect() {
-    if (!els.guildSelect) return;
-    els.guildSelect.innerHTML = "";
-    if (!state.guilds.length) {
-      var empty = document.createElement("option");
-      empty.value = "";
-      empty.textContent = state.authenticated
-        ? "No shared servers — use the bot in a Discord server first"
-        : "Sign in to list servers";
-      els.guildSelect.appendChild(empty);
+  function updateServerPanels() {
+    if (state.scope !== "server") {
+      if (els.serverPicker) els.serverPicker.hidden = true;
+      if (els.serverDetail) els.serverDetail.hidden = true;
       return;
     }
-    state.guilds.forEach(function (g) {
-      var o = document.createElement("option");
-      o.value = g.id;
-      o.textContent = g.name;
-      els.guildSelect.appendChild(o);
-    });
-    if (state.guildId) {
-      els.guildSelect.value = state.guildId;
-    } else if (state.guilds[0]) {
-      state.guildId = state.guilds[0].id;
-      els.guildSelect.value = state.guildId;
+    if (els.serverPicker) els.serverPicker.hidden = false;
+    if (els.serverDetail) {
+      els.serverDetail.hidden = !(state.guildId && state.guilds.length > 0);
     }
+    if (els.serverPickerLead) {
+      if (!state.authenticated) {
+        els.serverPickerLead.textContent =
+          "Sign in to see Discord servers you share with Poké Pon.";
+      } else if (!state.guilds.length) {
+        els.serverPickerLead.textContent =
+          "Join a server that has the Poké Pon bot, then refresh this page.";
+      } else if (!state.guildId) {
+        els.serverPickerLead.textContent =
+          "Select a server below to view milestones and member rankings.";
+      } else {
+        els.serverPickerLead.textContent =
+          "Viewing rankings for the selected server. Choose another server anytime.";
+      }
+    }
+  }
+
+  function renderServerList() {
+    if (!els.serverList) return;
+    els.serverList.innerHTML = "";
+    if (els.serverPickerEmpty) els.serverPickerEmpty.hidden = true;
+
+    if (!state.authenticated) {
+      if (els.serverPickerEmpty) {
+        els.serverPickerEmpty.hidden = false;
+        els.serverPickerEmpty.innerHTML =
+          'Sign in with Discord (sidebar) to list your servers. <button type="button" class="btn btn-primary btn-sm" id="lb-server-login">Sign in</button>';
+        var btn = document.getElementById("lb-server-login");
+        if (btn) {
+          btn.addEventListener("click", function () {
+            if (!API_BASE) return;
+            window.location.href =
+              api("/auth/discord/login?return_to=") + encodeURIComponent(window.location.href);
+          });
+        }
+      }
+      updateServerPanels();
+      return;
+    }
+
+    if (!state.guilds.length) {
+      if (els.serverPickerEmpty) {
+        els.serverPickerEmpty.hidden = false;
+        els.serverPickerEmpty.textContent =
+          "No shared servers found. Add Poké Pon to a Discord server you are in, use /cd once there, then refresh.";
+      }
+      updateServerPanels();
+      return;
+    }
+
+    state.guilds.forEach(function (g) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className =
+        "lb-server-card" + (String(state.guildId) === String(g.id) ? " is-selected" : "");
+      btn.setAttribute("role", "option");
+      btn.setAttribute("aria-selected", String(state.guildId) === String(g.id) ? "true" : "false");
+      btn.dataset.guildId = g.id;
+      btn.innerHTML =
+        '<span class="lb-server-card-name">' +
+        escapeHtml(g.name) +
+        '</span><span class="lb-server-card-hint">Server rankings</span>';
+      btn.addEventListener("click", function () {
+        selectServer(g.id);
+      });
+      els.serverList.appendChild(btn);
+    });
+    updateServerPanels();
+  }
+
+  function selectServer(guildId) {
+    state.guildId = String(guildId);
+    var match = state.guilds.find(function (g) {
+      return String(g.id) === String(guildId);
+    });
+    state.guildName = match ? match.name : null;
+    state.page = 1;
+    renderServerList();
+    updateServerPanels();
+    syncUrl();
+    loadLeaderboard();
   }
 
   async function loadGuilds() {
     if (!state.authenticated) {
       state.guilds = [];
-      populateGuildSelect();
+      renderServerList();
       return false;
+    }
+    if (els.serverList) {
+      els.serverList.innerHTML =
+        '<p class="lb-server-picker-empty">Loading your servers…</p>';
     }
     try {
       var res = await apiFetch("/api/me/guilds");
@@ -344,13 +416,30 @@
       if (data.authenticated === false) {
         state.authenticated = false;
         state.guilds = [];
-        populateGuildSelect();
+        renderServerList();
         return false;
       }
       state.guilds = data.guilds || [];
-      populateGuildSelect();
+      if (state.guilds.length === 1 && !state.guildId) {
+        state.guildId = state.guilds[0].id;
+        state.guildName = state.guilds[0].name;
+      }
+      if (
+        state.guildId &&
+        !state.guilds.some(function (g) {
+          return String(g.id) === String(state.guildId);
+        })
+      ) {
+        state.guildId = state.guilds[0] ? state.guilds[0].id : null;
+        state.guildName = state.guilds[0] ? state.guilds[0].name : null;
+      }
+      renderServerList();
       return state.guilds.length > 0;
     } catch (_) {
+      if (els.serverPickerEmpty) {
+        els.serverPickerEmpty.hidden = false;
+        els.serverPickerEmpty.textContent = "Could not load servers. Try again in a moment.";
+      }
       return false;
     }
   }
@@ -671,11 +760,18 @@
     bindEntryClicks(els.podium);
     bindEntryClicks(els.list);
     renderPager(data);
-    if (!data.total) {
+    if (data.members_unavailable) {
       setStatus(
-        state.category === "auction"
-          ? "No completed auction sales yet."
-          : "No ranked players yet."
+        "Could not load server members yet. Use /cd in this server once, or try again in a moment.",
+        true
+      );
+    } else if (!data.total) {
+      setStatus(
+        state.scope === "server"
+          ? "No ranked players in this server yet — open packs or trade here to climb the board."
+          : state.category === "auction"
+            ? "No completed auction sales yet."
+            : "No ranked players yet."
       );
     } else {
       setStatus("");
@@ -724,22 +820,23 @@
       if (!state.guilds.length && state.authenticated) {
         await loadGuilds();
       }
+      updateServerPanels();
       if (!state.guildId) {
-        if (!state.authenticated) {
-          setStatus("Sign in to view server leaderboards.", true);
-        } else if (!state.guilds.length) {
-          setStatus(
-            "No shared servers found. Join a Discord server that has Poké Pon, then try again.",
-            true
-          );
-        } else {
-          setStatus("Choose a Discord server from the dropdown.", true);
+        setStatus("");
+        if (els.podium) {
+          els.podium.hidden = true;
+          els.podium.innerHTML = "";
         }
+        if (els.list) els.list.innerHTML = "";
+        if (els.pager) els.pager.hidden = true;
+        if (els.viewerRank) els.viewerRank.hidden = true;
         return;
       }
       await loadMilestones();
-    } else if (els.milestonePanel) {
-      els.milestonePanel.hidden = true;
+    } else {
+      if (els.milestonePanel) els.milestonePanel.hidden = true;
+      if (els.serverPicker) els.serverPicker.hidden = true;
+      if (els.serverDetail) els.serverDetail.hidden = true;
     }
 
     var path =
@@ -783,27 +880,28 @@
   }
 
   function bindEvents() {
-    if (els.scopeGlobal) {
-      els.scopeGlobal.addEventListener("click", function () {
-        if (state.scope === "global") return;
-        state.scope = "global";
-        state.page = 1;
-        loadLeaderboard();
-      });
-    }
     if (els.scopeServer) {
       els.scopeServer.addEventListener("click", async function () {
         if (state.scope === "server") return;
         state.scope = "server";
         state.page = 1;
         if (state.authenticated) await loadGuilds();
-        if (!state.guildId && state.guilds[0]) state.guildId = state.guilds[0].id;
+        renderServerList();
+        if (state.guilds.length === 1) {
+          state.guildId = state.guilds[0].id;
+          state.guildName = state.guilds[0].name;
+        } else if (state.guilds.length > 1) {
+          state.guildId = null;
+          state.guildName = null;
+        }
+        updateServerPanels();
         loadLeaderboard();
       });
     }
-    if (els.guildSelect) {
-      els.guildSelect.addEventListener("change", function () {
-        state.guildId = els.guildSelect.value || null;
+    if (els.scopeGlobal) {
+      els.scopeGlobal.addEventListener("click", function () {
+        if (state.scope === "global") return;
+        state.scope = "global";
         state.page = 1;
         loadLeaderboard();
       });
@@ -877,9 +975,13 @@
     setSidebarState("loading");
     await loadMe();
     await loadGuilds();
-    if (state.scope === "server" && !state.guildId && state.guilds[0]) {
-      state.guildId = state.guilds[0].id;
-      populateGuildSelect();
+    if (state.scope === "server") {
+      renderServerList();
+      if (state.guilds.length === 1) {
+        state.guildId = state.guilds[0].id;
+        state.guildName = state.guilds[0].name;
+      }
+      updateServerPanels();
     }
     await loadLeaderboard();
   }

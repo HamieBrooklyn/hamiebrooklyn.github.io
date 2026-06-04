@@ -10,7 +10,7 @@
   <link rel="canonical" href="https://pokepon.org/leaderboard/" />
   <link rel="stylesheet" href="/assets/style.css?v=45" />
   <link rel="stylesheet" href="/assets/cosmetic-frames.css?v=1" />
-  <link rel="stylesheet" href="/assets/leaderboard.css?v=3" />
+  <link rel="stylesheet" href="/assets/leaderboard.css?v=4" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -150,12 +150,16 @@
           <button type="button" class="lb-scope-btn is-active" data-scope="global" id="lb-scope-global">Global</button>
           <button type="button" class="lb-scope-btn" data-scope="server" id="lb-scope-server">Server</button>
         </div>
-        <label class="lb-guild-picker" id="lb-guild-picker" hidden>
-          <span class="lb-guild-picker-label">Discord server</span>
-          <select id="lb-guild-select" aria-label="Select Discord server"></select>
-        </label>
       </div>
 
+      <section class="lb-server-picker" id="lb-server-picker" hidden aria-labelledby="lb-server-picker-title">
+        <h2 class="lb-server-picker-title" id="lb-server-picker-title">Your servers with Poké Pon</h2>
+        <p class="lb-server-picker-lead" id="lb-server-picker-lead">Select a server to view its milestones and member rankings.</p>
+        <div class="lb-server-list" id="lb-server-list" role="listbox" aria-label="Discord servers"></div>
+        <p class="lb-server-picker-empty" id="lb-server-picker-empty" hidden></p>
+      </section>
+
+      <div class="lb-server-detail" id="lb-server-detail" hidden>
       <section class="lb-milestone-panel" id="lb-milestone-panel" hidden aria-live="polite">
         <h2 class="lb-milestone-title" id="lb-milestone-title">Server milestones</h2>
         <p class="lb-milestone-lead" id="lb-milestone-lead"></p>
@@ -201,6 +205,7 @@
         <span class="pager-info" id="lb-pager-info">Page 1</span>
         <button class="btn btn-ghost" type="button" id="lb-next">Next →</button>
       </nav>
+      </div>
     </main>
   </div>
 
@@ -230,6 +235,6 @@
   <script src="/assets/api-base-init.js?v=1"></script>
   <script src="/assets/site-origin.js?v=1"></script>
   <script src="/assets/app-shell.js?v=11" defer></script>
-  <script src="/assets/leaderboard.js?v=4" defer></script>
+  <script src="/assets/leaderboard.js?v=6" defer></script>
 </body>
 </html>
