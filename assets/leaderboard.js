@@ -29,6 +29,10 @@
       lead: "Completed auction sales — tap a seller to preview the card that sold.",
       icon: "₽",
     },
+    graded: {
+      lead: "Players ranked by their highest graded slab (PSA-style 1–10). Tap a player to preview that copy.",
+      icon: "🏆",
+    },
   };
 
   function readSessionToken() {
@@ -424,7 +428,14 @@
     }
     if (els.modalHp) els.modalHp.textContent = card.hp || "—";
     if (els.modalStat) {
-      els.modalStat.textContent = (entry.stat && entry.stat.label) || "—";
+      var statLabel = (entry.stat && entry.stat.label) || "—";
+      if (card.grade != null) {
+        statLabel +=
+          " · Slab " +
+          String(card.grade) +
+          (card.grade_label ? " (" + card.grade_label + ")" : "");
+      }
+      els.modalStat.textContent = statLabel;
     }
     els.cardModal.hidden = false;
     els.cardModal.setAttribute("aria-hidden", "false");

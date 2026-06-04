@@ -1565,9 +1565,13 @@
     }
 
     var quote = sell.quote_pokedollars;
+    var gradeBonus =
+      sell.grade_bonus_percent > 0 && sell.base_quote_pokedollars != null
+        ? " (+" + sell.grade_bonus_percent + "% graded bonus)"
+        : "";
     var need = !!sell.needs_confirm;
     if (need && state.sellUiStep === 1) {
-      els.modalSellQuote.textContent = "Sale amount: " + fmtPokedollars(quote);
+      els.modalSellQuote.textContent = "Sale amount: " + fmtPokedollars(quote) + gradeBonus;
       els.modalSellWarn.hidden = false;
       els.modalSellWarn.innerHTML =
         "High-tier printing — selling is permanent. You will receive " +
@@ -1588,7 +1592,7 @@
       return;
     }
 
-    els.modalSellQuote.textContent = "Shop buyout: " + fmtPokedollars(quote);
+    els.modalSellQuote.textContent = "Shop buyout: " + fmtPokedollars(quote) + gradeBonus;
     els.modalSellBtn.disabled = state.sellInFlight || !sell.can_sell;
     if (state.sellInFlight) {
       els.modalSellBtn.textContent = "Selling…";

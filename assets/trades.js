@@ -1239,6 +1239,13 @@
       var sp = document.createElement("span");
       sp.textContent = tradeChipLabel(c);
       hit.appendChild(sp);
+      if (c.grade != null) {
+        var gradeBadge = document.createElement("span");
+        gradeBadge.className = "card-tile-grade trade-card-grade";
+        gradeBadge.textContent = String(c.grade);
+        gradeBadge.title = c.grade_label || "Graded";
+        row.appendChild(gradeBadge);
+      }
       var modalItem = tradeModalItemFromSide(c);
       hit.onclick = function () {
         if (modalItem) openTradeCardModal(modalItem, { allowEvolve: removable });

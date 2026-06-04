@@ -606,10 +606,19 @@
       a.high_bid != null
         ? fmtAmt(a.high_bid, cur)
         : "min " + fmtAmt(a.starting_bid, cur);
+    var gradeBadge =
+      a.card && a.card.grade != null
+        ? '<span class="card-tile-grade" title="' +
+          escapeHtml(a.card.grade_label || "Graded") +
+          '">' +
+          escapeHtml(String(a.card.grade)) +
+          "</span>"
+        : "";
     el.innerHTML =
       '<img src="' +
       img +
       '" alt="" loading="lazy" />' +
+      gradeBadge +
       '<div class="auction-tile-meta">' +
       '<span class="auction-pill">' +
       sym(cur) +
