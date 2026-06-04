@@ -35,6 +35,24 @@ In **pokepon-org-staging → Settings → Pages**:
 
 Use **DNS only** (grey cloud) until GitHub shows a valid certificate, same as apex setup.
 
+**Important:** If the Cloudflare proxy (orange cloud) is on for `staging`, Firefox/Chrome will show “unsafe” because GitHub’s certificate is for `staging.pokepon.org`, not the proxy. Turn the proxy **off** for the `staging` record.
+
+### 2b. HTTPS certificate (Firefox “unsafe” warning)
+
+GitHub must issue a certificate for **`staging.pokepon.org`** (not `*.github.io`).
+
+1. **pokepon-org-staging → Settings → Pages** → confirm custom domain `staging.pokepon.org` is saved (no “DNS not configured” warning).
+2. Wait **15 minutes – 24 hours** after DNS propagates.
+3. When ready, enable **Enforce HTTPS** on that Pages screen.
+
+Until the cert is ready you can use **http://staging.pokepon.org** (same site, no TLS warning). Do not use `https://pokepon.org/?api=…` for routine staging work.
+
+Check the cert (should show `CN=staging.pokepon.org`):
+
+```bash
+echo | openssl s_client -connect staging.pokepon.org:443 -servername staging.pokepon.org 2>/dev/null | openssl x509 -noout -subject
+```
+
 ### 3. Staging branch on the main website repo
 
 ```bash
@@ -62,6 +80,12 @@ Redirect URL stays:
 `https://api-staging.pokepon.org/auth/discord/callback`
 
 Sign in from **https://staging.pokepon.org** while testing.
+
+### Staying on staging (not pokepon.org)
+
+- Use **staging.pokepon.org** in the address bar (not pokepon.org with `?api=`).
+- After Discord login, you should land back on **staging** — if you still hit production, sign out and log in again on staging (old OAuth fallback used `WEB_FRONTEND_URL` before it pointed at staging).
+- `assets/site-origin.js` rewrites any `https://pokepon.org/...` links on the staging host to stay on staging.
 
 ---
 
