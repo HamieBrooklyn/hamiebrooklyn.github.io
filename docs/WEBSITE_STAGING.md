@@ -67,6 +67,8 @@ Sign in from **https://staging.pokepon.org** while testing.
 
 ## Daily workflow
 
+**Agents:** push **staging** after every feature; push **production** only when you say “push to production”.
+
 ```bash
 cd ~/Documents/GitHub/hamiebrooklyn.github.io
 git checkout staging
@@ -77,13 +79,13 @@ bash scripts/deploy-website-staging.sh
 
 Open **https://staging.pokepon.org** and test with the staging bot (`bash scripts/start-bot-staging.sh` in Poke-Cards).
 
-When ready for live users:
+When you want live users to see it, say **push to production** — then:
 
 ```bash
 bash scripts/promote-website-to-production.sh
 ```
 
-That merges `staging` → `main` and pushes **pokepon.org** only.
+That merges `staging` → `main` and updates **pokepon.org** only.
 
 ---
 

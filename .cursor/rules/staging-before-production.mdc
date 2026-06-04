@@ -1,44 +1,70 @@
 ---
-description: Test on staging website and API before pushing website changes to production
+description: Push staging website by default; production only when the user asks
 alwaysApply: true
 ---
 
 # Staging before production (website + bot)
 
-Every user-facing change is verified on **staging** before **https://pokepon.org** or production bot deploy.
+Ship work to **staging** by default. **Production** only when the user explicitly asks (e.g. “push to production”, “ship to prod”, “promote to live”).
 
-| | Staging | Production |
+| | Staging (default) | Production (user request only) |
 |---|---|---|
 | Website | **https://staging.pokepon.org** | **https://pokepon.org** |
-| Git branch | `staging` in `hamiebrooklyn.github.io` | `main` |
-| Site repo | `HamieBrooklyn/pokepon-org-staging` | `HamieBrooklyn/hamiebrooklyn.github.io` |
+| Website git | `staging` branch → `pokepon-org-staging` | `main` on `hamiebrooklyn.github.io` |
 | API | `https://api-staging.pokepon.org` | `https://api.pokepon.org` |
-| Bot | `bash scripts/start-bot-staging.sh` (`:8081`) | `deploy-mac.sh` (`:8080`) |
+| Bot | `scripts/start-bot-staging.sh` / `deploy-mac-staging.sh` | `scripts/deploy-mac.sh` |
 
-Full setup: `docs/WEBSITE_STAGING.md` (website) and `~/Developer/Poke-Cards/docs/STAGING.md` (bot).
+Setup: `docs/WEBSITE_STAGING.md` (website) and `~/Developer/Poke-Cards/docs/STAGING.md` (bot).
 
-## Agent workflow
+## Agent workflow (every feature / fix)
 
-1. **Code** on `staging` branch (website) and in Poke-Cards (bot/API).
-2. **Restart staging bot** after bot changes: `bash scripts/start-bot-staging.sh` in `~/Developer/Poke-Cards` (do not ask the user to restart).
-3. **Deploy staging website** (does not touch production):
+1. **Code** on the website **`staging`** branch and in Poke-Cards (bot/API) as needed.
+2. **Restart staging bot** after bot/API changes (you run it in the background — do not ask the user):
+   ```bash
+   cd ~/Developer/Poke-Cards
+   bash scripts/start-bot-staging.sh
+   ```
+3. **Push to the staging website** (required when website files changed — this is the default “ship”):
    ```bash
    cd ~/Documents/GitHub/hamiebrooklyn.github.io
    git checkout staging
    bash scripts/deploy-website-staging.sh
    ```
-4. **Test** on **https://staging.pokepon.org** + staging Discord sign-in.
-5. **Promote website** only when verified:
-   ```bash
-   bash scripts/promote-website-to-production.sh
-   ```
-6. **Promote bot** only when verified: `bash scripts/deploy-mac.sh` in Poke-Cards.
+   - Commits on `staging`, pushes `origin staging`, syncs **`pokepon-org-staging`** (updates **staging.pokepon.org**).
+   - Does **not** push `main` or change **pokepon.org**.
+4. **Tell the user** staging is ready: **https://staging.pokepon.org** (and staging bot if API changed).
+5. **Stop here** unless the user asked for production in the same message.
+
+## Push to production (only when the user says so)
+
+Run these **only** after an explicit user request to push/promote/deploy **production** / **live** / **pokepon.org**:
+
+**Website:**
+```bash
+cd ~/Documents/GitHub/hamiebrooklyn.github.io
+bash scripts/promote-website-to-production.sh
+```
+(or merge `staging` → `main` and `git push origin main` — same outcome).
+
+**Bot:**
+```bash
+cd ~/Developer/Poke-Cards
+bash scripts/deploy-mac.sh
+```
+
+Confirm staging was tested before promoting unless the user explicitly skips staging.
 
 ## Do not
 
-- Push `main` on the website repo for feature work before staging passes.
-- Use `?api=` on pokepon.org as the primary staging workflow (use **staging.pokepon.org**).
-- Change production `pokepon-api-base` meta to `api-staging` on `main`.
-- Tell the user to restart the staging bot — restart it yourself.
+- Push `main` or run `promote-website-to-production.sh` without the user asking for production.
+- Run `deploy-mac.sh` or restart production bot for routine feature work.
+- Treat “done” as production-deployed — default “done” is **staging website pushed** + staging bot restarted.
+- Ask the user to restart the staging bot — restart it yourself.
+- Use `pokepon.org/?api=` as the primary test URL — use **staging.pokepon.org**.
 
-Bot staging docs: `~/Developer/Poke-Cards/docs/STAGING.md`.
+## Do not confuse with git commit rules
+
+- **Staging website push** (`deploy-website-staging.sh`) is part of finishing feature work — do it even if the user did not say “commit” (the script commits on `staging` when needed).
+- **Production website push** still requires the user to say **push to production** (or equivalent).
+
+Bot docs: `~/Developer/Poke-Cards/docs/STAGING.md`.

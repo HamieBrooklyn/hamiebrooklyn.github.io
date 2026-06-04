@@ -1,33 +1,45 @@
 ---
-description: Commit and push PokePon website changes to hamiebrooklyn.github.io when shipping UI features
+description: Push website to staging by default; production only when the user asks
 globs: "{**/hamiebrooklyn.github.io/**,**/collection/**,**/assets/*.js,**/assets/*.css}"
 alwaysApply: false
 ---
 
-# PokePon GitHub Pages deploy workflow
+# PokePon website deploy workflow
 
-| | Production | Staging |
+| | Staging (default) | Production (user says “push to production”) |
 |---|---|---|
-| URL | **https://pokepon.org** | **https://staging.pokepon.org** |
-| Branch | `main` | `staging` |
-| Deploy | `git push origin main` | `bash scripts/deploy-website-staging.sh` |
+| URL | **https://staging.pokepon.org** | **https://pokepon.org** |
+| Branch | `staging` | `main` |
+| Command | `bash scripts/deploy-website-staging.sh` | `bash scripts/promote-website-to-production.sh` |
 
 See `docs/WEBSITE_STAGING.md` and `.cursor/rules/staging-before-production.mdc`.
 
-## When this applies
+## After website HTML/JS/CSS changes
 
-After website HTML/JS/CSS changes:
+1. Commit on **`staging`** (or let `deploy-website-staging.sh` commit).
+2. **Push to staging website** (always — this is not “production”):
+   ```bash
+   cd ~/Documents/GitHub/hamiebrooklyn.github.io
+   git checkout staging
+   bash scripts/deploy-website-staging.sh
+   ```
+3. Tell the user to verify **https://staging.pokepon.org**.
+4. **Do not** push `main` until the user says **push to production**.
 
-1. Work on **`staging`** branch; deploy with `bash scripts/deploy-website-staging.sh`.
-2. Test on **https://staging.pokepon.org** with staging bot up.
-3. Promote with `bash scripts/promote-website-to-production.sh` (merges to `main`, updates pokepon.org).
+## Push to production
 
-## Bot API vs site
+Only when the user explicitly asks:
 
-- **Website** → UI only (staging site repo + `main` for production).
-- **Poke-Cards** → `/api/*`; restart staging bot after API edits.
+```bash
+bash scripts/promote-website-to-production.sh
+```
+
+## Bot API
+
+- Website staging push does not deploy the bot.
+- After API changes in Poke-Cards: `bash scripts/start-bot-staging.sh` on staging; `deploy-mac.sh` only when the user asks for production.
 
 ## Do not
 
-- Push `main` for feature work before staging verification.
+- `git push origin main` for feature work without the user requesting production.
 - Stop background bot/tunnel at the start of edits — restart staging bot when ready to test.
