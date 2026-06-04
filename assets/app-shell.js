@@ -80,9 +80,9 @@
     collection:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
     activity:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h3l2-7 4 14 2-7h5"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="12" height="5.5" rx="1.25"/><rect x="5.5" y="10" width="12" height="5.5" rx="1.25"/><rect x="8" y="16" width="12" height="5.5" rx="1.25"/><circle cx="18.5" cy="6.5" r="2"/><path d="M17.5 6.5h2M18.5 5.5v2"/><path d="M20.5 14.5l.9 1.8 2 1-2 1.2.5 2.1-1.9-1.1-1.9 1.1.5-2.1-2-1.2 2-1z"/></svg>',
     missions:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.4 7.4H22l-6 4.6 2.3 7L12 17.8 5.7 22l2.3-7-6-4.6h7.6L12 3z"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5L18 6v5.5c0 4.8-2.8 7.8-6 8.8-3.2-1-6-4-6-8.8V6l6-2.5z"/><path d="M9.5 12.5l2 2 4.5-4.5"/><path d="M17.5 5.5l.75 1.5 1.65.35-1.2 1.05.35 1.65-1.55-.85-1.55.85.35-1.65-1.2-1.05 1.65-.35z"/></svg>',
     pokedex:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/></svg>',
     packs:
