@@ -107,8 +107,11 @@
     createCur: document.getElementById("c-cur"),
     createStart: document.getElementById("c-start"),
     createDur: document.getElementById("c-dur"),
-    createSpotlight: document.getElementById("c-spotlight"),
     createMsg: document.getElementById("create-msg"),
+    spotlightBox: document.getElementById("spotlight-box"),
+    spotlightHint: document.getElementById("spotlight-hint"),
+    btnSpotlight: document.getElementById("btn-spotlight"),
+    spotlightMsg: document.getElementById("spotlight-msg"),
     pickerSearch: document.getElementById("auction-picker-search"),
     pickerFilterFavorited: document.getElementById("auction-picker-filter-favorited"),
     pickerFilterEvolvable: document.getElementById("auction-picker-filter-evolvable"),
@@ -737,7 +740,10 @@
         "</div>" +
         '<div class="auction-muted" style="margin-top:0.35rem">' +
         (a.bid_count || 0) +
-        " total bids logged</div>";
+        " total bids logged</div>" +
+        (a.spotlight_active
+          ? '<div style="margin-top:0.5rem">✨ <strong>Spotlight</strong> listing</div>'
+          : "");
 
       els.detailBids.innerHTML = "";
       (a.bids || []).forEach(function (b) {
@@ -763,12 +769,48 @@
       });
 
       if (els.bidMsg) els.bidMsg.innerHTML = "";
+      if (els.spotlightMsg) els.spotlightMsg.innerHTML = "";
+      var isSeller =
+        state.me && String(state.me.id) === String(a.seller_discord_id);
       if (els.bidBox) {
-        if (state.me && String(state.me.id) !== String(a.seller_discord_id)) {
+        if (state.me && !isSeller) {
           els.bidBox.hidden = false;
           els.bidAmt.value = minNext != null ? String(minNext) : "";
         } else {
           els.bidBox.hidden = true;
+        }
+      }
+      if (els.spotlightBox) {
+        if (isSeller) {
+          els.spotlightBox.hidden = false;
+          var spotCost = a.spotlight_crystal_cost || 12;
+          if (a.spotlight_active) {
+            if (els.spotlightHint) {
+              els.spotlightHint.textContent =
+                "✨ Spotlight is active" +
+                (a.spotlight_until
+                  ? " until " + fmtEndsAt(a.spotlight_until)
+                  : "") +
+                ".";
+            }
+            if (els.btnSpotlight) {
+              els.btnSpotlight.disabled = true;
+              els.btnSpotlight.textContent = "Spotlight active";
+            }
+          } else {
+            if (els.spotlightHint) {
+              els.spotlightHint.textContent =
+                "Feature this listing at the top of search for 24h (" +
+                spotCost +
+                " 💎).";
+            }
+            if (els.btnSpotlight) {
+              els.btnSpotlight.disabled = false;
+              els.btnSpotlight.textContent = "Spotlight (" + spotCost + " 💎)";
+            }
+          }
+        } else {
+          els.spotlightBox.hidden = true;
         }
       }
     } catch (e) {
@@ -1169,7 +1211,6 @@
             currency: els.createCur.value,
             starting_bid: parseInt(els.createStart.value, 10),
             duration: els.createDur.value.trim(),
-            spotlight: els.createSpotlight && els.createSpotlight.checked ? "yes" : "",
           };
           var r = await apiFetch("/api/auctions", {
             method: "POST",
@@ -1186,6 +1227,36 @@
         } catch (e) {
           if (els.createMsg) {
             els.createMsg.innerHTML =
+              '<div class="auction-msg-err">' + String(e.message || e) + "</div>";
+          }
+        }
+      });
+    }
+
+    if (els.btnSpotlight) {
+      els.btnSpotlight.addEventListener("click", async function () {
+        if (els.spotlightMsg) els.spotlightMsg.innerHTML = "";
+        if (!state.detailId) return;
+        try {
+          var r = await apiFetch("/api/auctions/" + state.detailId + "/spotlight", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
+          });
+          var j = await r.json();
+          if (!r.ok) throw new Error(j.message || j.error || "Spotlight failed");
+          if (els.spotlightMsg) {
+            els.spotlightMsg.innerHTML =
+              '<div class="auction-msg-ok">Spotlight active for 24h.</div>';
+          }
+          if (window.PokePonApp && window.PokePonApp.notifyBalancesChanged) {
+            window.PokePonApp.notifyBalancesChanged();
+          }
+          await openDetail(state.detailId);
+          await loadList();
+        } catch (e) {
+          if (els.spotlightMsg) {
+            els.spotlightMsg.innerHTML =
               '<div class="auction-msg-err">' + String(e.message || e) + "</div>";
           }
         }

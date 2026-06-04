@@ -227,10 +227,6 @@
             <label for="c-dur">Duration</label>
             <input id="c-dur" placeholder="24h" value="24h" />
           </div>
-          <label class="auction-field auction-spotlight-field">
-            <input type="checkbox" id="c-spotlight" />
-            <span>Spotlight 24h (12 💎) — featured in search</span>
-          </label>
           <button type="button" class="btn btn-primary" id="btn-create" style="align-self:flex-end">List card</button>
         </div>
         <div id="create-msg"></div>
@@ -251,6 +247,12 @@
         <div id="detail-stats" style="margin-top:1rem;font-size:0.95rem"></div>
         <h3 style="margin:1.25rem 0 0.35rem;font-size:1rem">Recent bids</h3>
         <ul class="auction-bid-list" id="detail-bids"></ul>
+        <div id="spotlight-box" hidden>
+          <h3 style="margin:1rem 0 0.35rem;font-size:1rem">Spotlight</h3>
+          <p class="auction-muted" id="spotlight-hint">Feature this listing at the top of search for 24h.</p>
+          <button type="button" class="btn btn-primary" id="btn-spotlight">Spotlight (12 💎)</button>
+          <div id="spotlight-msg"></div>
+        </div>
         <div id="bid-box" hidden>
           <h3 style="margin:1rem 0 0.35rem;font-size:1rem">Place bid</h3>
           <div class="auction-filters" style="margin:0">
