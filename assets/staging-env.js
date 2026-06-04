@@ -6,6 +6,11 @@
     return (window.POKEPON_API_BASE || "").replace(/\/+$/, "");
   }
 
+  function isStagingHost() {
+    var host = (window.location.hostname || "").toLowerCase();
+    return host === "staging.pokepon.org";
+  }
+
   function isStagingApi() {
     var base = apiBase();
     if (!base) return false;
@@ -23,7 +28,7 @@
   }
 
   function mountBanner() {
-    if (!isStagingApi() || document.getElementById("pokepon-staging-banner")) return;
+    if ((!isStagingHost() && !isStagingApi()) || document.getElementById("pokepon-staging-banner")) return;
 
     document.documentElement.classList.add("pokepon-staging-active");
     if (document.title.indexOf("STAGING") !== 0) {
@@ -36,7 +41,9 @@
     bar.innerHTML =
       '<span class="pokepon-staging-banner__tag">STAGING</span>' +
       '<span class="pokepon-staging-banner__text">Test environment — not production. Data and purchases here do not affect live Poké Pon.</span>' +
-      '<a class="pokepon-staging-banner__exit" href="?api=clear">Exit staging</a>';
+      (isStagingHost()
+        ? '<a class="pokepon-staging-banner__exit" href="https://pokepon.org/">Open production site</a>'
+        : '<a class="pokepon-staging-banner__exit" href="?api=clear">Exit staging</a>');
 
     if (document.body) {
       document.body.insertBefore(bar, document.body.firstChild);
@@ -53,5 +60,5 @@
     init();
   }
 
-  window.PokePonStaging = { isStagingApi: isStagingApi, refresh: mountBanner };
+  window.PokePonStaging = { isStagingApi: isStagingApi, isStagingHost: isStagingHost, refresh: mountBanner };
 })();

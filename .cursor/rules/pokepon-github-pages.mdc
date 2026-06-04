@@ -6,93 +6,28 @@ alwaysApply: false
 
 # PokePon GitHub Pages deploy workflow
 
-The live site is **https://pokepon.org**, served from the **`hamiebrooklyn.github.io`** repository (local path is often `~/Documents/GitHub/hamiebrooklyn.github.io`).
+| | Production | Staging |
+|---|---|---|
+| URL | **https://pokepon.org** | **https://staging.pokepon.org** |
+| Branch | `main` | `staging` |
+| Deploy | `git push origin main` | `bash scripts/deploy-website-staging.sh` |
 
-## Staging first (mandatory)
-
-Before commit/push to `main`, test on staging:
-
-1. Staging bot up: `bash scripts/start-bot-staging.sh` in `~/Developer/Poke-Cards`
-2. Open: `https://pokepon.org/<page>/?api=https://api-staging.pokepon.org` (amber **STAGING** banner)
-3. `bash scripts/verify-staging.sh`
-
-See `.cursor/rules/staging-before-production.mdc`. **Do not push to production website until staging passes.**
+See `docs/WEBSITE_STAGING.md` and `.cursor/rules/staging-before-production.mdc`.
 
 ## When this applies
 
-After you change website files (HTML, `assets/*.js`, `assets/*.css`, pages under `collection/`, `trades/`, etc.) for a user-facing feature or bugfix:
+After website HTML/JS/CSS changes:
 
-1. **Verify on staging** (above).
-2. **Commit** in `hamiebrooklyn.github.io` with a clear message (what changed and why).
-3. **Push** to `origin/main` so GitHub Pages updates — do not leave site-only work only on disk.
-4. **Bump cache-busters** on touched assets (e.g. `collection.js?v=N`, `style.css?v=N` in the HTML that loads them).
+1. Work on **`staging`** branch; deploy with `bash scripts/deploy-website-staging.sh`.
+2. Test on **https://staging.pokepon.org** with staging bot up.
+3. Promote with `bash scripts/promote-website-to-production.sh` (merges to `main`, updates pokepon.org).
 
 ## Bot API vs site
 
-- **Website repo** → UI, client JS, styles.
-- **`Poke-Cards` bot repo** (`~/Developer/Poke-Cards` or workspace clone) → `/api/*` handlers; commit and push separately when API changes are part of the same feature.
-- Pages deploy alone is **not** enough when the bot API changed.
+- **Website** → UI only (staging site repo + `main` for production).
+- **Poke-Cards** → `/api/*`; restart staging bot after API edits.
 
-## Do not stop services while editing
+## Do not
 
-The bot, Cloudflare tunnel, and other background terminals are **production-like dev infrastructure**. While implementing a feature:
-
-- **Do not** run `stop-bot.sh`, `pkill` the bot/tunnel, or otherwise shut down service terminals **at the start** of work just because you are about to edit code.
-- **Do not** stop services “to be safe” before making website or API changes — leave them running unless the user asks to stop them.
-- **Only restart** (stop → start) when changes are **ready for testing** or when shipping (after commit/push), so the running process loads new code.
-
-If a service is already down, starting it is fine; the rule is about not unnecessarily tearing down working background processes mid-task.
-
-## Restart background services (when ready to test or ship)
-
-After bot/API edits are complete and you need the live process to pick them up:
-
-From `~/Developer/Poke-Cards` (or the active bot clone):
-
-```bash
-# 1. Stop old bot (launchd, nohup, anything on :8080)
-bash scripts/stop-bot.sh
-sleep 2
-
-# 2. Start bot in background (same pattern as production)
-nohup bash scripts/run-bot.sh >> logs/bot.log 2>&1 &
-
-# 3. Confirm API is up
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/events
-```
-
-If **https://api.pokepon.org** still returns 502/Bad Gateway, restart the Cloudflare tunnel (forwards to localhost:8080):
-
-```bash
-pkill -f "cloudflared tunnel run pokepon-api" 2>/dev/null || true
-sleep 1
-nohup cloudflared tunnel run pokepon-api >> logs/cloudflared.log 2>&1 &
-curl -s -o /dev/null -w "%{http_code}\n" https://api.pokepon.org/api/events
-```
-
-Other long-running services (only if relevant to the change):
-
-- **GitHub Actions self-hosted runner** — restart only when CI/runner config changed, not for normal bot API edits.
-- **GitHub Pages** — no local server to restart; push to `main` and hard-refresh the site.
-- See `docs/MAC-STARTUP.md` in the bot repo for full stack checks (`pgrep -lf poke_pon_bot`, `pgrep -lf cloudflared`).
-
-Treat **restart + health check** as part of “done” for any task that touches `poke_pon_bot/`, not as a first step before coding.
-
-## Unless the user says otherwise
-
-- Do **not** skip push because of the general “only commit when asked” rule — **shipping site work includes push** once the user is iterating on pokepon.org features.
-- Do **not** commit secrets (`.env`, tokens).
-- Do **not** force-push `main`.
-
-## Quick check before closing the task
-
-```bash
-cd ~/Documents/GitHub/hamiebrooklyn.github.io
-git status -sb
-git push origin main   # if ahead of origin
-
-# If bot API changed (after edits are ready — do not stop services at the start):
-cd ~/Developer/Poke-Cards
-bash scripts/stop-bot.sh && sleep 2 && nohup bash scripts/run-bot.sh >> logs/bot.log 2>&1 &
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/events
-```
+- Push `main` for feature work before staging verification.
+- Stop background bot/tunnel at the start of edits — restart staging bot when ready to test.

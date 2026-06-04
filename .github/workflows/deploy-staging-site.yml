@@ -1,0 +1,33 @@
+# Optional: auto-deploy staging branch to pokepon-org-staging (staging.pokepon.org).
+# Requires repo secret STAGING_SITE_TOKEN (classic PAT with repo scope on pokepon-org-staging).
+
+name: Deploy staging website
+
+on:
+  push:
+    branches: [staging]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ secrets.STAGING_SITE_TOKEN != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish to pokepon-org-staging
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.STAGING_SITE_TOKEN }}
+          external_repository: HamieBrooklyn/pokepon-org-staging
+          publish_branch: main
+          publish_dir: .
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+          commit_message: "Deploy website staging ${{ github.sha }}"
+
+      - name: Note CNAME
+        run: |
+          echo "Ensure pokepon-org-staging repo has CNAME staging.pokepon.org and Pages custom domain set."

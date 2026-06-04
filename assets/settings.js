@@ -84,6 +84,9 @@
     notifyAuctions: document.getElementById("notify-auctions"),
     notifyReferrals: document.getElementById("notify-referrals"),
     notifyMissions: document.getElementById("notify-missions"),
+    notifyWishlistMarket: document.getElementById("notify-wishlist-market"),
+    wishlistMaxPokedollars: document.getElementById("wishlist-max-pokedollars"),
+    wishlistMaxCrystals: document.getElementById("wishlist-max-crystals"),
     notifySaveMsg: document.getElementById("notify-save-msg"),
     inviteLinkInput: document.getElementById("invite-link-input"),
     btnCopyInvite: document.getElementById("btn-copy-invite"),
@@ -300,11 +303,34 @@
       });
   }
 
+  function parseOptionalCapInput(el) {
+    if (!el) return null;
+    var raw = String(el.value || "").trim();
+    if (!raw) return null;
+    var n = parseInt(raw, 10);
+    return isNaN(n) || n < 1 ? null : n;
+  }
+
   function applySettings(settings) {
     if (els.notifyTrades) els.notifyTrades.checked = !!settings.notify_trades;
     if (els.notifyAuctions) els.notifyAuctions.checked = !!settings.notify_auctions;
     if (els.notifyReferrals) els.notifyReferrals.checked = !!settings.notify_referrals;
     if (els.notifyMissions) els.notifyMissions.checked = settings.notify_missions !== false;
+    if (els.notifyWishlistMarket) {
+      els.notifyWishlistMarket.checked = settings.notify_wishlist_market !== false;
+    }
+    if (els.wishlistMaxPokedollars) {
+      els.wishlistMaxPokedollars.value =
+        settings.wishlist_alert_max_pokedollars != null
+          ? String(settings.wishlist_alert_max_pokedollars)
+          : "";
+    }
+    if (els.wishlistMaxCrystals) {
+      els.wishlistMaxCrystals.value =
+        settings.wishlist_alert_max_crystals != null
+          ? String(settings.wishlist_alert_max_crystals)
+          : "";
+    }
     state.settingsLoaded = true;
   }
 
@@ -330,6 +356,9 @@
       notify_auctions: els.notifyAuctions.checked,
       notify_referrals: els.notifyReferrals.checked,
       notify_missions: els.notifyMissions ? els.notifyMissions.checked : true,
+      notify_wishlist_market: els.notifyWishlistMarket ? els.notifyWishlistMarket.checked : true,
+      wishlist_alert_max_pokedollars: parseOptionalCapInput(els.wishlistMaxPokedollars),
+      wishlist_alert_max_crystals: parseOptionalCapInput(els.wishlistMaxCrystals),
     };
     apiFetch("/api/me/settings", {
       method: "PATCH",

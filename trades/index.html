@@ -322,25 +322,7 @@
   </div>
 
   <meta name="pokepon-api-base" content="https://api.pokepon.org" />
-  <script>
-    (function () {
-      var KEY = "pokepon-api-base";
-      function isValidBase(value) {
-        if (!value || !/^https?:\/\//i.test(value)) return false;
-        try { var u = new URL(value); return /^https?:$/.test(u.protocol) && !!u.hostname && !/[<>{}\s]/.test(u.hostname); } catch (_) { return false; }
-      }
-      var params = new URLSearchParams(window.location.search);
-      var override = params.get("api");
-      if (override === "clear" || override === "reset") { try { localStorage.removeItem(KEY); } catch (_) {} override = ""; }
-      if (override) { if (isValidBase(override)) { try { localStorage.setItem(KEY, override.replace(/\/+$/, "")); } catch (_) {} } }
-      var stored = ""; try { stored = localStorage.getItem(KEY) || ""; } catch (_) {}
-      if (stored && !isValidBase(stored)) { try { localStorage.removeItem(KEY); } catch (_) {} stored = ""; }
-      var meta = document.querySelector('meta[name="pokepon-api-base"]');
-      var fromMeta = (meta && meta.content && meta.content.trim()) || "";
-      if (fromMeta && !isValidBase(fromMeta)) fromMeta = "";
-      window.POKEPON_API_BASE = stored || fromMeta || "";
-    })();
-  </script>
+  <script src="/assets/api-base-init.js?v=1"></script>
   <script src="/assets/app-shell.js?v=11" defer></script>
   <script src="/assets/evo-focus.js?v=5" defer></script>
   <script src="/assets/trades.js?v=20" defer></script>

@@ -235,6 +235,25 @@
                 <span class="settings-muted">Discord DM when a daily or weekly mission is ready to claim.</span>
               </span>
             </label>
+            <label class="settings-toggle">
+              <input type="checkbox" name="notify_wishlist_market" id="notify-wishlist-market" />
+              <span class="settings-toggle-ui" aria-hidden="true"></span>
+              <span class="settings-toggle-text">
+                <strong>Wishlist market alerts</strong>
+                <span class="settings-muted">Discord DM when a starred card is listed on auction or offered in a trade.</span>
+              </span>
+            </label>
+            <div class="settings-field-group">
+              <p class="settings-muted settings-field-label">Optional auction price caps (leave blank for any price)</p>
+              <label class="settings-field">
+                <span>Max starting bid (₽)</span>
+                <input type="number" min="1" step="1" inputmode="numeric" id="wishlist-max-pokedollars" name="wishlist_alert_max_pokedollars" placeholder="No limit" />
+              </label>
+              <label class="settings-field">
+                <span>Max starting bid (💎)</span>
+                <input type="number" min="1" step="1" inputmode="numeric" id="wishlist-max-crystals" name="wishlist_alert_max_crystals" placeholder="No limit" />
+              </label>
+            </div>
             <div class="settings-form-actions">
               <button type="submit" class="btn btn-primary" id="btn-save-notify">Save preferences</button>
               <span class="settings-save-msg" id="notify-save-msg" hidden></span>
@@ -245,28 +264,7 @@
     </main>
   </div>
 
-  <script>
-    (function () {
-      var KEY = "pokepon-api-base";
-      function isValidBase(u) {
-        return /^https?:\/\/.+/i.test(u);
-      }
-      var q = new URLSearchParams(window.location.search);
-      var override = (q.get("api") || "").trim();
-      if (override === "clear") {
-        try { localStorage.removeItem(KEY); } catch (_) {}
-        override = "";
-      }
-      if (override && isValidBase(override)) {
-        try { localStorage.setItem(KEY, override.replace(/\/+$/, "")); } catch (_) {}
-      }
-      var stored = "";
-      try { stored = localStorage.getItem(KEY) || ""; } catch (_) {}
-      var meta = document.querySelector('meta[name="pokepon-api-base"]');
-      var fromMeta = (meta && meta.content && meta.content.trim()) || "";
-      window.POKEPON_API_BASE = (stored && isValidBase(stored) ? stored : fromMeta) || "";
-    })();
-  </script>
+  <script src="/assets/api-base-init.js?v=1"></script>
   <script src="/assets/site-links.js?v=1" defer></script>
   <script src="/assets/app-shell.js?v=11" defer></script>
   <script src="/assets/settings.js?v=3" defer></script>
