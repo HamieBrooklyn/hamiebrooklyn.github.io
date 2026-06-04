@@ -179,12 +179,6 @@
     serverPickerLead: document.getElementById("lb-server-picker-lead"),
     serverPickerEmpty: document.getElementById("lb-server-picker-empty"),
     serverList: document.getElementById("lb-server-list"),
-    serverDetail: document.getElementById("lb-server-detail"),
-    milestonePanel: document.getElementById("lb-milestone-panel"),
-    milestoneTitle: document.getElementById("lb-milestone-title"),
-    milestoneLead: document.getElementById("lb-milestone-lead"),
-    milestoneBar: document.getElementById("lb-milestone-bar"),
-    milestoneMeta: document.getElementById("lb-milestone-meta"),
   };
 
   function hasCardPreview(entry) {
@@ -309,13 +303,9 @@
   function updateServerPanels() {
     if (state.scope !== "server") {
       if (els.serverPicker) els.serverPicker.hidden = true;
-      if (els.serverDetail) els.serverDetail.hidden = true;
       return;
     }
     if (els.serverPicker) els.serverPicker.hidden = false;
-    if (els.serverDetail) {
-      els.serverDetail.hidden = !(state.guildId && state.guilds.length > 0);
-    }
     if (els.serverPickerLead) {
       if (!state.authenticated) {
         els.serverPickerLead.textContent =
@@ -360,7 +350,7 @@
       if (els.serverPickerEmpty) {
         els.serverPickerEmpty.hidden = false;
         els.serverPickerEmpty.textContent =
-          "No shared servers found. Add Poké Pon to a Discord server you are in, use /cd once there, then refresh.";
+          "No servers found. Only Discord servers that have the Poké Pon bot installed appear here — add the bot to another server you use, then refresh.";
       }
       updateServerPanels();
       return;
@@ -441,52 +431,6 @@
         els.serverPickerEmpty.textContent = "Could not load servers. Try again in a moment.";
       }
       return false;
-    }
-  }
-
-  async function loadMilestones() {
-    if (!els.milestonePanel) return;
-    if (state.scope !== "server" || !state.guildId) {
-      els.milestonePanel.hidden = true;
-      return;
-    }
-    try {
-      var res = await apiFetch(
-        "/api/guild-milestones?guild_id=" + encodeURIComponent(state.guildId)
-      );
-      if (!res.ok) {
-        els.milestonePanel.hidden = true;
-        return;
-      }
-      var data = await res.json();
-      var m = data.milestones || {};
-      els.milestonePanel.hidden = false;
-      if (els.milestoneTitle) {
-        els.milestoneTitle.textContent =
-          "Server milestones — " + (data.guild_name || "Server");
-      }
-      if (els.milestoneLead) {
-        if (m.next_tier != null) {
-          els.milestoneLead.textContent =
-            (m.packs_opened || 0).toLocaleString() +
-            " packs opened · next goal: " +
-            m.next_tier.toLocaleString();
-        } else {
-          els.milestoneLead.textContent =
-            (m.packs_opened || 0).toLocaleString() +
-            " packs opened — all community milestones complete!";
-        }
-      }
-      if (els.milestoneBar) {
-        els.milestoneBar.textContent = m.progress_bar || "";
-      }
-      if (els.milestoneMeta) {
-        els.milestoneMeta.textContent =
-          (m.trades_completed || 0).toLocaleString() +
-          " trades completed in this server.";
-      }
-    } catch (_) {
-      els.milestonePanel.hidden = true;
     }
   }
 
@@ -832,11 +776,6 @@
         if (els.viewerRank) els.viewerRank.hidden = true;
         return;
       }
-      await loadMilestones();
-    } else {
-      if (els.milestonePanel) els.milestonePanel.hidden = true;
-      if (els.serverPicker) els.serverPicker.hidden = true;
-      if (els.serverDetail) els.serverDetail.hidden = true;
     }
 
     var path =
@@ -863,10 +802,11 @@
         throw new Error(errBody.error || "http_" + res.status);
       }
       var data = await res.json();
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted || state.inflight !== controller) return;
       render(data);
     } catch (e) {
       if (e && e.name === "AbortError") return;
+      if (state.inflight !== controller) return;
       setStatus("Could not load leaderboard. Try again in a moment.", true);
       if (els.podium) {
         els.podium.hidden = true;
@@ -903,6 +843,11 @@
         if (state.scope === "global") return;
         state.scope = "global";
         state.page = 1;
+        if (isServerCategory(state.category)) {
+          state.category = "strongest";
+        }
+        updateServerPanels();
+        setActiveTab();
         loadLeaderboard();
       });
     }
