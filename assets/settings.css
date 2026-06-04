@@ -140,25 +140,73 @@
 
 .cosmetics-frame-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(7.25rem, 1fr));
   gap: 0.75rem;
   margin-top: 0.75rem;
 }
 
+.cosmetics-frame-group {
+  grid-column: 1 / -1;
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cosmetics-frame-group:first-child {
+  margin-top: 0;
+}
+
 .cosmetics-frame-card {
   text-align: center;
-  padding: 0.85rem 0.65rem;
+  padding: 0.85rem 0.5rem 0.65rem;
   border: 1px solid var(--border);
   border-radius: var(--radius, 10px);
   background: var(--surface);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
-.cosmetics-frame-card.is-equipped {
+.cosmetics-frame-card.is-owned {
+  cursor: pointer;
+}
+
+.cosmetics-frame-card.is-owned:hover {
+  border-color: rgba(129, 140, 248, 0.45);
+}
+
+.cosmetics-frame-card.is-selected {
   border-color: var(--accent, #7c9cff);
+  box-shadow: 0 0 0 1px rgba(124, 156, 255, 0.35);
+}
+
+.cosmetics-frame-card strong {
+  display: block;
+  font-size: 0.88rem;
+  margin-bottom: 0.35rem;
+}
+
+.cosmetics-frame-badge {
+  display: inline-block;
+  margin-bottom: 0.45rem;
+  padding: 0.12rem 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.18);
+  border-radius: 999px;
+}
+
+.cosmetics-frame-badge.is-locked {
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .cosmetics-frame-card .btn {
-  margin-top: 0.5rem;
+  margin-top: 0.15rem;
   width: 100%;
 }
 

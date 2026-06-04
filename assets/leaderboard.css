@@ -357,20 +357,35 @@
   margin: 0;
 }
 
-/* Leaderboard avatar frames (cosmetic crystal sink) */
-.lb-avatar-framed.lb-frame-bronze {
-  box-shadow: 0 0 0 3px #b87333, 0 0 12px rgba(184, 115, 51, 0.45);
+.lb-cosmetics-cta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.65rem;
+  margin: 0 0 1.25rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: var(--text);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.14), rgba(236, 72, 153, 0.1));
+  border: 1px solid rgba(129, 140, 248, 0.4);
+  border-radius: var(--radius);
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
-.lb-avatar-framed.lb-frame-silver {
-  box-shadow: 0 0 0 3px #c0c0c0, 0 0 12px rgba(192, 192, 192, 0.5);
+
+.lb-cosmetics-cta:hover,
+.lb-cosmetics-cta:focus-visible {
+  border-color: rgba(167, 139, 250, 0.65);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(236, 72, 153, 0.16));
+  outline: none;
 }
-.lb-avatar-framed.lb-frame-gold {
-  box-shadow: 0 0 0 3px #e8c547, 0 0 14px rgba(232, 197, 71, 0.55);
+
+.lb-cosmetics-cta-icon {
+  color: #c4b5fd;
+  font-size: 1rem;
 }
-.cosmetics-frame-preview.lb-avatar-framed {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  margin: 0 auto 0.5rem;
-  background: linear-gradient(135deg, var(--surface), var(--bg));
+
+.lb-cosmetics-cta-detail {
+  font-size: 0.82rem;
+  color: var(--muted);
 }

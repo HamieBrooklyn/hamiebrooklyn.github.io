@@ -144,6 +144,7 @@
     }
     if (els.settingsGate) els.settingsGate.hidden = true;
     if (els.settingsPanel) els.settingsPanel.hidden = false;
+    if (state.cosmeticsCatalog) renderCosmeticsFrames();
   }
 
   function switchTab(tabId) {
@@ -173,8 +174,41 @@
 
   function tabFromHash() {
     var h = (window.location.hash || "").replace(/^#/, "");
-    if (h === "referrals" || h === "notifications" || h === "account") return h;
+    if (
+      h === "referrals" ||
+      h === "notifications" ||
+      h === "account" ||
+      h === "cosmetics"
+    ) {
+      return h;
+    }
     return "account";
+  }
+
+  function defaultAvatarUrl() {
+    return (
+      "data:image/svg+xml," +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect fill="#1e293b" width="64" height="64"/><circle cx="32" cy="24" r="12" fill="#64748b"/><path fill="#64748b" d="M8 58c4-14 16-20 24-20s20 6 24 20z"/></svg>'
+      )
+    );
+  }
+
+  function previewAvatarUrl() {
+    return (state.user && state.user.avatar_url) || defaultAvatarUrl();
+  }
+
+  var FRAME_GROUP_LABELS = {
+    metal: "Metal",
+    gem: "Gem",
+    effect: "Effects",
+  };
+
+  function frameLabelById(frameId, frames) {
+    var found = (frames || []).find(function (f) {
+      return f.id === frameId;
+    });
+    return found ? found.label : frameId;
   }
 
   function statusLabel(status) {
@@ -348,63 +382,121 @@
     var settings = state.cosmeticsSettings || {};
     var unlocked = settings.unlocked_leaderboard_frames || [];
     var equipped = settings.leaderboard_frame || null;
+    var avatarSrc = previewAvatarUrl();
     if (!frames.length) {
       els.cosmeticsFrameGrid.innerHTML =
         '<p class="settings-muted">Could not load frame catalog.</p>';
       return;
     }
-    els.cosmeticsFrameGrid.innerHTML = frames
-      .map(function (f) {
+
+    var groupOrder = ["metal", "gem", "effect", ""];
+    var html = "";
+    groupOrder.forEach(function (groupKey) {
+      var groupFrames = frames.filter(function (f) {
+        var g = f.group || "";
+        if (!groupKey) return groupOrder.indexOf(g) < 0;
+        return g === groupKey;
+      });
+      if (!groupFrames.length) return;
+      if (groupKey && FRAME_GROUP_LABELS[groupKey]) {
+        html +=
+          '<p class="cosmetics-frame-group">' +
+          escapeHtml(FRAME_GROUP_LABELS[groupKey]) +
+          "</p>";
+      }
+      groupFrames.forEach(function (f) {
         var id = f.id;
         var owned = unlocked.indexOf(id) >= 0;
         var isOn = equipped === id;
-        var actions = owned
-          ? '<button type="button" class="btn btn-ghost btn-sm cosmetics-equip-btn" data-frame="' +
-            id +
-            '">' +
-            (isOn ? "Equipped" : "Equip") +
-            "</button>"
+        var cardCls =
+          "cosmetics-frame-card" +
+          (owned ? " is-owned" : "") +
+          (isOn ? " is-selected" : "");
+        var badge = isOn
+          ? '<span class="cosmetics-frame-badge">Selected</span>'
+          : owned
+            ? '<span class="cosmetics-frame-badge">Owned</span>'
+            : '<span class="cosmetics-frame-badge is-locked">Preview</span>';
+        var action = owned
+          ? isOn
+            ? '<button type="button" class="btn btn-ghost btn-sm cosmetics-clear-btn">Clear</button>'
+            : '<button type="button" class="btn btn-primary btn-sm cosmetics-select-btn" data-frame="' +
+              id +
+              '">Select</button>'
           : '<button type="button" class="btn btn-primary btn-sm cosmetics-unlock-btn" data-frame="' +
             id +
             '">Unlock (' +
             f.cost +
             " 💎)</button>";
-        return (
-          '<div class="cosmetics-frame-card' +
-          (isOn ? " is-equipped" : "") +
-          ' lb-frame-' +
+        html +=
+          '<div class="' +
+          cardCls +
+          '" data-frame-id="' +
           id +
+          '" tabindex="' +
+          (owned ? "0" : "-1") +
+          '" role="' +
+          (owned ? "button" : "group") +
+          '" aria-pressed="' +
+          (isOn ? "true" : "false") +
           '">' +
-          '<div class="cosmetics-frame-preview lb-avatar-framed lb-frame-' +
+          '<div class="cosmetics-frame-preview">' +
+          '<img class="cosmetics-frame-avatar lb-avatar-framed lb-frame-' +
           id +
-          '"></div>' +
+          '" src="' +
+          escapeHtml(avatarSrc) +
+          '" alt="" loading="lazy" />' +
+          "</div>" +
           "<strong>" +
           escapeHtml(f.label) +
           "</strong>" +
-          actions +
-          "</div>"
-        );
-      })
-      .join("");
+          badge +
+          action +
+          "</div>";
+      });
+    });
+    els.cosmeticsFrameGrid.innerHTML = html;
+
     els.cosmeticsFrameGrid.querySelectorAll(".cosmetics-unlock-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
         unlockFrame(btn.getAttribute("data-frame"));
       });
     });
-    els.cosmeticsFrameGrid.querySelectorAll(".cosmetics-equip-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var fid = btn.getAttribute("data-frame");
-        if (settings.leaderboard_frame === fid) {
-          equipFrame(null);
-        } else {
-          equipFrame(fid);
-        }
+    els.cosmeticsFrameGrid.querySelectorAll(".cosmetics-select-btn").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        equipFrame(btn.getAttribute("data-frame"));
       });
     });
+    els.cosmeticsFrameGrid.querySelectorAll(".cosmetics-clear-btn").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        equipFrame(null);
+      });
+    });
+    els.cosmeticsFrameGrid.querySelectorAll(".cosmetics-frame-card.is-owned").forEach(function (card) {
+      card.addEventListener("click", function (e) {
+        if (e.target.closest("button")) return;
+        var fid = card.getAttribute("data-frame-id");
+        if (settings.leaderboard_frame === fid) equipFrame(null);
+        else equipFrame(fid);
+      });
+      card.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        var fid = card.getAttribute("data-frame-id");
+        if (settings.leaderboard_frame === fid) equipFrame(null);
+        else equipFrame(fid);
+      });
+    });
+
     if (els.cosmeticsFrameMsg) {
       els.cosmeticsFrameMsg.textContent = equipped
-        ? "Equipped: " + equipped + ". Tap Equipped to clear."
-        : "Unlock a frame, then equip it for the global leaderboard.";
+        ? "Selected: " +
+          frameLabelById(equipped, frames) +
+          " — shows on the global leaderboard. Tap again or Clear to remove."
+        : "Tap a frame preview to select it, or unlock more with Crystals.";
     }
   }
 
