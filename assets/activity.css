@@ -1,0 +1,126 @@
+.activity-hero {
+  margin-bottom: 1.5rem;
+}
+
+.activity-gate {
+  padding: 2rem 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  text-align: center;
+}
+
+.activity-panel[hidden],
+.activity-gate[hidden],
+.activity-luck[hidden],
+.activity-empty[hidden] {
+  display: none !important;
+}
+
+.activity-luck {
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.15rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(120, 220, 140, 0.28);
+  background: linear-gradient(135deg, rgba(24, 56, 40, 0.9), rgba(18, 28, 32, 0.92));
+  font-size: 0.95rem;
+}
+
+.activity-luck strong {
+  color: #86efac;
+}
+
+.activity-status {
+  min-height: 1.25rem;
+  margin: 0 0 1rem;
+  color: var(--muted);
+}
+
+.activity-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.activity-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.85rem 1rem;
+  padding: 0.95rem 1.05rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+
+.activity-item-thumb {
+  width: 52px;
+  height: 72px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border);
+}
+
+.activity-item-body {
+  min-width: 0;
+}
+
+.activity-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.activity-item-title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.activity-item-time {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  white-space: nowrap;
+}
+
+.activity-item-detail {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.activity-item-detail a {
+  color: var(--accent);
+}
+
+.activity-kind {
+  display: inline-block;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.15rem;
+}
+
+.activity-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 2rem 1rem;
+}
+
+@media (max-width: 480px) {
+  .activity-item {
+    grid-template-columns: 1fr;
+  }
+  .activity-item-thumb {
+    width: 44px;
+    height: 62px;
+  }
+}

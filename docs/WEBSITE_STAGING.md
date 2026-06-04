@@ -53,6 +53,18 @@ Check the cert (should show `CN=staging.pokepon.org`):
 echo | openssl s_client -connect staging.pokepon.org:443 -servername staging.pokepon.org 2>/dev/null | openssl x509 -noout -subject
 ```
 
+If the subject shows `CN=*.github.io` instead, browsers block **https://staging.pokepon.org** (looks “down”). The HTML is usually still fine on **http://staging.pokepon.org**. Fix:
+
+1. **pokepon-org-staging → Settings → Pages** — save custom domain `staging.pokepon.org` again (or re-run the API steps below).
+2. When GitHub shows the certificate **approved**, enable **Enforce HTTPS**.
+3. Wait a few minutes for the new cert to appear at the edge.
+
+```bash
+# Re-trigger cert + enforce HTTPS (requires gh auth)
+gh api -X PUT repos/HamieBrooklyn/pokepon-org-staging/pages \
+  --input - <<< '{"cname": "staging.pokepon.org", "https_enforced": true}'
+```
+
 ### 3. Staging branch on the main website repo
 
 ```bash
