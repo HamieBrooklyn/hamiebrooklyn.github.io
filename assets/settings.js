@@ -79,6 +79,8 @@
     referralsEmpty: document.getElementById("referrals-empty"),
     referralList: document.getElementById("referral-list"),
     referralsError: document.getElementById("referrals-error"),
+    referralsInviteeCard: document.getElementById("referrals-invitee-card"),
+    referralsInviteeBody: document.getElementById("referrals-invitee-body"),
     notifyForm: document.getElementById("notify-form"),
     notifyTrades: document.getElementById("notify-trades"),
     notifyAuctions: document.getElementById("notify-auctions"),
@@ -240,6 +242,7 @@
     }
 
     updateInviteCard(data.personal_invite_url);
+    renderInviteeCard(data.as_invitee, rules);
 
     var list = data.referrals || [];
     if (els.referralsEmpty) els.referralsEmpty.hidden = list.length > 0;
@@ -249,6 +252,32 @@
       els.referralList.appendChild(renderReferralRow(row, rules.cd_uses_required || 10));
     });
     state.referralsLoaded = true;
+  }
+
+  function renderInviteeCard(invitee, rules) {
+    if (!els.referralsInviteeCard || !els.referralsInviteeBody) return;
+    if (!invitee) {
+      els.referralsInviteeCard.hidden = true;
+      return;
+    }
+    var req = invitee.cd_uses_required || (rules && rules.cd_uses_required) || 10;
+    var uses = invitee.cd_uses || 0;
+    var invName = invitee.inviter_display_name || "a friend";
+    var firstLine = invitee.first_pack_rewarded
+      ? "You earned Crystals on your first card drop."
+      : "Use /cd once to claim your welcome Crystals (" +
+        ((rules && rules.first_pack_invitee_crystals) || 15) +
+        " 💎).";
+    els.referralsInviteeBody.textContent =
+      "Invited by " +
+      invName +
+      ". Progress: " +
+      uses +
+      " / " +
+      req +
+      " card drops. " +
+      firstLine;
+    els.referralsInviteeCard.hidden = false;
   }
 
   function updateInviteCard(url) {
