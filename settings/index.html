@@ -159,6 +159,7 @@
           <button type="button" class="settings-tab is-active" role="tab" aria-selected="true" data-tab="account" id="tab-btn-account">Account</button>
           <button type="button" class="settings-tab" role="tab" aria-selected="false" data-tab="referrals" id="tab-btn-referrals">Referrals</button>
           <button type="button" class="settings-tab" role="tab" aria-selected="false" data-tab="notifications" id="tab-btn-notifications">Notifications</button>
+          <button type="button" class="settings-tab" role="tab" aria-selected="false" data-tab="cosmetics" id="tab-btn-cosmetics">Cosmetics</button>
         </nav>
 
         <section class="settings-tab-panel is-active" id="tab-account" role="tabpanel" aria-labelledby="tab-btn-account">
@@ -198,6 +199,15 @@
             <ul class="referral-list" id="referral-list"></ul>
           </div>
           <p class="settings-error" id="referrals-error" hidden></p>
+        </section>
+
+        <section class="settings-tab-panel" id="tab-cosmetics" role="tabpanel" aria-labelledby="tab-btn-cosmetics" hidden>
+          <p class="settings-muted">Spend Crystals on optional flair — not pay-to-win. Frames show on the <a href="/leaderboard/">global leaderboard</a>.</p>
+          <div class="settings-card" id="cosmetics-frames">
+            <h2 class="settings-card-title">Leaderboard frame</h2>
+            <p class="settings-muted" id="cosmetics-frame-msg"></p>
+            <div class="cosmetics-frame-grid" id="cosmetics-frame-grid"></div>
+          </div>
         </section>
 
         <section class="settings-tab-panel" id="tab-notifications" role="tabpanel" aria-labelledby="tab-btn-notifications" hidden>

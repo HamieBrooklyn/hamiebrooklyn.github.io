@@ -138,6 +138,30 @@
   font-size: 0.9rem;
 }
 
+.cosmetics-frame-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.cosmetics-frame-card {
+  text-align: center;
+  padding: 0.85rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 10px);
+  background: var(--surface);
+}
+
+.cosmetics-frame-card.is-equipped {
+  border-color: var(--accent, #7c9cff);
+}
+
+.cosmetics-frame-card .btn {
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
 .invite-card {
   display: flex;
   flex-direction: column;

@@ -356,3 +356,21 @@
 .lb-modal-stats {
   margin: 0;
 }
+
+/* Leaderboard avatar frames (cosmetic crystal sink) */
+.lb-avatar-framed.lb-frame-bronze {
+  box-shadow: 0 0 0 3px #b87333, 0 0 12px rgba(184, 115, 51, 0.45);
+}
+.lb-avatar-framed.lb-frame-silver {
+  box-shadow: 0 0 0 3px #c0c0c0, 0 0 12px rgba(192, 192, 192, 0.5);
+}
+.lb-avatar-framed.lb-frame-gold {
+  box-shadow: 0 0 0 3px #e8c547, 0 0 14px rgba(232, 197, 71, 0.55);
+}
+.cosmetics-frame-preview.lb-avatar-framed {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  margin: 0 auto 0.5rem;
+  background: linear-gradient(135deg, var(--surface), var(--bg));
+}

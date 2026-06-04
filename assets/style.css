@@ -1327,6 +1327,29 @@ main {
   font-size: 0.72rem;
 }
 
+.auction-tile {
+  position: relative;
+}
+
+.auction-spotlight-badge {
+  position: absolute;
+  top: 0.35rem;
+  left: 0.35rem;
+  z-index: 2;
+  font-size: 1rem;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.auction-spotlight-field {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+  align-self: flex-end;
+}
+
 .auction-tile-seller {
   margin-top: 0.5rem;
   padding-top: 0.45rem;

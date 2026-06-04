@@ -84,6 +84,12 @@
     return user.global_name || user.username || "Player #" + (user.id || "?");
   }
 
+  function avatarFrameClass(user) {
+    var f = user && user.leaderboard_frame;
+    if (!f) return "";
+    return " lb-avatar-framed lb-frame-" + String(f);
+  }
+
   function rarityClass(label) {
     var n = (label || "").toLowerCase();
     if (n.indexOf("secret") >= 0) return "rarity-secret";
@@ -280,7 +286,9 @@
         '<div class="lb-podium-medal">' +
         medalForRank(rank) +
         "</div>" +
-        '<img class="lb-podium-avatar" src="' +
+        '<img class="lb-podium-avatar' +
+        avatarFrameClass(user) +
+        '" src="' +
         (user.avatar_url || defaultAvatar()) +
         '" alt="" loading="lazy" />' +
         '<div class="lb-podium-name">' +
@@ -333,7 +341,9 @@
           '"' +
           clickableAttrs(entry) +
           ">" +
-          '<img class="lb-avatar" src="' +
+          '<img class="lb-avatar' +
+          avatarFrameClass(user) +
+          '" src="' +
           (user.avatar_url || defaultAvatar()) +
           '" alt="" loading="lazy" />' +
           '<div class="lb-user-text">' +

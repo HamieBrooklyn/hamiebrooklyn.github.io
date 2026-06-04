@@ -107,6 +107,7 @@
     createCur: document.getElementById("c-cur"),
     createStart: document.getElementById("c-start"),
     createDur: document.getElementById("c-dur"),
+    createSpotlight: document.getElementById("c-spotlight"),
     createMsg: document.getElementById("create-msg"),
     pickerSearch: document.getElementById("auction-picker-search"),
     pickerFilterFavorited: document.getElementById("auction-picker-filter-favorited"),
@@ -614,10 +615,14 @@
           escapeHtml(String(a.card.grade)) +
           "</span>"
         : "";
+    var spotBadge = a.spotlight_active
+      ? '<span class="auction-spotlight-badge" title="Spotlight listing">✨</span>'
+      : "";
     el.innerHTML =
       '<img src="' +
       img +
       '" alt="" loading="lazy" />' +
+      spotBadge +
       gradeBadge +
       '<div class="auction-tile-meta">' +
       '<span class="auction-pill">' +
@@ -1164,6 +1169,7 @@
             currency: els.createCur.value,
             starting_bid: parseInt(els.createStart.value, 10),
             duration: els.createDur.value.trim(),
+            spotlight: els.createSpotlight && els.createSpotlight.checked ? "yes" : "",
           };
           var r = await apiFetch("/api/auctions", {
             method: "POST",

@@ -93,12 +93,16 @@
     btnOpenInvite: document.getElementById("btn-open-invite"),
     inviteCopyMsg: document.getElementById("invite-copy-msg"),
     inviteHint: document.getElementById("invite-hint"),
+    cosmeticsFrameGrid: document.getElementById("cosmetics-frame-grid"),
+    cosmeticsFrameMsg: document.getElementById("cosmetics-frame-msg"),
   };
 
   var state = {
     user: null,
     referralsLoaded: false,
     settingsLoaded: false,
+    cosmeticsCatalog: null,
+    cosmeticsSettings: null,
   };
 
   function displayName(user) {
@@ -155,6 +159,9 @@
     });
     if (tabId === "referrals" && !state.referralsLoaded) {
       loadReferrals();
+    }
+    if (tabId === "cosmetics" && !state.cosmeticsCatalog) {
+      loadCosmetics();
     }
     if (tabId === "notifications" && !state.settingsLoaded) {
       loadSettings();
@@ -332,6 +339,143 @@
           : "";
     }
     state.settingsLoaded = true;
+  }
+
+  function renderCosmeticsFrames() {
+    if (!els.cosmeticsFrameGrid) return;
+    var cat = state.cosmeticsCatalog || {};
+    var frames = cat.leaderboard_frames || [];
+    var settings = state.cosmeticsSettings || {};
+    var unlocked = settings.unlocked_leaderboard_frames || [];
+    var equipped = settings.leaderboard_frame || null;
+    if (!frames.length) {
+      els.cosmeticsFrameGrid.innerHTML =
+        '<p class="settings-muted">Could not load frame catalog.</p>';
+      return;
+    }
+    els.cosmeticsFrameGrid.innerHTML = frames
+      .map(function (f) {
+        var id = f.id;
+        var owned = unlocked.indexOf(id) >= 0;
+        var isOn = equipped === id;
+        var actions = owned
+          ? '<button type="button" class="btn btn-ghost btn-sm cosmetics-equip-btn" data-frame="' +
+            id +
+            '">' +
+            (isOn ? "Equipped" : "Equip") +
+            "</button>"
+          : '<button type="button" class="btn btn-primary btn-sm cosmetics-unlock-btn" data-frame="' +
+            id +
+            '">Unlock (' +
+            f.cost +
+            " 💎)</button>";
+        return (
+          '<div class="cosmetics-frame-card' +
+          (isOn ? " is-equipped" : "") +
+          ' lb-frame-' +
+          id +
+          '">' +
+          '<div class="cosmetics-frame-preview lb-avatar-framed lb-frame-' +
+          id +
+          '"></div>' +
+          "<strong>" +
+          escapeHtml(f.label) +
+          "</strong>" +
+          actions +
+          "</div>"
+        );
+      })
+      .join("");
+    els.cosmeticsFrameGrid.querySelectorAll(".cosmetics-unlock-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        unlockFrame(btn.getAttribute("data-frame"));
+      });
+    });
+    els.cosmeticsFrameGrid.querySelectorAll(".cosmetics-equip-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var fid = btn.getAttribute("data-frame");
+        if (settings.leaderboard_frame === fid) {
+          equipFrame(null);
+        } else {
+          equipFrame(fid);
+        }
+      });
+    });
+    if (els.cosmeticsFrameMsg) {
+      els.cosmeticsFrameMsg.textContent = equipped
+        ? "Equipped: " + equipped + ". Tap Equipped to clear."
+        : "Unlock a frame, then equip it for the global leaderboard.";
+    }
+  }
+
+  function loadCosmetics() {
+    Promise.all([
+      apiFetch("/api/crystal-sinks").then(function (r) {
+        return r.ok ? r.json() : {};
+      }),
+      apiFetch("/api/me/settings").then(function (r) {
+        return r.ok ? r.json() : {};
+      }),
+    ])
+      .then(function (pair) {
+        state.cosmeticsCatalog = pair[0] || {};
+        state.cosmeticsSettings = (pair[1] && pair[1].settings) || {};
+        renderCosmeticsFrames();
+      })
+      .catch(function () {
+        if (els.cosmeticsFrameMsg) {
+          els.cosmeticsFrameMsg.textContent = "Could not load cosmetics.";
+        }
+      });
+  }
+
+  function unlockFrame(frameId) {
+    apiFetch("/api/me/leaderboard-frame/unlock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ frame_id: frameId }),
+    })
+      .then(function (r) {
+        return r.json().then(function (d) {
+          return { ok: r.ok, data: d };
+        });
+      })
+      .then(function (res) {
+        if (!res.ok) throw new Error((res.data && res.data.message) || "Unlock failed");
+        state.cosmeticsSettings = res.data.settings || state.cosmeticsSettings;
+        renderCosmeticsFrames();
+        if (window.PokePonApp && window.PokePonApp.notifyBalancesChanged) {
+          window.PokePonApp.notifyBalancesChanged();
+        }
+      })
+      .catch(function (err) {
+        if (els.cosmeticsFrameMsg) {
+          els.cosmeticsFrameMsg.textContent = err.message || "Unlock failed.";
+        }
+      });
+  }
+
+  function equipFrame(frameId) {
+    apiFetch("/api/me/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leaderboard_frame: frameId }),
+    })
+      .then(function (r) {
+        return r.json().then(function (d) {
+          return { ok: r.ok, data: d };
+        });
+      })
+      .then(function (res) {
+        if (!res.ok) throw new Error((res.data && res.data.message) || "Equip failed");
+        state.cosmeticsSettings = res.data.settings || state.cosmeticsSettings;
+        renderCosmeticsFrames();
+      })
+      .catch(function (err) {
+        if (els.cosmeticsFrameMsg) {
+          els.cosmeticsFrameMsg.textContent = err.message || "Equip failed.";
+        }
+      });
   }
 
   function loadSettings() {
