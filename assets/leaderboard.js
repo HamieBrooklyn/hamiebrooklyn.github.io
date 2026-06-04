@@ -33,7 +33,25 @@
       lead: "Players ranked by their highest graded slab (PSA-style 1–10). Tap a player to preview that copy.",
       icon: "🏆",
     },
+    packs: {
+      lead: "Members who opened the most `/cd` and booster packs in this server.",
+      icon: "📦",
+      serverOnly: true,
+    },
+    traders: {
+      lead: "Members with the most completed trades in this server.",
+      icon: "⇄",
+      serverOnly: true,
+    },
+    collectors: {
+      lead: "Members with the largest unique-card collections (all servers, members in this server).",
+      icon: "▣",
+      serverOnly: true,
+    },
   };
+
+  var GLOBAL_CATEGORIES = ["strongest", "tankiest", "rarest", "auction", "graded"];
+  var SERVER_ONLY_CATEGORIES = ["packs", "traders", "collectors"];
 
   function readSessionToken() {
     try {
@@ -119,6 +137,9 @@
 
   var state = {
     category: "strongest",
+    scope: "global",
+    guildId: null,
+    guilds: [],
     page: 1,
     me: null,
     authenticated: false,
@@ -152,6 +173,15 @@
     modalPlayer: document.getElementById("lb-modal-player"),
     modalHp: document.getElementById("lb-modal-hp"),
     modalStat: document.getElementById("lb-modal-stat"),
+    scopeGlobal: document.getElementById("lb-scope-global"),
+    scopeServer: document.getElementById("lb-scope-server"),
+    guildPicker: document.getElementById("lb-guild-picker"),
+    guildSelect: document.getElementById("lb-guild-select"),
+    milestonePanel: document.getElementById("lb-milestone-panel"),
+    milestoneTitle: document.getElementById("lb-milestone-title"),
+    milestoneLead: document.getElementById("lb-milestone-lead"),
+    milestoneBar: document.getElementById("lb-milestone-bar"),
+    milestoneMeta: document.getElementById("lb-milestone-meta"),
   };
 
   function hasCardPreview(entry) {
@@ -196,9 +226,15 @@
     }
   }
 
+  function isServerCategory(cat) {
+    return SERVER_ONLY_CATEGORIES.indexOf(cat) >= 0;
+  }
+
   function syncUrl() {
     var params = new URLSearchParams();
     if (state.category !== "strongest") params.set("category", state.category);
+    if (state.scope === "server") params.set("scope", "server");
+    if (state.scope === "server" && state.guildId) params.set("guild_id", state.guildId);
     if (state.page > 1) params.set("page", String(state.page));
     var qs = params.toString();
     var url = window.location.pathname + (qs ? "?" + qs : "");
@@ -209,20 +245,148 @@
     var params = new URLSearchParams(window.location.search);
     var cat = (params.get("category") || "strongest").toLowerCase();
     if (CATEGORY_META[cat]) state.category = cat;
+    var scope = (params.get("scope") || "global").toLowerCase();
+    if (scope === "server") state.scope = "server";
+    else state.scope = "global";
+    var gid = params.get("guild_id");
+    if (gid) state.guildId = gid;
     var page = parseInt(params.get("page") || "1", 10);
     state.page = isNaN(page) || page < 1 ? 1 : page;
   }
 
-  function setActiveTab() {
+  function updateScopeUi() {
+    if (els.scopeGlobal) {
+      els.scopeGlobal.classList.toggle("is-active", state.scope === "global");
+    }
+    if (els.scopeServer) {
+      els.scopeServer.classList.toggle("is-active", state.scope === "server");
+    }
+    if (els.guildPicker) {
+      els.guildPicker.hidden = state.scope !== "server";
+    }
     els.tabs.forEach(function (tab) {
+      var serverOnly = tab.getAttribute("data-server-only") === "true";
+      if (serverOnly) {
+        tab.hidden = state.scope !== "server";
+      }
+    });
+    if (state.scope === "global" && isServerCategory(state.category)) {
+      state.category = "strongest";
+    }
+  }
+
+  function setActiveTab() {
+    updateScopeUi();
+    els.tabs.forEach(function (tab) {
+      if (tab.hidden) return;
       var active = tab.dataset.category === state.category;
       tab.classList.toggle("is-active", active);
       tab.setAttribute("aria-pressed", active ? "true" : "false");
     });
     var meta = CATEGORY_META[state.category];
-    if (els.lead && meta) els.lead.textContent = meta.lead;
+    if (els.lead && meta) {
+      var scopeNote =
+        state.scope === "server" && state.guildName
+          ? " Rankings for **" + state.guildName + "**."
+          : state.scope === "server"
+            ? " Pick a server you share with the bot."
+            : "";
+      els.lead.textContent = meta.lead + scopeNote;
+    }
     if (els.previewHint) {
-      els.previewHint.hidden = false;
+      els.previewHint.hidden = isServerCategory(state.category);
+    }
+    if (els.title) {
+      var title = (meta && meta.icon ? meta.icon + " " : "") + (state.apiTitle || "Leaderboards");
+      if (state.scope === "server" && state.guildName) {
+        title += " — " + state.guildName;
+      }
+      els.title.textContent = title;
+    }
+  }
+
+  function populateGuildSelect() {
+    if (!els.guildSelect) return;
+    els.guildSelect.innerHTML = "";
+    if (!state.guilds.length) {
+      var opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "Sign in to list servers";
+      els.guildSelect.appendChild(opt);
+      return;
+    }
+    state.guilds.forEach(function (g) {
+      var o = document.createElement("option");
+      o.value = g.id;
+      o.textContent = g.name;
+      els.guildSelect.appendChild(o);
+    });
+    if (state.guildId) {
+      els.guildSelect.value = state.guildId;
+    } else if (state.guilds[0]) {
+      state.guildId = state.guilds[0].id;
+      els.guildSelect.value = state.guildId;
+    }
+  }
+
+  async function loadGuilds() {
+    if (!state.authenticated) {
+      state.guilds = [];
+      populateGuildSelect();
+      return;
+    }
+    try {
+      var res = await apiFetch("/api/me/guilds");
+      if (!res.ok) return;
+      var data = await res.json();
+      state.guilds = data.guilds || [];
+      populateGuildSelect();
+    } catch (_) {}
+  }
+
+  async function loadMilestones() {
+    if (!els.milestonePanel) return;
+    if (state.scope !== "server" || !state.guildId) {
+      els.milestonePanel.hidden = true;
+      return;
+    }
+    try {
+      var res = await apiFetch(
+        "/api/guild-milestones?guild_id=" + encodeURIComponent(state.guildId)
+      );
+      if (!res.ok) {
+        els.milestonePanel.hidden = true;
+        return;
+      }
+      var data = await res.json();
+      var m = data.milestones || {};
+      els.milestonePanel.hidden = false;
+      if (els.milestoneTitle) {
+        els.milestoneTitle.textContent =
+          "Server milestones — " + (data.guild_name || "Server");
+      }
+      if (els.milestoneLead) {
+        if (m.next_tier != null) {
+          els.milestoneLead.textContent =
+            (m.packs_opened || 0).toLocaleString() +
+            " packs opened · next goal: " +
+            m.next_tier.toLocaleString();
+        } else {
+          els.milestoneLead.textContent =
+            (m.packs_opened || 0).toLocaleString() +
+            " packs opened — all community milestones complete!";
+        }
+      }
+      if (els.milestoneBar) {
+        els.milestoneBar.textContent = m.progress_bar || "";
+      }
+      if (els.milestoneMeta) {
+        els.milestoneMeta.textContent =
+          (m.trades_completed || 0).toLocaleString() +
+          " trades completed in this server.";
+      }
+    } catch (_) {
+      els.milestonePanel.hidden = true;
     }
   }
 
@@ -295,7 +459,7 @@
         escapeHtml(displayName(user)) +
         "</div>" +
         '<div class="lb-podium-card-name">' +
-        escapeHtml(entry.card_name || "") +
+        escapeHtml(entry.card_name || (entry.stat && entry.stat.label) || "") +
         "</div>" +
         '<div class="lb-podium-stat ' +
         sc +
@@ -351,7 +515,10 @@
           escapeHtml(displayName(user)) +
           "</div>" +
           '<div class="lb-card-name">' +
-          escapeHtml(entry.card_name || "") +
+          escapeHtml(
+            entry.card_name ||
+              (isServerCategory(state.category) && entry.stat ? entry.stat.label : "")
+          ) +
           "</div>" +
           "</div>" +
           "</div>" +
@@ -386,8 +553,11 @@
     }
     if (data.viewer_rank != null) {
       els.viewerRank.hidden = false;
+      var scopeLabel = state.scope === "server" ? "server" : "global";
       els.viewerRank.innerHTML =
-        "Your global rank: <strong>#" +
+        "Your " +
+        scopeLabel +
+        " rank: <strong>#" +
         data.viewer_rank +
         "</strong> in " +
         escapeHtml(data.title || state.category) +
@@ -480,7 +650,9 @@
   }
 
   function render(data) {
-    if (els.title && data.title) els.title.textContent = data.title;
+    state.apiTitle = data.title || "Leaderboards";
+    state.guildName = data.guild_name || state.guildName || null;
+    setActiveTab();
     indexEntries(data.entries || []);
     renderViewerRank(data);
     renderPodium(data.entries || []);
@@ -537,12 +709,25 @@
     syncUrl();
     closeCardModal();
 
+    if (state.scope === "server") {
+      if (!state.guildId) {
+        setStatus("Choose a Discord server you share with the bot.", true);
+        return;
+      }
+      await loadMilestones();
+    } else if (els.milestonePanel) {
+      els.milestonePanel.hidden = true;
+    }
+
     var path =
       "/api/leaderboards?category=" +
       encodeURIComponent(state.category) +
       "&page=" +
       encodeURIComponent(String(state.page)) +
       "&limit=25";
+    if (state.scope === "server") {
+      path += "&scope=server&guild_id=" + encodeURIComponent(state.guildId);
+    }
 
     if (state.inflight) state.inflight.abort();
     var controller = new AbortController();
@@ -575,6 +760,30 @@
   }
 
   function bindEvents() {
+    if (els.scopeGlobal) {
+      els.scopeGlobal.addEventListener("click", function () {
+        if (state.scope === "global") return;
+        state.scope = "global";
+        state.page = 1;
+        loadLeaderboard();
+      });
+    }
+    if (els.scopeServer) {
+      els.scopeServer.addEventListener("click", function () {
+        if (state.scope === "server") return;
+        state.scope = "server";
+        state.page = 1;
+        if (!state.guildId && state.guilds[0]) state.guildId = state.guilds[0].id;
+        loadLeaderboard();
+      });
+    }
+    if (els.guildSelect) {
+      els.guildSelect.addEventListener("change", function () {
+        state.guildId = els.guildSelect.value || null;
+        state.page = 1;
+        loadLeaderboard();
+      });
+    }
     els.tabs.forEach(function (tab) {
       tab.addEventListener("click", function () {
         var cat = tab.dataset.category;
@@ -643,6 +852,11 @@
     bindEvents();
     setSidebarState("loading");
     await loadMe();
+    await loadGuilds();
+    if (state.scope === "server" && !state.guildId && state.guilds[0]) {
+      state.guildId = state.guilds[0].id;
+      populateGuildSelect();
+    }
     await loadLeaderboard();
   }
 

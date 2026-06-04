@@ -146,8 +146,26 @@
         </p>
       </header>
 
+      <div class="lb-scope-bar" id="lb-scope-bar">
+        <div class="lb-scope-toggle" role="group" aria-label="Leaderboard scope">
+          <button type="button" class="lb-scope-btn is-active" data-scope="global" id="lb-scope-global">Global</button>
+          <button type="button" class="lb-scope-btn" data-scope="server" id="lb-scope-server">Server</button>
+        </div>
+        <label class="lb-guild-picker" id="lb-guild-picker" hidden>
+          <span class="lb-guild-picker-label">Discord server</span>
+          <select id="lb-guild-select" aria-label="Select Discord server"></select>
+        </label>
+      </div>
+
+      <section class="lb-milestone-panel" id="lb-milestone-panel" hidden aria-live="polite">
+        <h2 class="lb-milestone-title" id="lb-milestone-title">Server milestones</h2>
+        <p class="lb-milestone-lead" id="lb-milestone-lead"></p>
+        <p class="lb-milestone-bar" id="lb-milestone-bar"></p>
+        <p class="lb-milestone-meta" id="lb-milestone-meta"></p>
+      </section>
+
       <p class="lb-discord-hint">
-        For <strong>server-only</strong> rankings, use <code>/leaderboard</code> in Discord with scope <strong>Server</strong>.
+        In Discord: <code>/servermilestones</code> for pack progress · <code>/leaderboard</code> with scope <strong>Server</strong>.
       </p>
 
       <a class="lb-cosmetics-cta" href="/settings/#cosmetics">
@@ -166,6 +184,9 @@
         <button type="button" class="lb-tab" data-category="rarest" aria-pressed="false">Rarest</button>
         <button type="button" class="lb-tab" data-category="auction" aria-pressed="false">Top auctions</button>
         <button type="button" class="lb-tab" data-category="graded" aria-pressed="false">Top graded</button>
+        <button type="button" class="lb-tab lb-tab-server" data-category="packs" data-server-only="true" aria-pressed="false" hidden>Packs opened</button>
+        <button type="button" class="lb-tab lb-tab-server" data-category="traders" data-server-only="true" aria-pressed="false" hidden>Top traders</button>
+        <button type="button" class="lb-tab lb-tab-server" data-category="collectors" data-server-only="true" aria-pressed="false" hidden>Top collectors</button>
       </nav>
 
       <section class="lb-status" id="lb-status" aria-live="polite"></section>
@@ -210,6 +231,6 @@
   <script src="/assets/api-base-init.js?v=1"></script>
   <script src="/assets/site-origin.js?v=1"></script>
   <script src="/assets/app-shell.js?v=11" defer></script>
-  <script src="/assets/leaderboard.js?v=2" defer></script>
+  <script src="/assets/leaderboard.js?v=3" defer></script>
 </body>
 </html>
