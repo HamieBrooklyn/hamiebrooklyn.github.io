@@ -279,36 +279,7 @@
   }
 
   function copyCardId(text, buttonEl) {
-    var pid = (text || "").trim();
-    if (!pid) return;
-    var flash = function (ok) {
-      if (!buttonEl || !ok) return;
-      var orig = buttonEl.textContent;
-      buttonEl.textContent = "Copied!";
-      setTimeout(function () {
-        buttonEl.textContent = orig;
-      }, 1500);
-    };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(pid).then(function () { flash(true); }).catch(function () { fallbackCopy(); });
-    } else {
-      fallbackCopy();
-    }
-    function fallbackCopy() {
-      try {
-        var ta = document.createElement("textarea");
-        ta.value = pid;
-        ta.style.position = "fixed";
-        ta.style.left = "-9999px";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        flash(true);
-      } catch (_) {
-        flash(false);
-      }
-    }
+    if (window.PokePonCopy) window.PokePonCopy.copy(text, buttonEl);
   }
 
   /** Build collection-shaped item for the card modal from a trade-side card entry. */
@@ -1251,6 +1222,18 @@
         if (modalItem) openTradeCardModal(modalItem, { allowEvolve: removable });
       };
       row.appendChild(hit);
+      if (c.public_id && window.PokePonCopy) {
+        var copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "btn btn-ghost btn-copy-inline trade-chip-copy";
+        copyBtn.textContent = "Copy";
+        copyBtn.setAttribute("aria-label", "Copy Card ID");
+        copyBtn.onclick = function (ev) {
+          ev.stopPropagation();
+          window.PokePonCopy.copy(c.public_id, copyBtn);
+        };
+        row.appendChild(copyBtn);
+      }
       if (removable) {
         var rm = document.createElement("button");
         rm.type = "button";
@@ -1439,6 +1422,12 @@
     var img = c.image_small_url ? '<img src="' + c.image_small_url + '" alt="" loading="lazy" />' : "";
     var favMark = c.is_favorite ? '<span class="picker-fav" title="Favorited">⭐</span>' : "";
     el.innerHTML = img + "<div>" + (c.name || "Card") + favMark + "</div>";
+    if (c.public_id && window.PokePonCopy) {
+      window.PokePonCopy.appendRow(el, c.public_id, {
+        rowClass: "card-id-row picker-card-id-row",
+        buttonClass: "btn btn-ghost btn-copy-inline picker-card-copy",
+      });
+    }
     el.onclick = function () {
       if (c.is_favorite) return;
       if (state.selectedCardIds.indexOf(c.instance_id) >= 0) {

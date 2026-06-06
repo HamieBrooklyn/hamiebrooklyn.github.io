@@ -235,6 +235,12 @@
     }
   }
 
+  function setSidebarOpen(sidebar, toggle, open) {
+    sidebar.classList.toggle("is-open", open);
+    document.body.classList.toggle("sidebar-open", open);
+    if (toggle) toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
   function initSidebar() {
     var shell = document.querySelector(".app-shell");
     var sidebar = document.getElementById("sidebar");
@@ -244,23 +250,84 @@
     shell.addEventListener("click", function (e) {
       if (!sidebar.classList.contains("is-open")) return;
       if (sidebar.contains(e.target)) return;
-      sidebar.classList.remove("is-open");
-      if (toggle) toggle.setAttribute("aria-expanded", "false");
+      setSidebarOpen(sidebar, toggle, false);
     });
 
     document.addEventListener("keydown", function (e) {
       if (e.key !== "Escape" || !sidebar.classList.contains("is-open")) return;
-      sidebar.classList.remove("is-open");
-      if (toggle) toggle.setAttribute("aria-expanded", "false");
+      setSidebarOpen(sidebar, toggle, false);
     });
 
     if (toggle) {
       toggle.addEventListener("click", function () {
-        var open = sidebar.classList.toggle("is-open");
-        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        setSidebarOpen(sidebar, toggle, !sidebar.classList.contains("is-open"));
       });
     }
   }
+
+  window.PokePonCopy = {
+    copy: function (text, buttonEl) {
+      var pid = String(text || "").trim();
+      if (!pid || pid === "—") return;
+      function flash(ok) {
+        if (!buttonEl || !ok) return;
+        var orig = buttonEl.textContent;
+        buttonEl.textContent = "Copied!";
+        setTimeout(function () {
+          buttonEl.textContent = orig;
+        }, 1500);
+      }
+      function fallbackCopy() {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = pid;
+          ta.style.position = "fixed";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          flash(true);
+        } catch (_) {
+          flash(false);
+        }
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pid).then(function () {
+          flash(true);
+        }).catch(function () {
+          fallbackCopy();
+        });
+      } else {
+        fallbackCopy();
+      }
+    },
+    appendRow: function (parent, publicId, opts) {
+      if (!parent) return null;
+      opts = opts || {};
+      var pid = String(publicId || "").trim();
+      if (!pid || pid === "—") return null;
+      var row = document.createElement("div");
+      row.className = opts.rowClass || "card-id-row";
+      var code = document.createElement("code");
+      code.className = opts.codeClass || "card-id-code";
+      code.textContent = pid;
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = opts.buttonClass || "btn btn-ghost btn-copy-inline";
+      btn.textContent = opts.buttonLabel || "Copy";
+      btn.setAttribute("aria-label", "Copy Card ID");
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        window.PokePonCopy.copy(pid, btn);
+      });
+      row.appendChild(code);
+      row.appendChild(btn);
+      parent.appendChild(row);
+      return row;
+    },
+  };
 
   function apiBase() {
     return (window.POKEPON_API_BASE || "").replace(/\/+$/, "");

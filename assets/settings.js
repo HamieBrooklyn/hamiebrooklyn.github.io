@@ -395,10 +395,10 @@
       els.notifyWishlistMarket.checked = settings.notify_wishlist_market !== false;
     }
     if (els.notifyDaily) {
-      els.notifyDaily.checked = settings.notify_daily !== false;
+      els.notifyDaily.checked = !!settings.notify_daily;
     }
     if (els.notifyDrop) {
-      els.notifyDrop.checked = settings.notify_drop !== false;
+      els.notifyDrop.checked = !!settings.notify_drop;
     }
     if (els.notifyVote) {
       els.notifyVote.checked = settings.notify_vote !== false;
@@ -639,8 +639,8 @@
       notify_referrals: els.notifyReferrals.checked,
       notify_missions: els.notifyMissions ? els.notifyMissions.checked : true,
       notify_wishlist_market: els.notifyWishlistMarket ? els.notifyWishlistMarket.checked : true,
-      notify_daily: els.notifyDaily ? els.notifyDaily.checked : true,
-      notify_drop: els.notifyDrop ? els.notifyDrop.checked : true,
+      notify_daily: els.notifyDaily ? els.notifyDaily.checked : false,
+      notify_drop: els.notifyDrop ? els.notifyDrop.checked : false,
       notify_vote: els.notifyVote ? els.notifyVote.checked : true,
       notify_browser: els.notifyBrowser ? els.notifyBrowser.checked : false,
       wishlist_alert_max_pokedollars: parseOptionalCapInput(els.wishlistMaxPokedollars),

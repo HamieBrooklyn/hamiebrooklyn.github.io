@@ -263,33 +263,7 @@
   }
 
   function copyCardId(text, btn) {
-    var pid = String(text || "").trim();
-    if (!pid || pid === "—") return;
-    function flash(ok) {
-      if (!btn) return;
-      var prev = btn.textContent;
-      btn.textContent = ok ? "Copied" : "Failed";
-      setTimeout(function () {
-        btn.textContent = prev;
-      }, 1200);
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(pid).then(function () { flash(true); }).catch(function () { flash(false); });
-      return;
-    }
-    try {
-      var ta = document.createElement("textarea");
-      ta.value = pid;
-      ta.style.position = "fixed";
-      ta.style.left = "-9999px";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-      flash(true);
-    } catch (_) {
-      flash(false);
-    }
+    if (window.PokePonCopy) window.PokePonCopy.copy(text, btn);
   }
 
   var CRAFT_TRAINER_SUBTYPES = ["Supporter", "Stadium"];
@@ -653,6 +627,12 @@
         buildUserChip(profileUser(a.seller, a.seller_discord_id), "pokepon-user-chip--sm")
       );
       meta.appendChild(sellerRow);
+      if (a.card && a.card.public_id && window.PokePonCopy) {
+        window.PokePonCopy.appendRow(meta, a.card.public_id, {
+          rowClass: "card-id-row auction-tile-id-row",
+          buttonClass: "btn btn-ghost btn-copy-inline picker-card-copy",
+        });
+      }
     }
     el.addEventListener("click", function () {
       openDetail(a.id);
@@ -712,10 +692,17 @@
           buildUserChip(profileUser(a.seller, a.seller_discord_id))
         );
       }
-      els.detailSub.textContent =
-        (a.card && a.card.set_name + " #" + a.card.collector_number) +
-        " · Card ID " +
-        (a.card && a.card.public_id);
+      if (els.detailSub) {
+        els.detailSub.innerHTML = "";
+        if (a.card && a.card.set_name) {
+          var setLine = document.createElement("div");
+          setLine.textContent = a.card.set_name + " #" + (a.card.collector_number || "");
+          els.detailSub.appendChild(setLine);
+        }
+        if (a.card && a.card.public_id && window.PokePonCopy) {
+          window.PokePonCopy.appendRow(els.detailSub, a.card.public_id);
+        }
+      }
       var img =
         (a.card && a.card.image_large_url) ||
         (a.card && a.card.image_small_url) ||
@@ -999,6 +986,12 @@
     };
     el.appendChild(hit);
     el.appendChild(viewBtn);
+    if (c.public_id && window.PokePonCopy) {
+      window.PokePonCopy.appendRow(el, c.public_id, {
+        rowClass: "card-id-row picker-card-id-row",
+        buttonClass: "btn btn-ghost btn-copy-inline picker-card-copy",
+      });
+    }
     parent.appendChild(el);
   }
 

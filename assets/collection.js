@@ -78,43 +78,7 @@
   }
 
   function copyCardId(text, buttonEl) {
-    var pid = (text || "").trim();
-    if (!pid) return;
-    var flash = function (ok) {
-      if (!buttonEl || !ok) return;
-      var orig = buttonEl.textContent;
-      buttonEl.textContent = "Copied!";
-      setTimeout(function () {
-        buttonEl.textContent = orig;
-      }, 1500);
-    };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard
-        .writeText(pid)
-        .then(function () {
-          flash(true);
-        })
-        .catch(function () {
-          fallbackCopy();
-        });
-    } else {
-      fallbackCopy();
-    }
-    function fallbackCopy() {
-      try {
-        var ta = document.createElement("textarea");
-        ta.value = pid;
-        ta.style.position = "fixed";
-        ta.style.left = "-9999px";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        flash(true);
-      } catch (_) {
-        flash(false);
-      }
-    }
+    if (window.PokePonCopy) window.PokePonCopy.copy(text, buttonEl);
   }
 
   var STATUS_KIND = {

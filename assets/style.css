@@ -5033,3 +5033,65 @@ html.pokepon-staging-active body {
 .pokepon-staging-banner__exit:hover {
   color: #451a03;
 }
+
+/* --- Mobile polish (#14) --- */
+.card-id-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+}
+
+.card-id-code {
+  font-size: 0.72rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--muted);
+  flex: 1 1 auto;
+  min-width: 0;
+  word-break: break-all;
+}
+
+.picker-card-id-row {
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 880px) {
+  .sidebar-toggle {
+    width: 44px;
+    height: 44px;
+  }
+
+  body.sidebar-open {
+    overflow: hidden;
+  }
+
+  .btn-copy-inline,
+  .card-tile-copy,
+  .trade-chip-copy,
+  .picker-card-copy {
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .search-clear {
+    width: 44px;
+    height: 44px;
+  }
+
+  .modal-close {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  #card-modal .modal-aside .modal-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    margin-top: 0.5rem;
+    padding: 0.75rem 0 calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    background: rgba(11, 14, 20, 0.92);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border);
+  }
+}
