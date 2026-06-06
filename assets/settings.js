@@ -87,6 +87,11 @@
     notifyReferrals: document.getElementById("notify-referrals"),
     notifyMissions: document.getElementById("notify-missions"),
     notifyWishlistMarket: document.getElementById("notify-wishlist-market"),
+    notifyDaily: document.getElementById("notify-daily"),
+    notifyDrop: document.getElementById("notify-drop"),
+    notifyVote: document.getElementById("notify-vote"),
+    notifyBrowser: document.getElementById("notify-browser"),
+    btnEnableBrowser: document.getElementById("btn-enable-browser"),
     wishlistMaxPokedollars: document.getElementById("wishlist-max-pokedollars"),
     wishlistMaxCrystals: document.getElementById("wishlist-max-crystals"),
     notifySaveMsg: document.getElementById("notify-save-msg"),
@@ -389,6 +394,18 @@
     if (els.notifyWishlistMarket) {
       els.notifyWishlistMarket.checked = settings.notify_wishlist_market !== false;
     }
+    if (els.notifyDaily) {
+      els.notifyDaily.checked = settings.notify_daily !== false;
+    }
+    if (els.notifyDrop) {
+      els.notifyDrop.checked = settings.notify_drop !== false;
+    }
+    if (els.notifyVote) {
+      els.notifyVote.checked = settings.notify_vote !== false;
+    }
+    if (els.notifyBrowser) {
+      els.notifyBrowser.checked = !!settings.notify_browser;
+    }
     if (els.wishlistMaxPokedollars) {
       els.wishlistMaxPokedollars.value =
         settings.wishlist_alert_max_pokedollars != null
@@ -622,6 +639,10 @@
       notify_referrals: els.notifyReferrals.checked,
       notify_missions: els.notifyMissions ? els.notifyMissions.checked : true,
       notify_wishlist_market: els.notifyWishlistMarket ? els.notifyWishlistMarket.checked : true,
+      notify_daily: els.notifyDaily ? els.notifyDaily.checked : true,
+      notify_drop: els.notifyDrop ? els.notifyDrop.checked : true,
+      notify_vote: els.notifyVote ? els.notifyVote.checked : true,
+      notify_browser: els.notifyBrowser ? els.notifyBrowser.checked : false,
       wishlist_alert_max_pokedollars: parseOptionalCapInput(els.wishlistMaxPokedollars),
       wishlist_alert_max_crystals: parseOptionalCapInput(els.wishlistMaxCrystals),
     };
@@ -700,6 +721,19 @@
     });
     if (els.notifyForm) {
       els.notifyForm.addEventListener("submit", saveSettings);
+    }
+    if (els.btnEnableBrowser) {
+      els.btnEnableBrowser.addEventListener("click", function () {
+        if (!window.Notification) {
+          alert("Browser notifications are not supported here.");
+          return;
+        }
+        Notification.requestPermission().then(function () {
+          if (els.notifyBrowser && Notification.permission === "granted") {
+            els.notifyBrowser.checked = true;
+          }
+        });
+      });
     }
     if (els.btnCopyInvite) {
       els.btnCopyInvite.addEventListener("click", copyInviteLink);

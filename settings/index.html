@@ -9,7 +9,7 @@
   <meta name="description" content="Poké Pon profile: referral progress, notification preferences, and account settings." />
   <link rel="canonical" href="https://pokepon.org/settings/" />
   <meta name="pokepon-api-base" content="https://api.pokepon.org" />
-  <link rel="stylesheet" href="/assets/style.css?v=47" />
+  <link rel="stylesheet" href="/assets/style.css?v=48" />
   <link rel="stylesheet" href="/assets/cosmetic-frames.css?v=1" />
   <link rel="stylesheet" href="/assets/settings.css?v=4" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -217,7 +217,7 @@
         </section>
 
         <section class="settings-tab-panel" id="tab-notifications" role="tabpanel" aria-labelledby="tab-btn-notifications" hidden>
-          <p class="settings-muted settings-notify-lead">Choose what the bot may notify you about on Discord. Website badges still update either way.</p>
+          <p class="settings-muted settings-notify-lead">Choose Discord DMs and optional browser alerts. The 🔔 inbox on the site always shows recent events while you are signed in.</p>
           <form class="settings-form" id="notify-form">
             <label class="settings-toggle">
               <input type="checkbox" name="notify_trades" id="notify-trades" />
@@ -259,6 +259,41 @@
                 <span class="settings-muted">Discord DM when a starred card is listed on auction or offered in a trade.</span>
               </span>
             </label>
+            <label class="settings-toggle">
+              <input type="checkbox" name="notify_daily" id="notify-daily" />
+              <span class="settings-toggle-ui" aria-hidden="true"></span>
+              <span class="settings-toggle-text">
+                <strong>Daily reward</strong>
+                <span class="settings-muted">Reminder when your daily ₽ claim is ready (`/daily`).</span>
+              </span>
+            </label>
+            <label class="settings-toggle">
+              <input type="checkbox" name="notify_drop" id="notify-drop" />
+              <span class="settings-toggle-ui" aria-hidden="true"></span>
+              <span class="settings-toggle-text">
+                <strong>Card drop</strong>
+                <span class="settings-muted">Reminder when your `/cd` cooldown finishes.</span>
+              </span>
+            </label>
+            <label class="settings-toggle">
+              <input type="checkbox" name="notify_vote" id="notify-vote" />
+              <span class="settings-toggle-ui" aria-hidden="true"></span>
+              <span class="settings-toggle-text">
+                <strong>Top.gg voting</strong>
+                <span class="settings-muted">Vote reminders and reward DMs when you vote on Top.gg.</span>
+              </span>
+            </label>
+            <label class="settings-toggle">
+              <input type="checkbox" name="notify_browser" id="notify-browser" />
+              <span class="settings-toggle-ui" aria-hidden="true"></span>
+              <span class="settings-toggle-text">
+                <strong>Browser alerts</strong>
+                <span class="settings-muted">Show native desktop notifications when new inbox items arrive (requires permission).</span>
+              </span>
+            </label>
+            <p class="settings-muted">
+              <button type="button" class="btn btn-ghost btn-small" id="btn-enable-browser">Enable browser permission</button>
+            </p>
             <div class="settings-field-group">
               <p class="settings-muted settings-field-label">Optional auction price caps (leave blank for any price)</p>
               <label class="settings-field">
@@ -283,7 +318,7 @@
   <script src="/assets/api-base-init.js?v=1"></script>
   <script src="/assets/site-origin.js?v=1"></script>
   <script src="/assets/site-links.js?v=1" defer></script>
-  <script src="/assets/app-shell.js?v=14" defer></script>
-  <script src="/assets/settings.js?v=3" defer></script>
+  <script src="/assets/app-shell.js?v=15" defer></script>
+  <script src="/assets/settings.js?v=5" defer></script>
 </body>
 </html>
