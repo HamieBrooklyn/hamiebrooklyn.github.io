@@ -495,7 +495,7 @@
     if (document.getElementById("app-events-banner-script")) return;
     var s = document.createElement("script");
     s.id = "app-events-banner-script";
-    s.src = "/assets/app-events-banner.js?v=3";
+    s.src = "/assets/app-events-banner.js?v=4";
     s.defer = true;
     document.body.appendChild(s);
   }

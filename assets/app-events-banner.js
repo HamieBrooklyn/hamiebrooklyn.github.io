@@ -145,8 +145,36 @@
     refreshTimer = setInterval(load, 120000);
   }
 
-  function pickPrimaryEvent(events) {
-    if (!events || !events.length) return null;
+  function gameEventDetail(ev) {
+    if (!ev) return "";
+    if (ev.kind === "luck_boost") return "+" + Number(ev.luck_percent || 0) + "% luck";
+    if (ev.kind === "double_daily") return "Daily ×" + Number(ev.daily_multiplier || 2);
+    if (ev.kind === "free_spotlight") return "Free spotlight";
+    if (ev.kind === "set_spotlight") return "Set " + (ev.set_code || "") + " spotlight";
+    return ev.kind || "";
+  }
+
+  function normalizeGameEvent(ev) {
+    return {
+      name: ev.title || "Game event",
+      description: gameEventDetail(ev),
+      start_at: ev.start_at,
+      end_at: ev.end_at,
+      status: ev.status === "active" ? "active" : "scheduled",
+      url: "/activity/",
+      location: "In-game",
+      is_game_event: true,
+    };
+  }
+
+  function pickPrimaryEvent(data) {
+    var game = data && data.game_events ? data.game_events : [];
+    var liveGame = game.filter(function (g) {
+      return g.status === "active";
+    });
+    if (liveGame.length) return normalizeGameEvent(liveGame[0]);
+    var events = data && data.events ? data.events : [];
+    if (!events.length) return null;
     var sorted = events.slice().sort(function (a, b) {
       var sa = parseIso(a.start_at);
       var sb = parseIso(b.start_at);
@@ -192,10 +220,12 @@
     barEl.innerHTML =
       '<a class="app-events-bar-inner" href="' +
       escapeHtml(ev.url || "#") +
-      '" target="_blank" rel="noopener noreferrer">' +
+      '"' +
+      (ev.is_game_event ? "" : ' target="_blank" rel="noopener noreferrer"') +
+      ">" +
       badge +
       '<span class="app-events-bar-title">' +
-      escapeHtml(ev.name || "Discord event") +
+      escapeHtml(ev.name || "Event") +
       "</span>" +
       '<span class="app-events-bar-countdown app-events-bar-countdown-soon" data-status="' +
       escapeHtml(status) +
@@ -205,7 +235,12 @@
       escapeHtml(ev.end_at || "") +
       '"></span>' +
       (meta ? '<span class="app-events-bar-meta">' + meta + "</span>" : "") +
-      '<span class="app-events-bar-cta">Open in Discord</span>' +
+      (ev.description
+        ? '<span class="app-events-bar-meta">' + escapeHtml(ev.description) + "</span>"
+        : "") +
+      '<span class="app-events-bar-cta">' +
+      (ev.is_game_event ? "View activity" : "Open in Discord") +
+      "</span>" +
       "</a>";
 
     barEl.hidden = false;
@@ -223,8 +258,7 @@
         return r.json();
       })
       .then(function (data) {
-        var events = data && data.events ? data.events : [];
-        render(pickPrimaryEvent(events));
+        render(pickPrimaryEvent(data || {}));
       })
       .catch(function () {
         if (barEl) barEl.hidden = true;

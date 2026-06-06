@@ -164,6 +164,52 @@
     });
   }
 
+  function gameEventDetail(ev) {
+    if (!ev) return "";
+    if (ev.kind === "luck_boost") {
+      return "+" + Number(ev.luck_percent || 0) + "% rarer card pulls";
+    }
+    if (ev.kind === "double_daily") {
+      return "Daily rewards ×" + Number(ev.daily_multiplier || 2);
+    }
+    if (ev.kind === "free_spotlight") {
+      return "Free auction spotlight (no crystal fee)";
+    }
+    if (ev.kind === "set_spotlight") {
+      return "Free spotlight for set " + (ev.set_code || "");
+    }
+    return ev.kind || "";
+  }
+
+  function normalizeGameEvent(ev) {
+    var detail = gameEventDetail(ev);
+    var desc = detail;
+    if (ev.schedule_label) desc = detail + " · " + ev.schedule_label;
+    else if (ev.description) desc = ev.description;
+    return {
+      id: "game-" + ev.id,
+      name: ev.title || "Game event",
+      description: desc,
+      start_at: ev.start_at,
+      end_at: ev.end_at,
+      status: ev.status === "active" ? "active" : "scheduled",
+      url: "/activity/",
+      location: "In-game",
+      is_game_event: true,
+    };
+  }
+
+  function mergeEventsPayload(data) {
+    var discord = data && data.events ? data.events : [];
+    var game = data && data.game_events ? data.game_events : [];
+    var normalized = game
+      .filter(function (g) {
+        return g.status === "active" || g.status === "scheduled";
+      })
+      .map(normalizeGameEvent);
+    return normalized.concat(discord);
+  }
+
   function formatScheduleLine(isoStart, isoEnd) {
     var start = parseIso(isoStart);
     if (!start) return "";
@@ -339,7 +385,11 @@
           desc +
           '<a class="btn btn-primary btn-small home-events-cta" href="' +
           escapeHtml(ev.url || "#") +
-          '" target="_blank" rel="noopener noreferrer">Open in Discord</a>' +
+          '"' +
+          (ev.is_game_event ? "" : ' target="_blank" rel="noopener noreferrer"') +
+          ">" +
+          (ev.is_game_event ? "View activity" : "Open in Discord") +
+          "</a>" +
           "</div></article>"
         );
       })
@@ -358,7 +408,7 @@
       })
       .then(function (data) {
         renderSetChase(data && data.set_chase ? data.set_chase : null);
-        render(data && data.events ? data.events : []);
+        render(mergeEventsPayload(data || {}));
       })
       .catch(function (err) {
         if (panel) panel.hidden = true;
