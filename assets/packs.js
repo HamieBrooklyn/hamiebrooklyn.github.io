@@ -363,9 +363,9 @@
         if (err && err.name === "AbortError") return;
         if (els.detailMain) {
           els.detailMain.innerHTML =
-            '<p class="packs-detail-error">Could not load this pack.</p>';
+            '<p class="packs-detail-error">Could not load this pack. Try again in a moment.</p>';
         }
-        showBrowse();
+        setStatus("error", "Could not load pack details.");
       });
   }
 
