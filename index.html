@@ -8,7 +8,7 @@
   <title>Poké Pon — Discord bot</title>
   <meta name="description" content="Poké Pon: Pokémon TCG gacha, collection, trades, and auctions on Discord." />
   <link rel="canonical" href="https://pokepon.org/" />
-  <link rel="stylesheet" href="assets/style.css?v=46" />
+  <link rel="stylesheet" href="assets/style.css?v=50" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -86,6 +86,12 @@
         <div class="home-set-chase-bars" id="home-set-chase-bars"></div>
         <p class="home-set-chase-meta" id="home-set-chase-meta"></p>
         <button class="btn btn-primary btn-small" type="button" id="home-set-chase-claim" hidden>Claim reward</button>
+      </aside>
+
+      <aside id="home-news" class="home-news" hidden aria-label="New cards in the catalog">
+        <p class="home-news-kicker">Catalog</p>
+        <h2 class="home-news-title">New cards &amp; sets</h2>
+        <div id="home-news-list" class="home-news-list"></div>
       </aside>
 
       <aside id="home-events" class="home-events" hidden aria-label="Current events">
@@ -238,6 +244,7 @@
   <script src="/assets/staging-env.js?v=1" defer></script>
   <script src="assets/site-links.js?v=1" defer></script>
   <script src="assets/home-events.js?v=8" defer></script>
+  <script src="assets/home-news.js?v=1" defer></script>
   <script>
     document.getElementById("y").textContent = new Date().getFullYear();
   </script>
