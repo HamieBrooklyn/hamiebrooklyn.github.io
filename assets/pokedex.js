@@ -70,6 +70,9 @@
     authenticated: false,
     q: "",
     set_code: "",
+    card_ids: [],
+    news_id: "",
+    news_title: "",
     supertype: "",
     rarity_tier: "",
     pokedex: "",
@@ -186,12 +189,19 @@
     var params = new URLSearchParams();
     if (state.q) params.set("q", state.q);
     if (state.set_code) params.set("set_code", state.set_code);
+    if (state.card_ids && state.card_ids.length) {
+      params.set("card_ids", state.card_ids.join(","));
+    }
     if (state.supertype) params.set("supertype", state.supertype);
     if (state.rarity_tier) params.set("rarity_tier", state.rarity_tier);
     if (state.pokedex) params.set("pokedex", state.pokedex);
     params.set("sort", state.sort);
     params.set("page", String(state.page));
-    params.set("page_size", String(state.page_size));
+    if (state.card_ids && state.card_ids.length) {
+      params.set("page_size", String(Math.max(60, state.card_ids.length)));
+    } else {
+      params.set("page_size", String(state.page_size));
+    }
     return params.toString();
   }
 
@@ -222,6 +232,16 @@
         if (data.authenticated) state.authenticated = true;
         renderGrid();
         renderPager();
+        if (state.news_title && state.card_ids && state.card_ids.length) {
+          setStatus(
+            "info",
+            "Showing " +
+              state.total +
+              " new cards from “" +
+              state.news_title +
+              "”."
+          );
+        }
       })
       .catch(function (err) {
         console.error(err);
@@ -699,12 +719,53 @@
     });
   }
 
+  function applyHashFilters() {
+    if (!window.location.hash) return Promise.resolve();
+    var params = new URLSearchParams(window.location.hash.slice(1));
+    var setCode = params.get("set_code");
+    if (setCode) state.set_code = setCode;
+    var newsId = params.get("news_id");
+    if (newsId) {
+      state.news_id = newsId;
+      return apiFetch("/api/news/" + encodeURIComponent(newsId))
+        .then(function (r) {
+          if (!r.ok) throw new Error("news " + r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          if (data.catalog_set_code) state.set_code = data.catalog_set_code;
+          else if (data.set_code && String(data.set_code).indexOf("dev-seed") !== 0) {
+            state.set_code = data.set_code;
+          }
+          if (Array.isArray(data.card_ids) && data.card_ids.length) {
+            state.card_ids = data.card_ids.map(String);
+            state.page = 1;
+          }
+          state.news_title = data.title || data.set_name || "Catalog news";
+        })
+        .catch(function (err) {
+          console.warn("news filter", err);
+        });
+    }
+    var cardIds = params.get("card_ids");
+    if (cardIds) {
+      state.card_ids = cardIds.split(",").map(function (s) {
+        return s.trim();
+      }).filter(Boolean);
+    }
+    return Promise.resolve();
+  }
+
   function init() {
     captureSessionFromFragment();
     bindEvents();
-    Promise.all([loadMe(), loadFacets()]).then(function () {
-      return loadCatalog();
-    });
+    applyHashFilters()
+      .then(function () {
+        return Promise.all([loadMe(), loadFacets()]);
+      })
+      .then(function () {
+        return loadCatalog();
+      });
   }
 
   if (document.readyState === "loading") {

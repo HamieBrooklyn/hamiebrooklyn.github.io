@@ -34,14 +34,13 @@
 
   function renderItem(item) {
     var samples = Array.isArray(item.sample_cards) ? item.sample_cards : [];
-    var thumb = "";
-    for (var i = 0; i < samples.length; i++) {
+    var thumbs = "";
+    for (var i = 0; i < samples.length && i < 3; i++) {
       if (samples[i] && samples[i].image_small_url) {
-        thumb =
+        thumbs +=
           '<img class="home-news-thumb" src="' +
           escapeHtml(samples[i].image_small_url) +
           '" alt="" loading="lazy" />';
-        break;
       }
     }
     var count = Number(item.new_card_count) || 0;
@@ -49,7 +48,9 @@
     var packs = item.packs_url || "/packs/";
     return (
       '<article class="home-news-card">' +
-      (thumb || '<span class="home-news-thumb home-news-thumb--empty" aria-hidden="true">▣</span>') +
+      (thumbs
+        ? '<div class="home-news-thumbs">' + thumbs + "</div>"
+        : '<span class="home-news-thumb home-news-thumb--empty" aria-hidden="true">▣</span>') +
       '<div class="home-news-body">' +
       '<p class="home-news-meta">' +
       escapeHtml(formatDate(item.published_at)) +

@@ -381,6 +381,18 @@ a:hover {
   background: rgba(0, 0, 0, 0.15);
 }
 
+.home-news-thumbs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.home-news-thumbs .home-news-thumb {
+  width: 52px;
+  height: 72px;
+}
+
 .home-news-thumb {
   width: 52px;
   height: 72px;
