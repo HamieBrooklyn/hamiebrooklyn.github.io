@@ -35,7 +35,7 @@
   function renderItem(item) {
     var samples = Array.isArray(item.sample_cards) ? item.sample_cards : [];
     var thumbs = "";
-    for (var i = 0; i < samples.length && i < 3; i++) {
+    for (var i = 0; i < samples.length && i < 5; i++) {
       if (samples[i] && samples[i].image_small_url) {
         thumbs +=
           '<img class="home-news-thumb" src="' +

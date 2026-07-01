@@ -383,14 +383,16 @@ a:hover {
 
 .home-news-thumbs {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 0.35rem;
   flex-shrink: 0;
+  max-width: 9.5rem;
 }
 
 .home-news-thumbs .home-news-thumb {
-  width: 52px;
-  height: 72px;
+  width: 44px;
+  height: 62px;
 }
 
 .home-news-thumb {
