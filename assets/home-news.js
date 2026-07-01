@@ -65,7 +65,7 @@
       '<p class="home-news-links">' +
       '<a href="' +
       escapeHtml(pokedex) +
-      '">Pokédex</a> · <a href="' +
+      '">View new cards</a> · <a href="' +
       escapeHtml(packs) +
       '">Packs</a>' +
       "</p></div></article>"
