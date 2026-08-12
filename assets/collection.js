@@ -863,8 +863,18 @@
     if (card.hp) stats.push('<span title="HP">❤ ' + escapeHtml(card.hp) + "</span>");
     if (card.max_damage) stats.push('<span title="Max damage">⚡ ' + escapeHtml(card.max_damage) + "</span>");
     if (rarity.display_name) {
+      var printedName =
+        card.printed_rarity && card.printed_rarity.display_name
+          ? card.printed_rarity.display_name
+          : "";
+      var rarityTitle =
+        printedName && printedName !== rarity.display_name
+          ? "Graded from " + printedName
+          : "Rarity";
       stats.push(
-        '<span class="card-tile-rarity" title="Rarity">' +
+        '<span class="card-tile-rarity" title="' +
+          escapeHtml(rarityTitle) +
+          '">' +
           escapeHtml(rarity.display_name) +
           "</span>"
       );
@@ -1373,7 +1383,19 @@
             (g.enchantment.rarity ? " (" + escapeHtml(g.enchantment.rarity) + ")" : "")
         );
       }
-      if (g.rarity_bump > 0) {
+      if (
+        g.effective_rarity_name &&
+        g.printed_rarity_name &&
+        g.effective_rarity_name !== g.printed_rarity_name
+      ) {
+        lines.push(
+          "Rarity: " +
+            escapeHtml(g.printed_rarity_name) +
+            " → <strong>" +
+            escapeHtml(g.effective_rarity_name) +
+            "</strong>"
+        );
+      } else if (g.rarity_bump > 0) {
         lines.push(
           "Rarity bump: <strong>+" +
             escapeHtml(String(g.rarity_bump)) +
@@ -1720,7 +1742,14 @@
     els.modalTitle.textContent = card.name || "Card";
     els.modalSet.textContent =
       (card.set_name || card.set_code || "") + " · #" + (card.collector_number || "?");
-    els.modalRarity.textContent = rarity.display_name || card.tcg_rarity || "Unknown rarity";
+    var shown = rarity.display_name || card.tcg_rarity || "Unknown rarity";
+    var printed =
+      (card.printed_rarity && card.printed_rarity.display_name) || "";
+    if (printed && shown && printed !== shown) {
+      els.modalRarity.textContent = shown + " (from " + printed + ")";
+    } else {
+      els.modalRarity.textContent = shown;
+    }
     els.modalRarity.className = "modal-rarity " + rarityClassFor(rarity.display_name);
     els.modalHp.textContent = card.hp ? String(card.hp) : "—";
     els.modalDamage.textContent = card.max_damage ? String(card.max_damage) : "—";
