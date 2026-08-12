@@ -8,7 +8,7 @@
   <title>Collection — PokePon</title>
   <meta name="description" content="Browse your PokePon Discord-bot card collection: search, sort by rarity / HP / damage, and view focused card details." />
   <link rel="canonical" href="https://pokepon.org/collection/" />
-  <link rel="stylesheet" href="/assets/style.css?v=49" />
+  <link rel="stylesheet" href="/assets/style.css?v=53" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -215,8 +215,16 @@
       <button class="modal-close" type="button" data-close aria-label="Close">×</button>
       <div class="modal-grid">
         <aside class="modal-aside" aria-label="Card preview and actions">
-          <div class="modal-image">
-            <img id="modal-img" alt="" />
+          <div class="modal-image" id="modal-image-stage">
+            <div class="modal-card-art">
+              <img id="modal-img" alt="" />
+              <span class="card-grade-film" id="modal-grade-film" hidden aria-hidden="true"></span>
+              <div class="card-grade-chip" id="modal-grade-chip" hidden>
+                <span class="card-grade-chip-num" id="modal-grade-chip-num"></span>
+                <span class="card-grade-chip-lab" id="modal-grade-chip-lab"></span>
+                <span class="card-grade-chip-ench" id="modal-grade-chip-ench"></span>
+              </div>
+            </div>
             <button
               type="button"
               class="modal-favorite-btn"
@@ -242,7 +250,8 @@
                 </div>
               </div>
               <p class="modal-grade-desc muted">
-                Costs <strong>15</strong> 💎 per roll. Earlier global copies of this printing grade better on average.
+                Costs <strong>15</strong> 💎 per roll. Grades <strong>7+</strong> can bump display rarity (never down).
+                Each roll also grants a random <strong>enchantment film</strong> — cooler films are rarer.
               </p>
             </section>
             <section class="modal-sell" id="modal-sell-section" hidden aria-label="Sell to shop">
@@ -349,6 +358,6 @@
   <script src="/assets/site-links.js?v=1" defer></script>
   <script src="/assets/app-shell.js?v=16" defer></script>
   <script src="/assets/evo-focus.js?v=5" defer></script>
-  <script src="/assets/collection.js?v=34" defer></script>
+  <script src="/assets/collection.js?v=35" defer></script>
 </body>
 </html>

@@ -135,6 +135,12 @@
     modalGradeMsg: document.getElementById("modal-grade-msg"),
     modalGradeRollBtn: document.getElementById("modal-grade-roll-btn"),
     modalGradeRemoveBtn: document.getElementById("modal-grade-remove-btn"),
+    modalGradeFilm: document.getElementById("modal-grade-film"),
+    modalGradeChip: document.getElementById("modal-grade-chip"),
+    modalGradeChipNum: document.getElementById("modal-grade-chip-num"),
+    modalGradeChipLab: document.getElementById("modal-grade-chip-lab"),
+    modalGradeChipEnch: document.getElementById("modal-grade-chip-ench"),
+    modalImageStage: document.getElementById("modal-image-stage"),
     modalFooter: document.getElementById("modal-footer"),
     modalEvoFooter: document.getElementById("modal-evo-footer"),
     modalEvolveSection: document.getElementById("modal-evolve-section"),
@@ -867,7 +873,14 @@
 
     if (!applyAssemblyCompositeTile(btn, item)) {
       setTileCardImage(img, item);
-      btn.appendChild(img);
+      var art = document.createElement("span");
+      art.className = "card-tile-art";
+      art.appendChild(img);
+      var tileFilm = document.createElement("span");
+      tileFilm.className = "card-grade-film";
+      tileFilm.setAttribute("aria-hidden", "true");
+      art.appendChild(tileFilm);
+      btn.appendChild(art);
     }
     btn.appendChild(meta);
     var meter = buildCraftUsesMeter(craftUsesForItem(item));
@@ -897,10 +910,20 @@
       wrap.appendChild(favBadge);
     }
     if (item.grading && item.grading.grade != null) {
+      wrap.classList.add("is-graded");
+      var enchCode =
+        item.grading.enchantment && item.grading.enchantment.code
+          ? item.grading.enchantment.code
+          : "clear";
+      wrap.classList.add("enchant-" + enchCode);
       var gradeBadge = document.createElement("span");
       gradeBadge.className = "card-tile-grade";
       gradeBadge.textContent = String(item.grading.grade);
-      gradeBadge.title = item.grading.grade_label || "Graded";
+      gradeBadge.title =
+        (item.grading.grade_label || "Graded") +
+        (item.grading.enchantment && item.grading.enchantment.name
+          ? " · " + item.grading.enchantment.name
+          : "");
       wrap.appendChild(gradeBadge);
     }
 
@@ -1265,24 +1288,36 @@
 
   function setModalCardImage(item) {
     revokeModalSlabUrl();
-    if (applyAssemblyCompositeModal(item)) return;
+    if (applyAssemblyCompositeModal(item)) {
+      applyModalGradeFilm(null);
+      return;
+    }
     clearModalAssemblyComposite();
     var card = (item && item.card) || {};
-    var slabPath = slabPathForItem(item);
-    if (slabPath) {
-      fetchSlabBlobUrl(slabPath)
-        .then(function (url) {
-          state.modalSlabObjectUrl = url;
-          els.modalImg.src = url;
-          els.modalImg.classList.add("modal-img--slab");
-        })
-        .catch(function () {
-          els.modalImg.classList.remove("modal-img--slab");
-          els.modalImg.src = card.image_large_url || card.image_small_url || "";
-        });
-    } else {
-      els.modalImg.classList.remove("modal-img--slab");
-      els.modalImg.src = card.image_large_url || card.image_small_url || "";
+    els.modalImg.classList.remove("modal-img--slab");
+    els.modalImg.src = card.image_large_url || card.image_small_url || "";
+    applyModalGradeFilm(item);
+  }
+
+  function applyModalGradeFilm(item) {
+    var stage = els.modalImageStage;
+    var film = els.modalGradeFilm;
+    var chip = els.modalGradeChip;
+    if (stage) {
+      stage.className = "modal-image";
+    }
+    var g = item && item.grading;
+    var graded = !!(g && g.grade != null);
+    if (film) film.hidden = !graded;
+    if (chip) chip.hidden = !graded;
+    if (!graded || !stage) return;
+    var code = (g.enchantment && g.enchantment.code) || "clear";
+    stage.classList.add("is-graded", "enchant-" + code);
+    if (els.modalGradeChipNum) els.modalGradeChipNum.textContent = String(g.grade);
+    if (els.modalGradeChipLab) els.modalGradeChipLab.textContent = g.grade_label || "GRADED";
+    if (els.modalGradeChipEnch) {
+      els.modalGradeChipEnch.textContent =
+        (g.enchantment && g.enchantment.name) || "Clear Coat";
     }
   }
 
@@ -1302,31 +1337,8 @@
 
   function setTileCardImage(img, item) {
     var card = (item && item.card) || {};
-    var slabPath = slabPathForItem(item);
-    if (!slabPath) {
-      img.classList.remove("card-tile-img--slab");
-      img.src = card.image_small_url || card.image_large_url || "";
-      return;
-    }
-    var pid = item.public_id;
-    var cache = state.tileSlabUrls || {};
-    if (cache[pid]) {
-      img.classList.add("card-tile-img--slab");
-      img.src = cache[pid];
-      return;
-    }
     img.classList.remove("card-tile-img--slab");
     img.src = card.image_small_url || card.image_large_url || "";
-    fetchSlabBlobUrl(slabPath)
-      .then(function (url) {
-        if (!state.tileSlabUrls) state.tileSlabUrls = {};
-        state.tileSlabUrls[pid] = url;
-        if (img.isConnected) {
-          img.classList.add("card-tile-img--slab");
-          img.src = url;
-        }
-      })
-      .catch(function () {});
   }
 
   function renderGradeUi(item) {
@@ -1353,6 +1365,21 @@
           "</strong>" +
           (g.grade_label ? " — " + escapeHtml(g.grade_label) : "")
       );
+      if (g.enchantment && g.enchantment.name) {
+        lines.push(
+          "Enchantment: <strong>" +
+            escapeHtml(g.enchantment.name) +
+            "</strong>" +
+            (g.enchantment.rarity ? " (" + escapeHtml(g.enchantment.rarity) + ")" : "")
+        );
+      }
+      if (g.rarity_bump > 0) {
+        lines.push(
+          "Rarity bump: <strong>+" +
+            escapeHtml(String(g.rarity_bump)) +
+            "</strong> tier (low grades never drop printed rarity)."
+        );
+      }
     } else {
       lines.push("Not graded yet.");
     }
@@ -1755,6 +1782,7 @@
     state.gradeInFlight = false;
     revokeModalSlabUrl();
     clearModalAssemblyComposite();
+    applyModalGradeFilm(null);
     if (els.modalFavoriteBtn) els.modalFavoriteBtn.hidden = true;
     if (els.modalEvolveSection) els.modalEvolveSection.hidden = true;
     if (els.modalSellSection) els.modalSellSection.hidden = true;
