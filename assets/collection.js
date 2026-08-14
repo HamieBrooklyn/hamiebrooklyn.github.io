@@ -149,6 +149,20 @@
     modalEvoTargets: document.getElementById("modal-evo-targets"),
     modalEvoBtn: document.getElementById("modal-evo-btn"),
     modalEvoMsg: document.getElementById("modal-evo-msg"),
+    modalTabCard: document.getElementById("modal-tab-card"),
+    modalTabMarket: document.getElementById("modal-tab-market"),
+    modalTabCardBtn: document.getElementById("modal-tab-card-btn"),
+    modalTabMarketBtn: document.getElementById("modal-tab-market-btn"),
+    modalMarketPrice: document.getElementById("modal-market-price"),
+    modalMarketRange: document.getElementById("modal-market-range"),
+    modalMarketChart: document.getElementById("modal-market-chart"),
+    modalMarketHint: document.getElementById("modal-market-hint"),
+    modalMarketPosition: document.getElementById("modal-market-position"),
+    modalMarketForm: document.getElementById("modal-market-invest-form"),
+    modalMarketAmount: document.getElementById("modal-market-amount"),
+    modalMarketInvestBtn: document.getElementById("modal-market-invest-btn"),
+    modalMarketSellBtn: document.getElementById("modal-market-sell-btn"),
+    modalMarketMsg: document.getElementById("modal-market-msg"),
     sidebarToggle: document.getElementById("sidebar-toggle"),
     sidebar: document.getElementById("sidebar"),
     bulkBar: document.getElementById("bulk-sell-bar"),
@@ -179,6 +193,10 @@
     inflight: null,
     searchDebounce: 0,
     modalItem: null,
+    modalTab: "card",
+    marketReq: 0,
+    marketAbort: null,
+    marketPositionId: null,
     sellUiStep: 0,
     sellInFlight: false,
     evoSelectedTargetId: null,
@@ -226,6 +244,222 @@
   function fmtPokedollars(n) {
     if (n == null || n === "") return "—";
     return "₽" + Number(n).toLocaleString();
+  }
+
+  function fmtUsd(n) {
+    if (n == null || isNaN(n)) return "—";
+    return "$" + Number(n).toFixed(2);
+  }
+
+  function catalogCardId(item) {
+    var card = item && item.card;
+    return card && card.id != null ? Number(card.id) : 0;
+  }
+
+  function setModalTab(tab) {
+    var market = tab === "market";
+    if (els.modalTabCard) els.modalTabCard.hidden = market;
+    if (els.modalTabMarket) els.modalTabMarket.hidden = !market;
+    if (els.modalTabCardBtn) {
+      els.modalTabCardBtn.classList.toggle("is-active", !market);
+      els.modalTabCardBtn.setAttribute("aria-selected", market ? "false" : "true");
+    }
+    if (els.modalTabMarketBtn) {
+      els.modalTabMarketBtn.classList.toggle("is-active", market);
+      els.modalTabMarketBtn.setAttribute("aria-selected", market ? "true" : "false");
+    }
+    state.modalTab = market ? "market" : "card";
+    if (market) loadMarketPanel(state.modalItem);
+  }
+
+  function showMarketMsg(text, ok) {
+    if (!els.modalMarketMsg) return;
+    els.modalMarketMsg.hidden = !text;
+    els.modalMarketMsg.textContent = text || "";
+    els.modalMarketMsg.className = "modal-grade-msg" + (ok ? " is-ok" : " is-error");
+  }
+
+  function clearMarketChart() {
+    var canvas = els.modalMarketChart;
+    if (!canvas) return;
+    var ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function historyHasMove(history) {
+    var pts = (history || []).map(function (p) { return Number(p.usd); }).filter(function (n) { return !isNaN(n); });
+    if (pts.length < 2) return false;
+    return pts.some(function (n) { return n !== pts[0]; });
+  }
+
+  function drawMarketChart(history, quote) {
+    var canvas = els.modalMarketChart;
+    if (!canvas) return;
+    var ctx = canvas.getContext("2d");
+    var w = canvas.width;
+    var h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    var left = 48, right = 12, top = 16, bottom = 28;
+    var pw = w - left - right;
+    var ph = h - top - bottom;
+    function padRange(values) {
+      var lo = Math.min.apply(null, values);
+      var hi = Math.max.apply(null, values);
+      if (hi <= lo) hi = lo + 1;
+      var pad = (hi - lo) * 0.12;
+      return { lo: lo - pad, hi: hi + pad };
+    }
+    function yOf(range, value) {
+      return top + ((range.hi - value) * ph) / (range.hi - range.lo);
+    }
+    function grid(range) {
+      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      ctx.lineWidth = 1;
+      ctx.fillStyle = "rgba(226,232,240,0.7)";
+      ctx.font = "12px DM Sans, sans-serif";
+      for (var g = 0; g < 4; g++) {
+        var gy = top + (ph * g) / 3;
+        ctx.beginPath();
+        ctx.moveTo(left, gy);
+        ctx.lineTo(w - right, gy);
+        ctx.stroke();
+      }
+      ctx.fillText(fmtUsd(range.hi), 4, top + 10);
+      ctx.fillText(fmtUsd(range.lo), 4, top + ph);
+    }
+    if (historyHasMove(history)) {
+      var pts = history.map(function (p) { return Number(p.usd); });
+      var range = padRange(pts);
+      grid(range);
+      ctx.strokeStyle = pts[pts.length - 1] >= pts[0] ? "#4ade80" : "#f87171";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      pts.forEach(function (y, i) {
+        var x = left + (i * pw) / Math.max(1, pts.length - 1);
+        var yy = yOf(range, y);
+        if (i === 0) ctx.moveTo(x, yy);
+        else ctx.lineTo(x, yy);
+      });
+      ctx.stroke();
+      return;
+    }
+    var market = Number(quote && quote.usd);
+    if (isNaN(market)) return;
+    var low = quote.usd_low == null ? null : Number(quote.usd_low);
+    var mid = quote.usd_mid == null ? null : Number(quote.usd_mid);
+    var high = quote.usd_high == null ? null : Number(quote.usd_high);
+    var ceiling = Math.max(market, mid || 0, 0.01) * 4;
+    if (high != null && high > ceiling) high = null;
+    if (low != null && (low <= 0 || low > market)) low = null;
+    var values = [market];
+    if (low != null) values.push(low);
+    if (mid != null) values.push(mid);
+    if (high != null) values.push(high);
+    var book = padRange(values);
+    grid(book);
+    var x0 = left + pw * 0.22;
+    var x1 = left + pw * 0.78;
+    var bandLo = low != null ? low : market;
+    var bandHi = high != null ? high : mid != null ? mid : market;
+    var yHi = yOf(book, Math.max(bandLo, bandHi));
+    var yLo = yOf(book, Math.min(bandLo, bandHi));
+    if (yLo - yHi < 10) { yHi -= 14; yLo += 14; }
+    ctx.fillStyle = "rgba(91,140,255,0.18)";
+    ctx.strokeStyle = "#5b8cff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x0, yHi, x1 - x0, yLo - yHi, 10);
+    else ctx.rect(x0, yHi, x1 - x0, yLo - yHi);
+    ctx.fill();
+    ctx.stroke();
+    if (mid != null) {
+      var ym = yOf(book, mid);
+      ctx.strokeStyle = "#facc15";
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(x0, ym);
+      ctx.lineTo(x1, ym);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    var yM = yOf(book, market);
+    ctx.strokeStyle = "#4ade80";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(left, yM);
+    ctx.lineTo(w - right, yM);
+    ctx.stroke();
+  }
+
+  function loadMarketPanel(item) {
+    var id = catalogCardId(item);
+    if (!els.modalMarketPrice) return;
+    showMarketMsg("", true);
+    if (!id) {
+      els.modalMarketPrice.textContent = "—";
+      if (els.modalMarketHint) els.modalMarketHint.textContent = "This copy has no catalog id yet — refresh the page.";
+      clearMarketChart();
+      return;
+    }
+    var req = ++state.marketReq;
+    if (state.marketAbort) {
+      try { state.marketAbort.abort(); } catch (_) {}
+    }
+    state.marketAbort = typeof AbortController !== "undefined" ? new AbortController() : null;
+    els.modalMarketPrice.textContent = "Loading TCGPlayer…";
+    if (els.modalMarketRange) els.modalMarketRange.textContent = "";
+    if (els.modalMarketHint) els.modalMarketHint.textContent = "Fetching live quote…";
+    if (els.modalMarketPosition) els.modalMarketPosition.hidden = true;
+    if (els.modalMarketSellBtn) els.modalMarketSellBtn.hidden = true;
+    clearMarketChart();
+    apiFetch("/api/me/market/cards/" + encodeURIComponent(id), state.marketAbort ? { signal: state.marketAbort.signal } : {})
+      .then(function (r) {
+        return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+      })
+      .then(function (res) {
+        if (req !== state.marketReq) return;
+        if (!res.ok) {
+          showMarketMsg((res.data && (res.data.message || res.data.error)) || "No live market.", false);
+          els.modalMarketPrice.textContent = "—";
+          return;
+        }
+        var quote = res.data.quote || {};
+        var hist = res.data.history || [];
+        var pos = res.data.position;
+        els.modalMarketPrice.textContent = fmtUsd(quote.usd) + " TCGPlayer";
+        if (els.modalMarketRange) {
+          els.modalMarketRange.textContent = "Range " + fmtUsd(quote.usd_low) + " – " + fmtUsd(quote.usd_high);
+        }
+        drawMarketChart(hist, quote);
+        if (els.modalMarketHint) {
+          els.modalMarketHint.textContent = historyHasMove(hist)
+            ? hist.length + " tracked day(s) of TCGPlayer closes."
+            : "Today's TCGPlayer book (low / mid / market). Daily history fills in as this printing is viewed.";
+        }
+        state.marketPositionId = pos && pos.id ? pos.id : null;
+        if (els.modalMarketPosition) {
+          if (pos) {
+            els.modalMarketPosition.hidden = false;
+            els.modalMarketPosition.className = "market-position-box" + (pos.pnl >= 0 ? " is-up" : " is-down");
+            els.modalMarketPosition.textContent =
+              "Position " + fmtPokedollars(pos.pokedollars_in) + " → " + fmtPokedollars(pos.current_value) +
+              " (" + (pos.pnl >= 0 ? "+" : "") + Number(pos.pnl_percent).toFixed(1) + "%)";
+          } else {
+            els.modalMarketPosition.hidden = true;
+          }
+        }
+        if (els.modalMarketSellBtn) els.modalMarketSellBtn.hidden = !pos;
+        if (els.modalMarketAmount) {
+          els.modalMarketAmount.min = res.data.invest_min || 100;
+          els.modalMarketAmount.max = res.data.invest_max || 100000;
+        }
+      })
+      .catch(function (err) {
+        if (err && err.name === "AbortError") return;
+        if (req !== state.marketReq) return;
+        showMarketMsg("Could not load market.", false);
+        els.modalMarketPrice.textContent = "—";
+      });
   }
 
   function rarityClassFor(displayName) {
@@ -1730,6 +1964,7 @@
         renderFavoriteBtn(detail);
         renderGradeUi(detail);
         applyModalCardFields(detail);
+        if (state.modalTab === "market") loadMarketPanel(detail);
       })
       .catch(function () {});
   }
@@ -1833,6 +2068,7 @@
     renderEvolutionUi(item);
     renderSellUi(item);
     renderGradeUi(item);
+    setModalTab("card");
     refreshModalCardDetail(item);
     els.modal.hidden = false;
     els.modal.setAttribute("aria-hidden", "false");
@@ -2298,6 +2534,84 @@
   if (els.modalEvoBtn) {
     els.modalEvoBtn.addEventListener("click", function () {
       commitEvolve();
+    });
+  }
+
+  if (els.modalTabCardBtn) {
+    els.modalTabCardBtn.addEventListener("click", function () {
+      setModalTab("card");
+    });
+  }
+  if (els.modalTabMarketBtn) {
+    els.modalTabMarketBtn.addEventListener("click", function () {
+      setModalTab("market");
+    });
+  }
+  if (els.modalMarketForm) {
+    els.modalMarketForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var id = catalogCardId(state.modalItem);
+      if (!id) return;
+      var amount = parseInt(els.modalMarketAmount && els.modalMarketAmount.value, 10);
+      if (!amount) {
+        showMarketMsg("Enter an amount.", false);
+        return;
+      }
+      if (els.modalMarketInvestBtn) els.modalMarketInvestBtn.disabled = true;
+      apiFetch("/api/me/market/buy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ card_id: id, amount: amount }),
+      })
+        .then(function (r) {
+          return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+        })
+        .then(function (res) {
+          if (els.modalMarketInvestBtn) els.modalMarketInvestBtn.disabled = false;
+          if (!res.ok) {
+            showMarketMsg((res.data && (res.data.message || res.data.error)) || "Could not invest.", false);
+            return;
+          }
+          showMarketMsg("Invested " + fmtPokedollars(amount) + ".", true);
+          loadMarketPanel(state.modalItem);
+          if (window.PokePonApp && window.PokePonApp.notifyBalancesChanged) {
+            window.PokePonApp.notifyBalancesChanged();
+          }
+        })
+        .catch(function () {
+          if (els.modalMarketInvestBtn) els.modalMarketInvestBtn.disabled = false;
+          showMarketMsg("Network error.", false);
+        });
+    });
+  }
+  if (els.modalMarketSellBtn) {
+    els.modalMarketSellBtn.addEventListener("click", function () {
+      if (!state.marketPositionId) return;
+      els.modalMarketSellBtn.disabled = true;
+      apiFetch("/api/me/market/sell", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ investment_id: state.marketPositionId }),
+      })
+        .then(function (r) {
+          return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+        })
+        .then(function (res) {
+          els.modalMarketSellBtn.disabled = false;
+          if (!res.ok) {
+            showMarketMsg((res.data && (res.data.message || res.data.error)) || "Sell failed.", false);
+            return;
+          }
+          showMarketMsg("Sold position.", true);
+          loadMarketPanel(state.modalItem);
+          if (window.PokePonApp && window.PokePonApp.notifyBalancesChanged) {
+            window.PokePonApp.notifyBalancesChanged();
+          }
+        })
+        .catch(function () {
+          els.modalMarketSellBtn.disabled = false;
+          showMarketMsg("Network error.", false);
+        });
     });
   }
 

@@ -19,7 +19,6 @@
       title: "Catalog",
       items: [
         { key: "pokedex", href: "/pokedex/", label: "Pokédex" },
-        { key: "market", href: "/market/", label: "Market" },
         { key: "packs", href: "/packs/", label: "Packs" },
       ],
     },
@@ -133,7 +132,6 @@
     if (path === "/activity" || path.indexOf("/activity/") === 0) return "activity";
     if (path === "/missions" || path.indexOf("/missions/") === 0) return "missions";
     if (path === "/pokedex" || path.indexOf("/pokedex/") === 0) return "pokedex";
-    if (path === "/market" || path.indexOf("/market/") === 0) return "market";
     if (path === "/craft" || path.indexOf("/craft/") === 0) return "craft";
     if (path === "/packs" || path.indexOf("/packs/") === 0) return "packs";
     if (path === "/deck" || path.indexOf("/deck/") === 0) return "deck";

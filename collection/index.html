@@ -8,7 +8,7 @@
   <title>Collection — PokePon</title>
   <meta name="description" content="Browse your PokePon Discord-bot card collection: search, sort by rarity / HP / damage, and view focused card details." />
   <link rel="canonical" href="https://pokepon.org/collection/" />
-  <link rel="stylesheet" href="/assets/style.css?v=53" />
+  <link rel="stylesheet" href="/assets/style.css?v=55" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -282,7 +282,11 @@
           </footer>
         </aside>
         <div class="modal-body">
-          <div class="modal-body-scroll">
+          <div class="modal-side-tabs" role="tablist" aria-label="Card panels">
+            <button class="chip is-active" type="button" id="modal-tab-card-btn" data-modal-tab="card" role="tab" aria-selected="true">Card</button>
+            <button class="chip" type="button" id="modal-tab-market-btn" data-modal-tab="market" role="tab" aria-selected="false">Market</button>
+          </div>
+          <div class="modal-body-scroll" id="modal-tab-card">
             <p class="modal-set" id="modal-set"></p>
             <h2 class="modal-title" id="modal-title"></h2>
             <p class="modal-rarity" id="modal-rarity"></p>
@@ -310,6 +314,22 @@
               <p class="modal-evolve-block" id="modal-evo-block" hidden></p>
               <div class="modal-evolve-targets" id="modal-evo-targets" role="list"></div>
             </section>
+          </div>
+          <div class="modal-body-scroll" id="modal-tab-market" hidden>
+            <p class="market-price" id="modal-market-price">—</p>
+            <p class="muted" id="modal-market-range"></p>
+            <canvas id="modal-market-chart" class="market-chart" width="720" height="280" aria-label="Price history"></canvas>
+            <p class="muted" id="modal-market-hint"></p>
+            <div class="market-position-box" id="modal-market-position" hidden></div>
+            <form class="market-invest-form" id="modal-market-invest-form">
+              <label for="modal-market-amount">Invest (₽)</label>
+              <div class="market-invest-row">
+                <input type="number" id="modal-market-amount" min="100" max="100000" step="1" placeholder="100" />
+                <button type="submit" class="btn btn-primary" id="modal-market-invest-btn">Buy</button>
+                <button type="button" class="btn btn-ghost" id="modal-market-sell-btn" hidden>Sell</button>
+              </div>
+              <p class="modal-grade-msg" id="modal-market-msg" hidden></p>
+            </form>
           </div>
         </div>
       </div>
@@ -356,8 +376,8 @@
   <script src="/assets/api-base-init.js?v=1"></script>
   <script src="/assets/site-origin.js?v=1"></script>
   <script src="/assets/site-links.js?v=1" defer></script>
-  <script src="/assets/app-shell.js?v=17" defer></script>
+  <script src="/assets/app-shell.js?v=18" defer></script>
   <script src="/assets/evo-focus.js?v=5" defer></script>
-  <script src="/assets/collection.js?v=36" defer></script>
+  <script src="/assets/collection.js?v=37" defer></script>
 </body>
 </html>

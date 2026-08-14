@@ -5419,3 +5419,20 @@ html.pokepon-staging-active body {
 .market-modal-card {
   max-width: 920px;
 }
+
+.modal-side-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.market-position-box {
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 0.92rem;
+}
+
+.market-position-box.is-up { border-color: rgba(74, 222, 128, 0.35); }
+.market-position-box.is-down { border-color: rgba(248, 113, 113, 0.35); }
