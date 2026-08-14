@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="icon" type="image/png" href="/assets/favicon.png" />
+  <link rel="apple-touch-icon" href="/assets/favicon.png" />
+  <title>Market — PokePon</title>
+  <meta name="description" content="Track live TCGPlayer prices and invest pokedollars in Pokémon TCG printings." />
+  <link rel="canonical" href="https://pokepon.org/market/" />
+  <link rel="stylesheet" href="/assets/style.css?v=54" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+</head>
+<body class="app-body market-page">
+  <div class="bg-grid"></div>
+
+  <div class="app-shell" id="app">
+    <aside class="sidebar" id="sidebar" aria-label="Primary">
+      <div class="sidebar-top">
+        <a class="logo sidebar-logo" href="/">PokePon</a>
+        <button class="sidebar-toggle" type="button" id="sidebar-toggle" aria-controls="sidebar" aria-expanded="false">
+          <span class="sidebar-toggle-bar"></span>
+          <span class="sidebar-toggle-bar"></span>
+          <span class="sidebar-toggle-bar"></span>
+        </button>
+      </div>
+      <nav class="sidebar-nav" aria-label="Sections">
+        <ul></ul>
+      </nav>
+      <div class="sidebar-user" id="sidebar-user" data-state="loading">
+        <div class="sidebar-user-loading">Checking session…</div>
+        <div class="sidebar-user-signedout" hidden>
+          <p>Sign in to invest pokedollars.</p>
+          <button class="btn btn-primary btn-block" type="button" id="btn-login">Sign in with Discord</button>
+        </div>
+        <div class="sidebar-user-signedin" hidden>
+          <img class="sidebar-avatar" alt="" src="" id="user-avatar" />
+          <div class="sidebar-user-text">
+            <div class="sidebar-user-name" id="user-name">—</div>
+            <div class="sidebar-user-hint">Signed in</div>
+          </div>
+          <button class="btn-link" type="button" id="btn-logout" title="Sign out">Sign out</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <header class="page-head">
+        <p class="hero-kicker">Invest</p>
+        <h1>Market</h1>
+        <p class="page-lead">
+          Search a printing, see its live <strong>TCGPlayer</strong> USD chart, and invest pokedollars.
+          Your position tracks real-world % change — sell anytime from Discord (<code>ppmymarketview</code>) or here.
+        </p>
+      </header>
+
+      <section class="market-portfolio" id="market-portfolio" hidden>
+        <div class="market-portfolio-head">
+          <h2>Your positions</h2>
+          <p class="muted" id="market-balance"></p>
+        </div>
+        <div class="market-position-list" id="market-position-list"></div>
+      </section>
+
+      <section class="toolbar pokedex-toolbar" aria-label="Market search">
+        <div class="toolbar-search">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input
+            type="search"
+            id="market-search"
+            class="toolbar-search-input"
+            placeholder="Search a card to chart…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button class="search-clear" type="button" id="market-search-clear" hidden aria-label="Clear search">×</button>
+        </div>
+      </section>
+
+      <section class="collection-status" id="market-status"></section>
+      <section class="card-grid" id="market-grid" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <div class="modal" id="market-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="market-modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card market-modal-card" role="document">
+      <button class="modal-close" type="button" data-close aria-label="Close">×</button>
+      <div class="modal-grid">
+        <aside class="modal-aside" aria-label="Card preview">
+          <div class="modal-image">
+            <img id="market-modal-img" alt="" />
+          </div>
+        </aside>
+        <div class="modal-body">
+          <div class="modal-body-scroll">
+            <p class="modal-set" id="market-modal-set"></p>
+            <h2 class="modal-title" id="market-modal-title"></h2>
+            <p class="modal-rarity" id="market-modal-rarity"></p>
+            <p class="market-price" id="market-modal-price">—</p>
+            <p class="muted" id="market-modal-range"></p>
+            <canvas id="market-chart" class="market-chart" width="720" height="280" aria-label="Price history"></canvas>
+            <p class="muted" id="market-chart-hint"></p>
+            <form class="market-invest-form" id="market-invest-form">
+              <label for="market-invest-amount">Invest (₽)</label>
+              <div class="market-invest-row">
+                <input type="number" id="market-invest-amount" min="100" max="100000" step="1" placeholder="100" />
+                <button type="submit" class="btn btn-primary" id="market-invest-btn">Invest</button>
+              </div>
+              <p class="modal-grade-msg" id="market-invest-msg" hidden></p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <meta name="pokepon-api-base" content="https://api.pokepon.org" />
+  <script src="/assets/api-base-init.js?v=1"></script>
+  <script src="/assets/site-origin.js?v=1"></script>
+  <script src="/assets/site-links.js?v=1" defer></script>
+  <script src="/assets/app-shell.js?v=17" defer></script>
+  <script src="/assets/market.js?v=1" defer></script>
+</body>
+</html>

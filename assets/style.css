@@ -1240,6 +1240,7 @@ main {
 .nav-icon--activity { color: #e879f9; background: rgba(232, 121, 249, 0.14); }
 .nav-icon--missions { color: #a78bfa; background: rgba(167, 139, 250, 0.14); }
 .nav-icon--pokedex { color: #c4b5fd; background: rgba(196, 181, 253, 0.12); }
+.nav-icon--market { color: #4ade80; background: rgba(74, 222, 128, 0.14); }
 .nav-icon--packs { color: #7dd3fc; background: rgba(125, 211, 252, 0.12); }
 .nav-icon--craft { color: #fbbf24; background: rgba(251, 191, 36, 0.12); }
 .nav-icon--deck { color: #fb923c; background: rgba(251, 146, 60, 0.12); }
@@ -5339,4 +5340,82 @@ html.pokepon-staging-active body {
     backdrop-filter: blur(10px);
     border-top: 1px solid var(--border);
   }
+}
+
+.market-portfolio {
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(18, 22, 30, 0.55);
+}
+.market-portfolio-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.market-portfolio-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.market-position-list {
+  display: grid;
+  gap: 0.6rem;
+}
+.market-position {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.45rem 0.55rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.market-position img {
+  width: 44px;
+  height: auto;
+  border-radius: 6px;
+}
+.market-position div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.88rem;
+}
+.market-position.is-up strong { color: #4ade80; }
+.market-position.is-down strong { color: #f87171; }
+.market-price {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0.35rem 0 0.15rem;
+}
+.market-chart {
+  width: 100%;
+  height: auto;
+  margin: 0.85rem 0 0.4rem;
+  border-radius: 10px;
+  background: #12141a;
+}
+.market-invest-form {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.4rem;
+}
+.market-invest-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.market-invest-row input {
+  flex: 1;
+  min-width: 0;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+  padding: 0.55rem 0.7rem;
+}
+.market-modal-card {
+  max-width: 920px;
 }

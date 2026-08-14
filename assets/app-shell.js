@@ -19,6 +19,7 @@
       title: "Catalog",
       items: [
         { key: "pokedex", href: "/pokedex/", label: "Pokédex" },
+        { key: "market", href: "/market/", label: "Market" },
         { key: "packs", href: "/packs/", label: "Packs" },
       ],
     },
@@ -85,6 +86,8 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5L18 6v5.5c0 4.8-2.8 7.8-6 8.8-3.2-1-6-4-6-8.8V6l6-2.5z"/><path d="M9.5 12.5l2 2 4.5-4.5"/><path d="M17.5 5.5l.75 1.5 1.65.35-1.2 1.05.35 1.65-1.55-.85-1.55.85.35-1.65-1.2-1.05 1.65-.35z"/></svg>',
     pokedex:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/></svg>',
+    market:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V8M9 18V4M14 18v-7M19 18V6"/><path d="M3 20h18"/></svg>',
     packs:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>',
     craft:
@@ -130,6 +133,7 @@
     if (path === "/activity" || path.indexOf("/activity/") === 0) return "activity";
     if (path === "/missions" || path.indexOf("/missions/") === 0) return "missions";
     if (path === "/pokedex" || path.indexOf("/pokedex/") === 0) return "pokedex";
+    if (path === "/market" || path.indexOf("/market/") === 0) return "market";
     if (path === "/craft" || path.indexOf("/craft/") === 0) return "craft";
     if (path === "/packs" || path.indexOf("/packs/") === 0) return "packs";
     if (path === "/deck" || path.indexOf("/deck/") === 0) return "deck";
