@@ -16,6 +16,23 @@
     }
   }
 
+  function captureSessionFromFragment() {
+    if (!window.location.hash) return;
+    var params = new URLSearchParams(window.location.hash.slice(1));
+    var token = params.get("session");
+    if (!token) return;
+    try {
+      localStorage.setItem(SESSION_KEY, token);
+    } catch (_) {}
+    params.delete("session");
+    var nextHash = params.toString();
+    var cleanUrl =
+      window.location.pathname +
+      window.location.search +
+      (nextHash ? "#" + nextHash : "");
+    window.history.replaceState(null, "", cleanUrl);
+  }
+
   function apiHeaders() {
     var headers = { "ngrok-skip-browser-warning": "1" };
     var token = readSessionToken();
@@ -373,6 +390,7 @@
     if (e.key === "Escape") closeModal();
   });
 
+  captureSessionFromFragment();
   setStatus("Search a card name to open its live chart.");
   loadPortfolio();
 })();
