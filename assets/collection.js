@@ -153,6 +153,7 @@
     modalTabMarket: document.getElementById("modal-tab-market"),
     modalTabCardBtn: document.getElementById("modal-tab-card-btn"),
     modalTabMarketBtn: document.getElementById("modal-tab-market-btn"),
+    modalMarketTrend: document.getElementById("modal-market-trend"),
     modalMarketPrice: document.getElementById("modal-market-price"),
     modalMarketRange: document.getElementById("modal-market-range"),
     modalMarketChart: document.getElementById("modal-market-chart"),
@@ -292,6 +293,44 @@
     return pts.some(function (n) { return n !== pts[0]; });
   }
 
+  function marketTrend(history, quote) {
+    var current = Number(quote && quote.usd);
+    var baseline = Number(quote && quote.usd_mid);
+    var label = "book mid";
+    if (historyHasMove(history)) {
+      var pts = history.map(function (p) { return Number(p.usd); });
+      baseline = pts[0];
+      current = pts[pts.length - 1];
+      label = "first tracked day";
+    }
+    if (isNaN(current) || isNaN(baseline) || !baseline) {
+      return { dir: "flat", text: "▬  FLAT", cls: "is-flat" };
+    }
+    var change = current - baseline;
+    var pct = (change / baseline) * 100;
+    if (change > 0) {
+      return {
+        dir: "up",
+        text: "▲  UP  " + fmtUsd(Math.abs(change)) + " (" + (pct >= 0 ? "+" : "") + pct.toFixed(1) + "%) vs " + label,
+        cls: "is-up",
+      };
+    }
+    if (change < 0) {
+      return {
+        dir: "down",
+        text: "▼  DOWN  " + fmtUsd(Math.abs(change)) + " (" + pct.toFixed(1) + "%) vs " + label,
+        cls: "is-down",
+      };
+    }
+    return { dir: "flat", text: "▬  FLAT vs " + label, cls: "is-flat" };
+  }
+
+  function setMarketTrend(trend) {
+    if (!els.modalMarketTrend) return;
+    els.modalMarketTrend.textContent = trend.text;
+    els.modalMarketTrend.className = "market-trend " + trend.cls;
+  }
+
   function drawMarketChart(history, quote) {
     var canvas = els.modalMarketChart;
     if (!canvas) return;
@@ -331,16 +370,46 @@
       var pts = history.map(function (p) { return Number(p.usd); });
       var range = padRange(pts);
       grid(range);
-      ctx.strokeStyle = pts[pts.length - 1] >= pts[0] ? "#4ade80" : "#f87171";
-      ctx.lineWidth = 2.5;
+      var up = pts[pts.length - 1] >= pts[0];
+      var color = up ? "#4ade80" : "#f87171";
+      var coords = pts.map(function (y, i) {
+        return {
+          x: left + (i * pw) / Math.max(1, pts.length - 1),
+          y: yOf(range, y),
+        };
+      });
+      ctx.fillStyle = up ? "rgba(74,222,128,0.22)" : "rgba(248,113,113,0.22)";
       ctx.beginPath();
-      pts.forEach(function (y, i) {
-        var x = left + (i * pw) / Math.max(1, pts.length - 1);
-        var yy = yOf(range, y);
-        if (i === 0) ctx.moveTo(x, yy);
-        else ctx.lineTo(x, yy);
+      ctx.moveTo(coords[0].x, top + ph);
+      coords.forEach(function (c) { ctx.lineTo(c.x, c.y); });
+      ctx.lineTo(coords[coords.length - 1].x, top + ph);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.35;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath();
+      ctx.moveTo(left, coords[0].y);
+      ctx.lineTo(w - right, coords[0].y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      coords.forEach(function (c, i) {
+        if (i === 0) ctx.moveTo(c.x, c.y);
+        else ctx.lineTo(c.x, c.y);
       });
       ctx.stroke();
+      var last = coords[coords.length - 1];
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(last.x - 2, last.y);
+      ctx.lineTo(last.x + 16, last.y - 11);
+      ctx.lineTo(last.x + 16, last.y + 11);
+      ctx.closePath();
+      ctx.fill();
       return;
     }
     var market = Number(quote && quote.usd);
@@ -383,12 +452,17 @@
       ctx.setLineDash([]);
     }
     var yM = yOf(book, market);
-    ctx.strokeStyle = "#4ade80";
-    ctx.lineWidth = 3;
+    var vsMid = mid != null ? market - mid : 0;
+    ctx.strokeStyle = vsMid > 0 ? "#4ade80" : vsMid < 0 ? "#f87171" : "#94a3b8";
+    ctx.lineWidth = 5;
     ctx.beginPath();
     ctx.moveTo(left, yM);
     ctx.lineTo(w - right, yM);
     ctx.stroke();
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.beginPath();
+    ctx.arc(left + pw / 2, yM, 7, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   function loadMarketPanel(item) {
@@ -407,6 +481,7 @@
     }
     state.marketAbort = typeof AbortController !== "undefined" ? new AbortController() : null;
     els.modalMarketPrice.textContent = "Loading TCGPlayer…";
+    setMarketTrend({ dir: "flat", text: "Loading…", cls: "is-flat" });
     if (els.modalMarketRange) els.modalMarketRange.textContent = "";
     if (els.modalMarketHint) els.modalMarketHint.textContent = "Fetching live quote…";
     if (els.modalMarketPosition) els.modalMarketPosition.hidden = true;
@@ -430,6 +505,7 @@
         if (els.modalMarketRange) {
           els.modalMarketRange.textContent = "Range " + fmtUsd(quote.usd_low) + " – " + fmtUsd(quote.usd_high);
         }
+        setMarketTrend(marketTrend(hist, quote));
         drawMarketChart(hist, quote);
         if (els.modalMarketHint) {
           els.modalMarketHint.textContent = historyHasMove(hist)

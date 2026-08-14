@@ -2332,6 +2332,10 @@ main {
   padding-right: 0.15rem;
 }
 
+.modal-body-scroll[hidden] {
+  display: none !important;
+}
+
 .modal-footer {
   flex-shrink: 0;
   margin-top: 0.65rem;
@@ -5425,6 +5429,18 @@ html.pokepon-staging-active body {
   gap: 0.4rem;
   margin-bottom: 0.75rem;
 }
+
+.market-trend {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.market-trend.is-up { color: #4ade80; }
+.market-trend.is-down { color: #f87171; }
+.market-trend.is-flat { color: #94a3b8; }
 
 .market-position-box {
   padding: 0.7rem 0.85rem;
