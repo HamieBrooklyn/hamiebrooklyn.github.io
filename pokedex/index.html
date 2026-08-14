@@ -94,61 +94,7 @@
         </p>
       </header>
 
-      <section class="toolbar pokedex-toolbar" aria-label="Pokédex filters">
-        <div class="toolbar-search">
-          <span class="search-icon" aria-hidden="true">⌕</span>
-          <input
-            type="search"
-            id="dex-search"
-            class="toolbar-search-input"
-            placeholder="Search by card name…"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <button class="search-clear" type="button" id="dex-search-clear" hidden aria-label="Clear search">×</button>
-        </div>
-
-        <div class="pokedex-filter-row">
-          <label class="pokedex-filter-label" for="dex-set">Set</label>
-          <select id="dex-set" class="pokedex-select">
-            <option value="">All sets</option>
-          </select>
-          <label class="pokedex-filter-label" for="dex-pokedex">Pokédex #</label>
-          <input
-            type="number"
-            id="dex-pokedex"
-            class="pokedex-number-input"
-            min="1"
-            max="1025"
-            placeholder="e.g. 25"
-            inputmode="numeric"
-          />
-        </div>
-
-        <div class="toolbar-sort pokedex-type-chips" id="dex-supertype-chips" role="group" aria-label="Card type">
-          <button class="chip is-active" type="button" data-supertype="" aria-pressed="true">All types</button>
-        </div>
-
-        <div class="toolbar-sort pokedex-rarity-chips" id="dex-rarity-chips" role="group" aria-label="Rarity tier" hidden>
-          <button class="chip is-active" type="button" data-rarity-tier="" aria-pressed="true">All rarities</button>
-        </div>
-
-        <div class="toolbar-sort" role="group" aria-label="Sort cards">
-          <button class="chip is-active" type="button" data-sort="name" aria-pressed="true">A–Z</button>
-          <button class="chip" type="button" data-sort="rarity" aria-pressed="false">Rarest</button>
-          <button class="chip" type="button" data-sort="set" aria-pressed="false">Set</button>
-          <button class="chip" type="button" data-sort="number" aria-pressed="false">Number</button>
-        </div>
-      </section>
-
-      <section class="collection-status" id="dex-status"></section>
-      <section class="card-grid" id="dex-grid" aria-live="polite"></section>
-
-      <nav class="pager" id="dex-pager" hidden aria-label="Pagination">
-        <button class="btn btn-ghost" type="button" id="dex-pager-prev">← Prev</button>
-        <span class="pager-info" id="dex-pager-info">Page 1</span>
-        <button class="btn btn-ghost" type="button" id="dex-pager-next">Next →</button>
-      </nav>
+      <div id="pokedex-browse"></div>
     </main>
   </div>
 
@@ -199,6 +145,7 @@
   <script src="/assets/site-origin.js?v=1"></script>
   <script src="/assets/site-links.js?v=1" defer></script>
   <script src="/assets/app-shell.js?v=17" defer></script>
-  <script src="/assets/pokedex.js?v=3" defer></script>
+  <script src="/assets/catalog-browse.js?v=1" defer></script>
+  <script src="/assets/pokedex.js?v=4" defer></script>
 </body>
 </html>

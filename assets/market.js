@@ -1,74 +1,16 @@
 (function () {
   "use strict";
 
-  var API_BASE = (window.POKEPON_API_BASE || "").replace(/\/+$/, "");
-  var SESSION_KEY = "pokepon-session";
-
-  function api(path) {
-    return API_BASE + path;
+  var browse = window.PokePonCatalogBrowse;
+  if (!browse) {
+    console.error("catalog-browse.js must load before market.js");
+    return;
   }
 
-  function readSessionToken() {
-    try {
-      return localStorage.getItem(SESSION_KEY) || "";
-    } catch (_) {
-      return "";
-    }
-  }
-
-  function captureSessionFromFragment() {
-    if (!window.location.hash) return;
-    var params = new URLSearchParams(window.location.hash.slice(1));
-    var token = params.get("session");
-    if (!token) return;
-    try {
-      localStorage.setItem(SESSION_KEY, token);
-    } catch (_) {}
-    params.delete("session");
-    var nextHash = params.toString();
-    var cleanUrl =
-      window.location.pathname +
-      window.location.search +
-      (nextHash ? "#" + nextHash : "");
-    window.history.replaceState(null, "", cleanUrl);
-  }
-
-  function apiHeaders() {
-    var headers = { "ngrok-skip-browser-warning": "1" };
-    var token = readSessionToken();
-    if (token) headers.Authorization = "Bearer " + token;
-    return headers;
-  }
-
-  function apiFetch(path, options) {
-    options = options || {};
-    options.credentials = "include";
-    options.headers = Object.assign({}, apiHeaders(), options.headers || {});
-    return fetch(api(path), options);
-  }
-
-  function escapeHtml(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  function formatUsd(n) {
-    if (n == null || isNaN(n)) return "—";
-    return "$" + Number(n).toFixed(2);
-  }
-
-  function formatPd(n) {
-    return "₽" + Number(n || 0).toLocaleString();
-  }
+  var apiFetch = browse.apiFetch;
+  var escapeHtml = browse.escapeHtml;
 
   var els = {
-    search: document.getElementById("market-search"),
-    clear: document.getElementById("market-search-clear"),
-    status: document.getElementById("market-status"),
-    grid: document.getElementById("market-grid"),
     portfolio: document.getElementById("market-portfolio"),
     positions: document.getElementById("market-position-list"),
     balance: document.getElementById("market-balance"),
@@ -87,7 +29,16 @@
     msg: document.getElementById("market-invest-msg"),
   };
 
-  var state = { q: "", timer: null, selectedId: null, authenticated: false };
+  var state = { selectedId: null, authenticated: false };
+
+  function formatUsd(n) {
+    if (n == null || isNaN(n)) return "—";
+    return "$" + Number(n).toFixed(2);
+  }
+
+  function formatPd(n) {
+    return "₽" + Number(n || 0).toLocaleString();
+  }
 
   function drawChart(history, currentUsd) {
     var canvas = els.chart;
@@ -150,19 +101,17 @@
     ctx.fillText(formatUsd(lo), 4, top + ph);
   }
 
-  function setStatus(text) {
-    if (els.status) els.status.textContent = text || "";
-  }
-
   function closeModal() {
     if (!els.modal) return;
     els.modal.hidden = true;
     els.modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
   }
 
   function openModal() {
     els.modal.hidden = false;
     els.modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
   }
 
   function showMsg(text, ok) {
@@ -172,55 +121,9 @@
     els.msg.className = "modal-grade-msg" + (ok ? " is-ok" : " is-error");
   }
 
-  function renderGrid(items) {
-    els.grid.innerHTML = "";
-    items.forEach(function (card) {
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "card-tile";
-      btn.innerHTML =
-        '<span class="card-tile-art"><img class="card-tile-img" alt="" src="' +
-        escapeHtml(card.image_small_url || "") +
-        '" /></span>' +
-        '<span class="card-tile-meta"><span class="card-tile-name">' +
-        escapeHtml(card.name) +
-        '</span><span class="card-tile-sub">' +
-        escapeHtml((card.set_name || "") + " · #" + (card.collector_number || "?")) +
-        "</span></span>";
-      btn.addEventListener("click", function () {
-        openCard(card.id);
-      });
-      var wrap = document.createElement("div");
-      wrap.className = "card-tile-wrap";
-      wrap.appendChild(btn);
-      els.grid.appendChild(wrap);
-    });
-  }
-
-  function search() {
-    var q = (els.search.value || "").trim();
-    els.clear.hidden = !q;
-    if (q.length < 2) {
-      els.grid.innerHTML = "";
-      setStatus(q ? "Type at least 2 characters." : "Search a card name to open its live chart.");
-      return;
-    }
-    setStatus("Searching…");
-    apiFetch("/api/catalog?q=" + encodeURIComponent(q) + "&page_size=24")
-      .then(function (r) {
-        return r.json();
-      })
-      .then(function (data) {
-        var items = (data && data.items) || [];
-        renderGrid(items);
-        setStatus(items.length ? items.length + " printings" : "No matches.");
-      })
-      .catch(function () {
-        setStatus("Search failed.");
-      });
-  }
-
-  function openCard(id) {
+  function openCard(card) {
+    var id = card && card.id;
+    if (!id) return;
     state.selectedId = id;
     showMsg("", true);
     apiFetch("/api/market/cards/" + encodeURIComponent(id))
@@ -235,13 +138,20 @@
           openModal();
           return;
         }
-        var card = res.data.card || {};
+        var detail = res.data.card || card || {};
         var quote = res.data.quote || {};
-        els.img.src = card.image_large_url || card.image_small_url || "";
-        els.img.alt = card.name || "";
-        els.set.textContent = (card.set_name || "") + " · #" + (card.collector_number || "?");
-        els.title.textContent = card.name || "Card";
-        els.rarity.textContent = (card.rarity && card.rarity.display_name) || card.tcg_rarity || "";
+        els.img.src = detail.image_large_url || detail.image_small_url || card.image_small_url || "";
+        els.img.alt = detail.name || card.name || "";
+        els.set.textContent =
+          (detail.set_name || card.set_name || "") +
+          " · #" +
+          (detail.collector_number || card.collector_number || "?");
+        els.title.textContent = detail.name || card.name || "Card";
+        els.rarity.textContent =
+          (detail.rarity && detail.rarity.display_name) ||
+          detail.tcg_rarity ||
+          (card.rarity && card.rarity.display_name) ||
+          "";
         els.price.textContent = formatUsd(quote.usd) + " TCGPlayer";
         els.range.textContent =
           "Range " + formatUsd(quote.usd_low) + " – " + formatUsd(quote.usd_high);
@@ -327,70 +237,88 @@
         });
       })
       .then(function (res) {
-        if (!res.ok) {
-          setStatus((res.data && (res.data.message || res.data.error)) || "Sell failed.");
-          return;
-        }
+        if (!res.ok) return;
         loadPortfolio();
+        if (window.PokePonApp && window.PokePonApp.notifyBalancesChanged) {
+          window.PokePonApp.notifyBalancesChanged();
+        }
       })
-      .catch(function () {
-        setStatus("Sell failed.");
-      });
+      .catch(function () {});
   }
 
-  els.search.addEventListener("input", function () {
-    clearTimeout(state.timer);
-    state.timer = setTimeout(search, 280);
-  });
-  els.clear.addEventListener("click", function () {
-    els.search.value = "";
-    search();
-    els.search.focus();
-  });
-  els.form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    if (!state.selectedId) return;
-    var amount = parseInt(els.amount.value, 10);
-    if (!amount) {
-      showMsg("Enter an amount.", false);
-      return;
-    }
-    els.investBtn.disabled = true;
-    apiFetch("/api/me/market/buy", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ card_id: state.selectedId, amount: amount }),
-    })
-      .then(function (r) {
-        return r.json().then(function (data) {
-          return { ok: r.ok, data: data };
-        });
-      })
-      .then(function (res) {
-        els.investBtn.disabled = false;
-        if (!res.ok) {
-          showMsg(
-            (res.data && (res.data.message || res.data.error)) || "Could not invest.",
-            false
-          );
+  function bindInvest() {
+    if (els.form) {
+      els.form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        if (!state.selectedId) return;
+        var amount = parseInt(els.amount.value, 10);
+        if (!amount) {
+          showMsg("Enter an amount.", false);
           return;
         }
-        showMsg("Invested " + formatPd(amount) + ".", true);
-        loadPortfolio();
-      })
-      .catch(function () {
-        els.investBtn.disabled = false;
-        showMsg("Network error.", false);
+        els.investBtn.disabled = true;
+        apiFetch("/api/me/market/buy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ card_id: state.selectedId, amount: amount }),
+        })
+          .then(function (r) {
+            return r.json().then(function (data) {
+              return { ok: r.ok, data: data };
+            });
+          })
+          .then(function (res) {
+            els.investBtn.disabled = false;
+            if (!res.ok) {
+              showMsg(
+                (res.data && (res.data.message || res.data.error)) || "Could not invest.",
+                false
+              );
+              return;
+            }
+            showMsg("Invested " + formatPd(amount) + ".", true);
+            loadPortfolio();
+            if (window.PokePonApp && window.PokePonApp.notifyBalancesChanged) {
+              window.PokePonApp.notifyBalancesChanged();
+            }
+          })
+          .catch(function () {
+            els.investBtn.disabled = false;
+            showMsg("Network error.", false);
+          });
       });
-  });
-  els.modal.addEventListener("click", function (e) {
-    if (e.target && e.target.hasAttribute("data-close")) closeModal();
-  });
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") closeModal();
-  });
+    }
+    if (els.modal) {
+      els.modal.addEventListener("click", function (e) {
+        if (e.target && e.target.hasAttribute("data-close")) closeModal();
+      });
+    }
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeModal();
+    });
+  }
 
-  captureSessionFromFragment();
-  setStatus("Search a card name to open its live chart.");
-  loadPortfolio();
+  function init() {
+    bindInvest();
+    browse.bindSidebarAuth({
+      onAuthenticated: function (ok) {
+        state.authenticated = ok;
+      },
+    });
+    browse.mount({
+      root: document.getElementById("market-browse"),
+      prefix: "market",
+      toolbarLabel: "Market catalog filters",
+      placeholder: "Search a card to chart…",
+      errorMessage: "Could not load the market catalog.",
+      onSelect: openCard,
+    });
+    loadPortfolio();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
