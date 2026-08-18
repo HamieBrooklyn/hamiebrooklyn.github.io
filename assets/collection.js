@@ -120,6 +120,7 @@
     modalPid: document.getElementById("modal-pid"),
     modalCopyId: document.getElementById("modal-copy-id"),
     modalFavoriteBtn: document.getElementById("modal-favorite-btn"),
+    modalPackLink: document.getElementById("modal-pack-link"),
     modalAttacksSection: document.getElementById("modal-attacks-section"),
     modalAttacks: document.getElementById("modal-attacks"),
     modalObtained: document.getElementById("modal-obtained"),
@@ -2066,6 +2067,9 @@
     els.modalDamage.textContent = card.max_damage ? String(card.max_damage) : "—";
     var types = Array.isArray(card.types) && card.types.length ? card.types.join(" · ") : "—";
     els.modalTypes.textContent = types;
+    if (window.PokePonPackProduct) {
+      window.PokePonPackProduct.apply(els.modalPackLink, card);
+    }
     els.modalPid.textContent = item.public_id || "—";
     if (item.obtained_at) {
       var d = new Date(item.obtained_at);

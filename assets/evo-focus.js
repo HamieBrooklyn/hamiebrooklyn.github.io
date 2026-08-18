@@ -127,6 +127,9 @@
       els.set.textContent =
         (target.set_name || target.set_code || "") + " · #" + (target.collector_number || "?");
     }
+    if (window.PokePonPackProduct) {
+      window.PokePonPackProduct.apply(els.packLink, target);
+    }
     var rarityLabel = target.rarity_display || target.tcg_rarity || "Unknown rarity";
     if (els.rarity) {
       els.rarity.textContent = rarityLabel;
@@ -190,6 +193,7 @@
     els.img = document.getElementById("evo-focus-img");
     els.title = document.getElementById("evo-focus-title");
     els.set = document.getElementById("evo-focus-set");
+    els.packLink = document.getElementById("evo-focus-pack-link");
     els.rarity = document.getElementById("evo-focus-rarity");
     els.hp = document.getElementById("evo-focus-hp");
     els.damage = document.getElementById("evo-focus-damage");

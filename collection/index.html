@@ -8,7 +8,7 @@
   <title>Collection — PokePon</title>
   <meta name="description" content="Browse your PokePon Discord-bot card collection: search, sort by rarity / HP / damage, and view focused card details." />
   <link rel="canonical" href="https://pokepon.org/collection/" />
-  <link rel="stylesheet" href="/assets/style.css?v=56" />
+  <link rel="stylesheet" href="/assets/style.css?v=57" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -224,6 +224,7 @@
                 <span class="card-grade-chip-lab" id="modal-grade-chip-lab"></span>
                 <span class="card-grade-chip-ench" id="modal-grade-chip-ench"></span>
               </div>
+              <a class="modal-pack-link" id="modal-pack-link" hidden target="_blank" rel="noopener noreferrer">Find pack</a>
             </div>
             <button
               type="button"
@@ -345,6 +346,7 @@
       <div class="modal-grid">
         <div class="modal-image">
           <img id="evo-focus-img" alt="" />
+          <a class="modal-pack-link" id="evo-focus-pack-link" hidden target="_blank" rel="noopener noreferrer">Find pack</a>
         </div>
         <div class="modal-body">
           <p class="modal-set" id="evo-focus-set"></p>
@@ -378,7 +380,8 @@
   <script src="/assets/site-origin.js?v=1"></script>
   <script src="/assets/site-links.js?v=1" defer></script>
   <script src="/assets/app-shell.js?v=18" defer></script>
-  <script src="/assets/evo-focus.js?v=5" defer></script>
-  <script src="/assets/collection.js?v=38" defer></script>
+  <script src="/assets/pack-product.js?v=1" defer></script>
+  <script src="/assets/evo-focus.js?v=6" defer></script>
+  <script src="/assets/collection.js?v=39" defer></script>
 </body>
 </html>

@@ -103,6 +103,7 @@
     modalAttacksSection: document.getElementById("pack-modal-attacks-section"),
     modalAttacks: document.getElementById("pack-modal-attacks"),
     modalOdds: document.getElementById("pack-modal-odds"),
+    modalPackLink: document.getElementById("pack-modal-pack-link"),
     sidebarUser: document.getElementById("sidebar-user"),
     btnLogin: document.getElementById("btn-login"),
     btnLogout: document.getElementById("btn-logout"),
@@ -513,6 +514,9 @@
     els.modalTitle.textContent = card.name || "Card";
     els.modalSet.textContent =
       (card.set_name || card.set_code || "") + " · #" + (card.collector_number || "?");
+    if (window.PokePonPackProduct) {
+      window.PokePonPackProduct.apply(els.modalPackLink, card);
+    }
     els.modalRarity.textContent = rarity.display_name || card.tcg_rarity || "Unknown";
     els.modalRarity.className =
       "modal-rarity " + rarityClassFor(rarity.display_name || rarity.code);

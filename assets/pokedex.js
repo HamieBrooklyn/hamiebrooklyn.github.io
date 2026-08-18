@@ -26,6 +26,7 @@
     modalSupertype: document.getElementById("dex-modal-supertype"),
     modalDex: document.getElementById("dex-modal-dex"),
     modalTcgId: document.getElementById("dex-modal-tcg-id"),
+    modalPackLink: document.getElementById("dex-modal-pack-link"),
     modalAttacksSection: document.getElementById("dex-modal-attacks-section"),
     modalAttacks: document.getElementById("dex-modal-attacks"),
     modalOwned: document.getElementById("dex-modal-owned"),
@@ -139,6 +140,9 @@
     var dexNums = card.dex_numbers || [];
     els.modalDex.textContent = dexNums.length ? dexNums.join(", ") : "—";
     els.modalTcgId.textContent = card.tcg_card_id || "—";
+    if (window.PokePonPackProduct) {
+      window.PokePonPackProduct.apply(els.modalPackLink, card);
+    }
 
     var attacks = Array.isArray(card.attacks) ? card.attacks : [];
     if (!attacks.length) {

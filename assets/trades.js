@@ -135,6 +135,7 @@
     modalImg: document.getElementById("modal-img"),
     modalTitle: document.getElementById("modal-title"),
     modalSet: document.getElementById("modal-set"),
+    modalPackLink: document.getElementById("modal-pack-link"),
     modalRarity: document.getElementById("modal-rarity"),
     modalHp: document.getElementById("modal-hp"),
     modalDamage: document.getElementById("modal-damage"),
@@ -315,6 +316,9 @@
     els.modalTitle.textContent = card.name || "Card";
     els.modalSet.textContent =
       (card.set_name || card.set_code || "") + " · #" + (card.collector_number || "?");
+    if (window.PokePonPackProduct) {
+      window.PokePonPackProduct.apply(els.modalPackLink, card);
+    }
     els.modalRarity.textContent = rarity.display_name || card.tcg_rarity || "Unknown rarity";
     els.modalRarity.className = "modal-rarity " + rarityClassFor(rarity.display_name);
     els.modalHp.textContent = card.hp ? String(card.hp) : "—";

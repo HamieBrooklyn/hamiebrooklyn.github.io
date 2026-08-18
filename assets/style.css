@@ -2025,6 +2025,46 @@ main {
   cursor: wait;
 }
 
+.modal-pack-link {
+  position: absolute;
+  left: 0.55rem;
+  bottom: 0.55rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.62rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(8, 10, 16, 0.78);
+  color: #e8eaef;
+  text-decoration: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  backdrop-filter: blur(8px);
+  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.modal-pack-link:hover,
+.modal-pack-link:focus-visible {
+  transform: translateY(-1px);
+  background: rgba(91, 140, 255, 0.28);
+  border-color: var(--accent);
+  outline: none;
+}
+
+.modal-pack-link[hidden] {
+  display: none !important;
+}
+
+.modal-pack-link-icon {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+}
+
 .picker-card.is-favorite {
   opacity: 0.55;
   cursor: not-allowed;

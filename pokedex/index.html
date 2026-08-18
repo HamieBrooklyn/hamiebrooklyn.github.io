@@ -8,7 +8,7 @@
   <title>Pokédex — PokePon</title>
   <meta name="description" content="Search every imported Pokémon TCG card in PokePon. Filter by set, rarity, type, and Pokédex number — see if you already own a printing." />
   <link rel="canonical" href="https://pokepon.org/pokedex/" />
-  <link rel="stylesheet" href="/assets/style.css?v=49" />
+  <link rel="stylesheet" href="/assets/style.css?v=57" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
@@ -106,6 +106,7 @@
         <aside class="modal-aside" aria-label="Card preview">
           <div class="modal-image">
             <img id="dex-modal-img" alt="" />
+            <a class="modal-pack-link" id="dex-modal-pack-link" hidden target="_blank" rel="noopener noreferrer">Find pack</a>
           </div>
           <footer class="modal-footer pokedex-modal-footer">
             <section class="pokedex-owned-panel" id="dex-modal-owned" hidden aria-label="Your copies">
@@ -145,7 +146,8 @@
   <script src="/assets/site-origin.js?v=1"></script>
   <script src="/assets/site-links.js?v=1" defer></script>
   <script src="/assets/app-shell.js?v=18" defer></script>
+  <script src="/assets/pack-product.js?v=1" defer></script>
   <script src="/assets/catalog-browse.js?v=1" defer></script>
-  <script src="/assets/pokedex.js?v=4" defer></script>
+  <script src="/assets/pokedex.js?v=5" defer></script>
 </body>
 </html>
