@@ -27,6 +27,7 @@
       items: [
         { key: "craft", href: "/craft/", label: "Crafting" },
         { key: "deck", href: "/deck/", label: "Deck editor" },
+        { key: "tcg", href: "/tcg/", label: "TCG Tabletop" },
       ],
     },
     {
@@ -135,6 +136,7 @@
     if (path === "/craft" || path.indexOf("/craft/") === 0) return "craft";
     if (path === "/packs" || path.indexOf("/packs/") === 0) return "packs";
     if (path === "/deck" || path.indexOf("/deck/") === 0) return "deck";
+    if (path === "/tcg" || path.indexOf("/tcg/") === 0) return "tcg";
     if (path === "/trades" || path.indexOf("/trades/") === 0) return "trades";
     if (path === "/auctions" || path.indexOf("/auctions/") === 0) return "auctions";
     if (path === "/leaderboard" || path.indexOf("/leaderboard/") === 0) return "leaderboard";
